@@ -1,4 +1,6 @@
 import crypto from "node:crypto";
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 import { AUTH_PROVIDERS } from "@superset/shared/constants";
 import { getHostId, getHostName } from "@superset/shared/host-info";
 import { observable } from "@trpc/server/observable";
@@ -19,6 +21,48 @@ import {
 } from "./utils/auth-functions";
 
 const PASSWORD_TOKEN_LIFETIME_MS = 1000 * 60 * 60 * 24 * 30;
+
+/**
+ * JSON POST over node:http(s) with only the headers we set. Unlike fetch
+ * (undici), this attaches no Origin or Sec-Fetch-* headers — see
+ * signInWithPassword for why that matters.
+ */
+function postJson(
+	url: string,
+	body: unknown,
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+	const payload = JSON.stringify(body);
+	const target = new URL(url);
+	const request = target.protocol === "https:" ? httpsRequest : httpRequest;
+	return new Promise((resolve, reject) => {
+		const req = request(
+			target,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Content-Length": Buffer.byteLength(payload),
+					Accept: "application/json",
+				},
+			},
+			(res) => {
+				const chunks: Buffer[] = [];
+				res.on("data", (chunk: Buffer) => chunks.push(chunk));
+				res.on("error", reject);
+				res.on("end", () => {
+					const status = res.statusCode ?? 0;
+					let data: unknown = {};
+					try {
+						data = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+					} catch {}
+					resolve({ ok: status >= 200 && status < 300, status, data });
+				});
+			},
+		);
+		req.on("error", reject);
+		req.end(payload);
+	});
+}
 
 export const createAuthRouter = () => {
 	return router({
@@ -127,26 +171,22 @@ export const createAuthRouter = () => {
 		 *
 		 * The packaged renderer is served from file://, so a browser fetch to
 		 * the API carries `Origin: null` plus Sec-Fetch-* headers and Better
-		 * Auth's CSRF middleware rejects it ("Missing or null Origin"). A Node
-		 * fetch sends neither, which Better Auth treats as a non-browser client
-		 * and validates on credentials alone. The token is persisted here so the
+		 * Auth's CSRF middleware rejects it ("Missing or null Origin"). The
+		 * main process's global fetch (undici) is no better: it sends
+		 * `Sec-Fetch-Mode: cors`, and that header alone makes Better Auth
+		 * force-validate the (absent) origin. A bare node:https request sends
+		 * neither, which Better Auth treats as a non-browser client and
+		 * validates on credentials alone. The token is persisted here so the
 		 * renderer only has to hydrate it.
 		 */
 		signInWithPassword: publicProcedure
 			.input(z.object({ email: z.string(), password: z.string() }))
 			.mutation(async ({ input }) => {
-				const response = await fetch(
+				const response = await postJson(
 					`${env.NEXT_PUBLIC_API_URL}/api/auth/sign-in/email`,
-					{
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							email: input.email.trim(),
-							password: input.password,
-						}),
-					},
+					{ email: input.email.trim(), password: input.password },
 				);
-				const data = (await response.json().catch(() => ({}))) as {
+				const data = response.data as {
 					token?: string;
 					code?: string;
 					message?: string;
