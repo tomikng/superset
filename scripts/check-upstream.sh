@@ -24,6 +24,27 @@ UPSTREAM_REMOTE="${UPSTREAM_REMOTE:-upstream}"
 UPSTREAM_BRANCH="${UPSTREAM_BRANCH:-main}"
 UPSTREAM_REF="${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}"
 
+# Discord notification. The webhook is a credential — it lives in an untracked
+# file, never in this repo. Anyone holding it can post to the channel.
+#   echo 'export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."' \
+#     > ~/.superset-selfhost.env && chmod 600 ~/.superset-selfhost.env
+[ -f "${HOME}/.superset-selfhost.env" ] && . "${HOME}/.superset-selfhost.env"
+
+NOTIFY_MODE="auto"   # auto = only when there is something to act on
+for arg in "$@"; do
+  case "$arg" in
+    --notify-always) NOTIFY_MODE="always" ;;
+    --no-notify)     NOTIFY_MODE="never" ;;
+    -h|--help)
+      echo "usage: $0 [--notify-always|--no-notify]"
+      exit 0 ;;
+    *) echo "unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+
+CONFLICT_LIST=""
+WATCH_LIST=""
+
 # Files this fork has modified. Upstream changes here mean a merge conflict.
 PATCHED_FILES=(
   "packages/auth/src/server.ts"
@@ -88,13 +109,14 @@ section "Superset fork — upstream check"
 printf '%s%s commits behind · %s ahead · base %s%s\n' \
   "$dim" "$BEHIND" "$AHEAD" "$(git rev-parse --short "$MERGE_BASE")" "$reset"
 
-if [ "$BEHIND" -eq 0 ]; then
-  echo ""
-  echo "Up to date with ${UPSTREAM_REF}. Nothing to do."
-  exit 0
-fi
-
-CHANGED=$(git diff --name-only "HEAD..${UPSTREAM_REF}")
+# Deliberately no early exit when BEHIND is 0: the flow below is harmless with
+# an empty diff, and falling through lets --notify-always post a heartbeat so a
+# scheduled run proves it happened rather than failing silently.
+# Diff from the MERGE BASE, not from HEAD. `HEAD..upstream/main` also reports
+# every file this fork changed, which reads as "upstream touched it" when
+# upstream did nothing of the sort — the whole report becomes false positives.
+# From the merge base, this is strictly "what upstream changed since we forked".
+CHANGED=$(git diff --name-only "${MERGE_BASE}..${UPSTREAM_REF}")
 
 # --- conflicts -------------------------------------------------------------
 
@@ -102,8 +124,9 @@ section "Merge conflicts expected"
 conflict_count=0
 for file in "${PATCHED_FILES[@]}"; do
   if grep -Fxq "$file" <<<"$CHANGED"; then
-    commits=$(git rev-list --count "HEAD..${UPSTREAM_REF}" -- "$file")
+    commits=$(git rev-list --count "${MERGE_BASE}..${UPSTREAM_REF}" -- "$file")
     printf '  %s  %s(%s upstream commits)%s\n' "$file" "$dim" "$commits" "$reset"
+    CONFLICT_LIST="${CONFLICT_LIST}- \`${file}\` (${commits} commits)"$'\n'
     conflict_count=$((conflict_count + 1))
   fi
 done
@@ -118,6 +141,7 @@ for entry in "${WATCHED_FILES[@]}"; do
   why="${entry#*:}"
   if grep -Fxq "$file" <<<"$CHANGED"; then
     printf '  %s\n    %s%s%s\n' "$file" "$dim" "$why" "$reset"
+    WATCH_LIST="${WATCH_LIST}- \`${file}\` — ${why}"$'\n'
     watch_count=$((watch_count + 1))
   fi
 done
@@ -135,7 +159,9 @@ fi
 # --- summary ---------------------------------------------------------------
 
 section "Summary"
-if [ "$conflict_count" -eq 0 ] && [ "$watch_count" -eq 0 ]; then
+if [ "$BEHIND" -eq 0 ]; then
+  echo "  Up to date with ${UPSTREAM_REF}. Nothing to do."
+elif [ "$conflict_count" -eq 0 ] && [ "$watch_count" -eq 0 ]; then
   echo "  ${BEHIND} commits behind, but nothing this deployment depends on changed."
   echo "  A plain merge should be safe."
 else
@@ -150,3 +176,85 @@ echo "  1. the API still boots (no new required env vars)"
 echo "  2. billing.activePlan still reads Postgres and returns 'enterprise'"
 echo "  3. the desktop build still bakes your hostnames into the CSP"
 echo "  4. sign-in still offers a password form and no social buttons"
+
+# --- Discord ---------------------------------------------------------------
+
+# Truncate a list to a few entries so the payload stays inside Discord's
+# 2000-character content limit even on a large upstream jump.
+trim_list() {
+  local list="$1" max="$2" shown
+  shown=$(printf '%s' "$list" | head -n "$max")
+  local total
+  total=$(printf '%s' "$list" | grep -c '^-' || true)
+  printf '%s' "$shown"
+  [ "$total" -gt "$max" ] && printf '\n_…and %s more_' "$((total - max))"
+}
+
+json_escape() {
+  # -Rs slurps raw stdin into one JSON string, escaping newlines and quotes.
+  jq -Rs . 2>/dev/null || printf '""'
+}
+
+notify_discord() {
+  [ -z "${DISCORD_WEBHOOK_URL:-}" ] && return 0
+  [ "$NOTIFY_MODE" = "never" ] && return 0
+
+  local actionable=0
+  { [ "$conflict_count" -gt 0 ] || [ "$watch_count" -gt 0 ] || \
+    [ "${NEW_MIGRATIONS:-0}" -gt 0 ]; } && actionable=1
+
+  if [ "$NOTIFY_MODE" = "auto" ] && [ "$actionable" -eq 0 ]; then
+    return 0   # quiet when there is nothing to act on
+  fi
+
+  local msg
+  msg="**Superset fork — upstream drift**
+${BEHIND} commits behind \`${UPSTREAM_REF}\`"
+
+  if [ "$conflict_count" -gt 0 ]; then
+    msg="${msg}
+
+**Will conflict (${conflict_count})** — files this fork patches
+$(trim_list "$CONFLICT_LIST" 6)"
+  fi
+
+  if [ "$watch_count" -gt 0 ]; then
+    msg="${msg}
+
+**Re-verify (${watch_count})** — merges clean, can break silently
+$(trim_list "$WATCH_LIST" 6)"
+  fi
+
+  if [ "${NEW_MIGRATIONS:-0}" -gt 0 ]; then
+    msg="${msg}
+
+**${NEW_MIGRATIONS} new migration(s)** — run migrations after merging"
+  fi
+
+  if [ "$actionable" -eq 1 ]; then
+    msg="${msg}
+
+To delegate: \`Merge ${UPSTREAM_REF} into the selfhost branch. Reapply the
+self-host patches, resolve conflicts in the files listed above, and confirm
+the four post-merge checks in scripts/check-upstream.sh still pass.\`"
+  else
+    msg="${msg}
+
+Nothing this deployment depends on changed — a plain merge should be safe."
+  fi
+
+  local payload
+  payload=$(printf '{"content": %s}' "$(printf '%s' "$msg" | json_escape)")
+
+  local code
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+    -H "Content-Type: application/json" \
+    -X POST -d "$payload" "$DISCORD_WEBHOOK_URL" 2>/dev/null)
+
+  case "$code" in
+    204|200) echo ""; echo "Posted to Discord." ;;
+    *)       echo ""; echo "Discord post failed (HTTP ${code:-000})." >&2 ;;
+  esac
+}
+
+notify_discord
