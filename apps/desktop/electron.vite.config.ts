@@ -73,6 +73,10 @@ export default defineConfig({
 				process.env.NEXT_PUBLIC_API_URL,
 				"https://api.superset.sh",
 			),
+			"process.env.DESKTOP_UPDATE_FEED_URL": defineEnv(
+				process.env.DESKTOP_UPDATE_FEED_URL,
+				"",
+			),
 			"process.env.NEXT_PUBLIC_STREAMS_URL": defineEnv(
 				process.env.NEXT_PUBLIC_STREAMS_URL,
 				"https://streams.superset.sh",

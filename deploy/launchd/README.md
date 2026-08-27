@@ -1,6 +1,6 @@
 # launchd services for self-hosted Superset on `ms1`
 
-Four supervised jobs that bring the whole stack back after a reboot of the
+Five supervised jobs that bring the whole stack back after a reboot of the
 MacBook running as `ms1`:
 
 | Label | What it runs | Listens on | Public hostname |
@@ -9,6 +9,7 @@ MacBook running as `ms1`:
 | `dev.tom-nguyen.superset.api` | `bun run start` in `apps/api` → `next start --port 3101` | 3101 | `superset-api.tom-nguyen.dev` |
 | `dev.tom-nguyen.superset.web` | `bun run start` in `apps/web` → `next start` (`PORT=3100`) | 3100 | `superset-app.tom-nguyen.dev` |
 | `dev.tom-nguyen.superset.relay` | `bun run start` in `apps/relay` → `bun run src/index.ts` | 3102 | `superset-relay.tom-nguyen.dev` |
+| `dev.tom-nguyen.superset.releases` | `bun run deploy/releases-server.ts` serving `~/superset-releases` | 3103 | `superset-app.tom-nguyen.dev/releases/*` |
 
 Every start command above is the `start` script from that app's
 `package.json` — nothing was invented. Cloudflare Tunnel terminates TLS and
@@ -540,3 +541,164 @@ ports these plists bind.
 - The exact path of `node_modules/.bin/dotenv` under `bunfig.toml`'s
   `linker = "isolated"` layout, mentioned as an alternative to shell-sourcing.
 - `apps/api` health endpoint: none found.
+
+---
+
+## Auto-deploy (push to selfhost)
+
+`.github/workflows/deploy-selfhost.yml` runs on every push to `selfhost` (and
+on `workflow_dispatch`), gated on `github.repository == 'tomikng/superset'`. It
+does **not** run on a GitHub-hosted runner: `runs-on: [self-hosted, macOS, ms1]`
+means the job executes on `ms1` itself, as the deploy user, so it can touch the
+live clone and the `gui/<uid>` launchd domain. There is no `actions/checkout`
+step — the runner's scratch workspace is irrelevant; the target is
+`~/Code/superset`, the clone the plists point at.
+
+Two steps, both `cd`'d into that clone:
+
+1. **Advance.** Refuse if the tree is dirty, record `prev=$(git rev-parse HEAD)`,
+   `git fetch fork selfhost`, `git merge --ff-only <pushed sha>`. Fast-forward
+   only: if someone committed on `ms1` directly, the deploy fails instead of
+   producing a merge commit that exists nowhere else.
+2. **Deploy.** `deploy/deploy.sh <prev-sha>`, appended to
+   `~/Library/Logs/superset/deploy.log`.
+
+What `deploy/deploy.sh` does, and deliberately does not:
+
+- **Never fetches or merges.** The caller advances the tree; the script only
+  realises whatever `HEAD` is. That is what makes it safe to run by hand.
+- **Refuses a dirty tree** (`git status --porcelain` must be empty). A stray
+  edit on `ms1` would otherwise get baked into a build nobody can reproduce.
+- **One at a time.** `mkdir .deploy.lock` in the clone root is the lock; a lock
+  older than 30 minutes is treated as a crashed run and cleared. The workflow's
+  `concurrency: deploy-selfhost` queues pushes on the GitHub side too.
+- **Diff-driven.** `git diff --name-only <prev> HEAD` decides everything:
+  `bun.lock` moved → `bun install --frozen`; `packages/db/drizzle/` moved →
+  `bun run db:migrate`; `apps/api`, `apps/web` or anything shared
+  (`packages/`, root `package.json`, `turbo.json`, `.bun-version`, `tsconfig*`)
+  → `turbo build` for that app and `launchctl kickstart -k` of only that
+  service; `apps/relay` → restart only (it runs from source). A commit that
+  touches none of those exits 0 with "nothing to do". Without a `<prev-sha>`
+  argument, or with one that isn't in the clone, it rebuilds and restarts
+  everything.
+- **Builds with `--env-mode=loose`.** Turbo's strict mode strips `RELAY_URL` &
+  co. from the build environment and the web CSP silently falls back to
+  `relay.superset.sh`. Same `.env` sourcing rules as step 3 of "Before you load
+  anything"; `SUPERSET_ALLOW_SIGNUP` is unset.
+- **Health-checks** each restarted service on its local port (api
+  `/api/auth/ok` → 200, web `/sign-in` → 200/307, relay `/` → any 2xx–4xx),
+  30 tries × 3 s, and fails the run otherwise.
+- **Discord.** Posts start/failure/success to `DISCORD_WEBHOOK_URL` from
+  `~/.superset-selfhost.env` (untracked, `chmod 600`). No file, no webhook, no
+  error.
+
+Run one by hand (after you have advanced the clone yourself):
+
+```bash
+cd ~/Code/superset
+prev=$(git rev-parse HEAD)
+git fetch fork selfhost && git merge --ff-only fork/selfhost
+deploy/deploy.sh "$prev"       # omit the sha to force a full rebuild/restart
+```
+
+### Installing the runner
+
+`deploy/runner/install-runner.sh` does the whole thing: downloads
+`actions-runner` for macOS arm64 into `~/actions-runner`, registers it against
+the mirror with a short-lived token, applies the `ms1` label, and installs it as
+a launchd service through the runner's own `./svc.sh install` / `./svc.sh start`.
+The token is minted with `gh` (authenticated as a repo admin) and expires in an
+hour, so there is nothing to store:
+
+```bash
+gh api -X POST repos/tomikng/superset/actions/runners/registration-token -q .token
+```
+
+**The gotcha is the same one as every other job in this README.** `svc.sh`
+installs a *user* LaunchAgent (`actions.runner.tomikng-superset.ms1.plist` in
+`~/Library/LaunchAgents`). It runs only while the deploy user has a GUI session,
+which is exactly what we want — it must reach the deploy user's `bun`, `docker`
+and `gui/<uid>` launchd domain — but it means the auto-login / FileVault-off /
+`pmset` settings under "LaunchAgents, not LaunchDaemons" apply to the runner
+too. If the runner shows *Offline* in GitHub → Settings → Actions → Runners after
+a reboot, the machine is sitting at the login screen. Do not "fix" it by
+installing the runner as a root LaunchDaemon: it would then be unable to
+kickstart the user-domain services and the deploy would fail at the restart
+step, after the build.
+
+Runner logs: `~/actions-runner/_diag/`; the launchd wrapper logs to
+`~/Library/Logs/actions.runner.*.log`. `~/actions-runner/svc.sh status` tells
+you whether launchd thinks it is running.
+
+---
+
+## Desktop update feed (`/releases`)
+
+The desktop app checks for updates with electron-updater, which fetches
+`latest-mac.yml` from a base URL and then the zip that file names. Two feeds
+are unavailable to the self-host build, for different reasons:
+
+- **GitHub Releases on the mirror.** `tomikng/superset` is private. Release
+  assets on a private repo 404 for an anonymous `GET` — and the updater is
+  anonymous. Fine for humans with `gh`; useless as a feed.
+- **The upstream feed** (`superset-sh/superset/releases/latest/download`). It
+  is public and the updater would happily follow it — straight into a build
+  with `api.superset.sh` compiled in. The self-host build therefore sets
+  `DESKTOP_UPDATE_FEED_URL` at compile time
+  (`apps/desktop/src/main/lib/auto-updater.ts`) to
+  `https://superset-app.tom-nguyen.dev/releases`, and that URL must exist.
+
+So the feed is a fifth launchd job, `dev.tom-nguyen.superset.releases`: Bun
+running `deploy/releases-server.ts`, bound to `127.0.0.1:3103`, serving
+`~/superset-releases` under the `/releases/` prefix (GET/HEAD only, no directory
+listing, no path escape). It reads no `.env`. `install.sh` installs it with the
+others. `deploy/cloudflared/config.yml` has a path rule for it on the web
+hostname:
+
+```yaml
+- hostname: superset-app.tom-nguyen.dev
+  path: ^/releases/
+  service: http://127.0.0.1:3103
+- hostname: superset-app.tom-nguyen.dev      # catch-all, must come AFTER
+  service: http://127.0.0.1:3100
+```
+
+cloudflared takes the first matching ingress rule, so the order is
+load-bearing: put the path rule below the catch-all and `/releases/*` quietly
+becomes a Next.js 404.
+
+Directory layout of `~/superset-releases` (populated by the release runbook,
+`.agents/skills/desktop-release-local/SKILL.md`):
+
+```
+latest-mac.yml                       # the feed: version, zip name, sha512, releaseDate
+Superset-<ver>-arm64-mac.zip         # what the updater downloads (sha512 in the yml)
+Superset-<ver>-arm64-mac.zip.blockmap# differential-download map; optional but keep it
+Superset-arm64.dmg                   # stable-named copy of Superset-<ver>-arm64.dmg
+                                     # for the web "Download for Mac" button
+```
+
+Older zips can stay (the yml only points at one), but the `.dmg` stable name
+is overwritten on every cut. The updater compares the yml's `version` against
+the running app's — same `package.json` version, no update offered, however
+many times you re-cut.
+
+The web download button reads its URL at **build** time from
+`packages/shared/src/constants.ts`:
+
+```
+NEXT_PUBLIC_DOWNLOAD_URL_MAC_ARM64=https://superset-app.tom-nguyen.dev/releases/Superset-arm64.dmg
+```
+
+It is in `deploy/env.production.template`; adding it to a live `.env` does
+nothing until `apps/web` is rebuilt (`deploy/deploy.sh` with no argument, or
+push any change under `apps/web/`).
+
+Verify:
+
+```bash
+launchctl list | grep superset.releases
+curl -sI http://127.0.0.1:3103/releases/latest-mac.yml          # 200
+curl -s  https://superset-app.tom-nguyen.dev/releases/latest-mac.yml
+curl -sI https://superset-app.tom-nguyen.dev/releases/Superset-arm64.dmg   # 200, content-length ≈ 200 MB
+```

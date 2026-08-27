@@ -85,6 +85,12 @@ ingress:
   # Next's default 3100. NOTE: the repo's WEB_PORT variable is read only by the
   # *dev* script; `next start` ignores it and honours PORT. If you launch web
   # with PORT set to anything else, change this line to match.
+  # Desktop update feed + installer downloads: static files served by the
+  # `releases` launchd job (deploy/releases-server.ts). Must precede the
+  # catch-all rule for the same hostname — cloudflared takes the first match.
+  - hostname: superset-app.tom-nguyen.dev
+    path: ^/releases/
+    service: http://127.0.0.1:3103
   - hostname: superset-app.tom-nguyen.dev
     service: http://127.0.0.1:3100
 

@@ -70,7 +70,7 @@ mkdir -p "$HOME/Library/LaunchAgents"
 
 DOMAIN="gui/$(id -u)"
 
-for svc in stack api web relay; do
+for svc in stack api web relay releases; do
   LABEL="dev.tom-nguyen.superset.$svc"
   DEST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
@@ -91,7 +91,7 @@ for svc in stack api web relay; do
 done
 
 # Bring the compose stack up first, then the apps.
-for svc in stack api web relay; do
+for svc in stack api web relay releases; do
   LABEL="dev.tom-nguyen.superset.$svc"
   launchctl bootstrap "$DOMAIN" "$HOME/Library/LaunchAgents/$LABEL.plist"
   launchctl enable "$DOMAIN/$LABEL"

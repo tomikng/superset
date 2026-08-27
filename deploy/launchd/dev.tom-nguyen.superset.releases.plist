@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  dev.tom-nguyen.superset.releases  ->  superset-app.tom-nguyen.dev/releases/*  ->  127.0.0.1:3103
+
+  Static server for the desktop auto-update feed and installer downloads
+  (deploy/releases-server.ts). It serves __HOME__/superset-releases, which is
+  populated by the release runbook (.agents/skills/desktop-release-local):
+  latest-mac.yml, Superset-<ver>-arm64-mac.zip(+.blockmap), and the
+  stable-named Superset-arm64.dmg. No .env needed — it only reads files.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.tom-nguyen.superset.releases</string>
+
+	<key>WorkingDirectory</key>
+	<string>__SUPERSET_ROOT__</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>__BUN_BIN__</string>
+		<string>run</string>
+		<string>__SUPERSET_ROOT__/deploy/releases-server.ts</string>
+	</array>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>__HOME__</string>
+		<key>PATH</key>
+		<string>__BUN_DIR__:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>RELEASES_DIR</key>
+		<string>__HOME__/superset-releases</string>
+		<key>RELEASES_PORT</key>
+		<string>3103</string>
+	</dict>
+
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>20</integer>
+
+	<key>ProcessType</key>
+	<string>Interactive</string>
+
+	<key>StandardOutPath</key>
+	<string>__HOME__/Library/Logs/superset/releases.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>__HOME__/Library/Logs/superset/releases.err.log</string>
+</dict>
+</plist>

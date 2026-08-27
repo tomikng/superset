@@ -7,7 +7,8 @@ description: Build, Developer-ID sign, notarize and publish the self-hosted Supe
 
 The GitHub `release-desktop.yml` workflow can't run for the private mirror
 (`tomikng/superset`) — it has no signing secrets and builds on 7 GB runners. So
-self-host releases are built here and uploaded with `gh`. This mirrors the
+self-host releases are built here and published by copying the artifacts to
+`ms1:~/superset-releases/` (the `/releases` update feed). This mirrors the
 `hive-build` skill in `Agentic-Editor` (same Apple identity, same notary profile).
 
 ## Non-negotiables
@@ -53,6 +54,7 @@ export NEXT_PUBLIC_DOCS_URL=https://superset-app.tom-nguyen.dev
 export NEXT_PUBLIC_MARKETING_URL=https://superset-app.tom-nguyen.dev
 export RELAY_URL=https://superset-relay.tom-nguyen.dev
 export NEXT_PUBLIC_POSTHOG_KEY=phc_unused_selfhosted NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+export DESKTOP_UPDATE_FEED_URL=https://superset-app.tom-nguyen.dev/releases   # never the upstream feed
 bun run install:deps && bun run clean:dev && bun run generate:icons && bun run compile:app \
   && bun run copy:native-modules && bun run validate:native-runtime
 export CSC_NAME="Developer ID Application: <Developer ID name> (Q89XY3A42H)"
@@ -79,6 +81,37 @@ updater downloads the **zip**, and the yml's sha512 refers to the zip.
 
 ## Publish
 
+The feed is the static `releases` launchd job on ms1 serving
+`~/superset-releases` at `https://superset-app.tom-nguyen.dev/releases/`
+(deploy/launchd/README.md "Desktop update feed"). GitHub Releases can't be the
+feed: the mirror is private, so assets 404 for the anonymous updater. Publishing
+is four files over scp (`ms1` is an ssh alias):
+
+```bash
+cd apps/desktop/release
+ssh ms1 'mkdir -p ~/superset-releases'
+scp Superset-<ver>-arm64-mac.zip Superset-<ver>-arm64-mac.zip.blockmap \
+    Superset-<ver>-arm64.dmg ms1:~/superset-releases/
+ssh ms1 'cp ~/superset-releases/Superset-<ver>-arm64.dmg ~/superset-releases/Superset-arm64.dmg'
+scp latest-mac.yml ms1:~/superset-releases/          # last: this is what flips the feed
+```
+
+Order matters: the yml names the zip by filename and sha512, so copy the zip
+(and blockmap) before the yml or an app checking in between gets a 404.
+`Superset-arm64.dmg` is the stable name the web "Download for Mac" button
+links to (`NEXT_PUBLIC_DOWNLOAD_URL_MAC_ARM64`); the versioned dmg next to it is
+just for the record.
+
+Verify from outside:
+
+```bash
+curl -s  https://superset-app.tom-nguyen.dev/releases/latest-mac.yml          # version: <ver>, path: Superset-<ver>-arm64-mac.zip
+curl -sI https://superset-app.tom-nguyen.dev/releases/Superset-<ver>-arm64-mac.zip | head -1   # 200
+curl -sI https://superset-app.tom-nguyen.dev/releases/Superset-arm64.dmg | head -1             # 200
+```
+
+The GitHub release is now archive + changelog only — nothing reads it:
+
 ```bash
 gh release create v<ver>-selfhost.<n> release/Superset-<ver>-arm64.dmg \
   release/Superset-<ver>-arm64-mac.zip release/latest-mac.yml \
@@ -86,9 +119,14 @@ gh release create v<ver>-selfhost.<n> release/Superset-<ver>-arm64.dmg \
 ```
 
 Tag pattern `v<ver>-selfhost.<n>` on purpose: `desktop-v*` / `cli-v*` would trigger
-the upstream release workflows. The desktop updater reads
-`releases/latest/download/latest-mac.yml`, so the newest self-host release must be
-the repo's "latest".
+the upstream release workflows.
+
+**Re-cuts are invisible to installed apps.** electron-updater compares the yml's
+`version` with the running app's `package.json` version, and only offers a
+strictly newer one. A `-selfhost.3` re-cut of the same `1.25.0` replaces the
+feed for *new* downloads but is never offered to anyone already on `1.25.0`.
+If existing installs must pick it up, the version has to move — and per
+non-negotiable 2 that means bumping desktop, host-service and cli together.
 
 ## Verify before announcing
 

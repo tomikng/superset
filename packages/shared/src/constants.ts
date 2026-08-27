@@ -59,7 +59,10 @@ export const OPEN_ROLES = [
 export const THEME_STORAGE_KEY = "superset-theme";
 
 // Download URLs
-export const DOWNLOAD_URL_MAC_ARM64 = `${COMPANY.GITHUB_URL}/releases/latest/download/Superset-arm64.dmg`;
+// Self-hosted deployments serve their own signed build (see deploy/README).
+export const DOWNLOAD_URL_MAC_ARM64 =
+	process.env.NEXT_PUBLIC_DOWNLOAD_URL_MAC_ARM64 ||
+	`${COMPANY.GITHUB_URL}/releases/latest/download/Superset-arm64.dmg`;
 export const DOWNLOAD_URL_MAC_X64 = `${COMPANY.GITHUB_URL}/releases/latest/download/Superset-x64.dmg`;
 
 // Auth token configuration

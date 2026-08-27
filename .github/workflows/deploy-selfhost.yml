@@ -1,0 +1,40 @@
+# Push-to-deploy for the ms1 self-host. Runs on the self-hosted runner that
+# lives on ms1 itself (labels: self-hosted, macOS, ms1) and advances the live
+# clone in place — see deploy/launchd/README.md "Auto-deploy".
+name: Deploy Self-host
+
+on:
+  push:
+    branches: [selfhost]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-selfhost
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to ms1
+    if: github.repository == 'tomikng/superset'
+    runs-on: [self-hosted, macOS, ms1]
+    timeout-minutes: 30
+    env:
+      SUPERSET_ROOT: Code/superset
+    steps:
+      # No actions/checkout: the deploy target is the live clone the launchd
+      # services run from, not the runner's scratch workspace.
+      - name: Advance the live clone
+        id: advance
+        run: |
+          cd "$HOME/$SUPERSET_ROOT"
+          [ -z "$(git status --porcelain)" ] || { echo "live clone is dirty" >&2; exit 1; }
+          echo "prev=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git fetch -q fork selfhost
+          git merge --ff-only "${{ github.sha }}"
+          git log --oneline -1
+
+      - name: Deploy
+        run: |
+          cd "$HOME/$SUPERSET_ROOT"
+          deploy/deploy.sh "${{ steps.advance.outputs.prev }}" 2>&1 | tee -a ~/Library/Logs/superset/deploy.log
+          exit "${PIPESTATUS[0]}"
