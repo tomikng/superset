@@ -1,3 +1,4 @@
+# Gated on the repository name: forks/mirrors lack the secrets this workflow needs.
 name: Triage Issue
 
 on:
@@ -15,7 +16,7 @@ jobs:
     name: Triage Issue
     # Auto-runs on new issues; re-run by applying the `triage` label or via
     # manual dispatch.
-    if: github.event_name == 'workflow_dispatch' || github.event.action == 'opened' || github.event.label.name == 'triage'
+    if: github.repository == 'superset-sh/superset' && (github.event_name == 'workflow_dispatch' || github.event.action == 'opened' || github.event.label.name == 'triage')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     concurrency:

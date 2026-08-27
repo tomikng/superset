@@ -183,7 +183,8 @@ jobs:
         run: bun install --frozen --ignore-scripts
 
       - name: Typecheck
-        run: bun run typecheck
+        # Cap turbo concurrency: forks get small (2-core/7GB) runners and 30+ parallel tsc tasks get OOM-killed.
+        run: bun run typecheck -- --concurrency=3
 
   build:
     name: Build
