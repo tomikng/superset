@@ -57,7 +57,7 @@ export NEXT_PUBLIC_POSTHOG_KEY=phc_unused_selfhosted NEXT_PUBLIC_POSTHOG_HOST=ht
 export DESKTOP_UPDATE_FEED_URL=https://superset-app.tom-nguyen.dev/releases   # never the upstream feed
 bun run install:deps && bun run clean:dev && bun run generate:icons && bun run compile:app \
   && bun run copy:native-modules && bun run validate:native-runtime
-export CSC_NAME="Developer ID Application: <Developer ID name> (Q89XY3A42H)"
+export CSC_NAME="<Developer ID name> (Q89XY3A42H)"   # no "Developer ID Application:" prefix — electron-builder rejects it
 export APPLE_KEYCHAIN_PROFILE=hive-notary APPLE_TEAM_ID=Q89XY3A42H
 bun run package -- --publish never --config electron-builder.ts --arm64
 ```
