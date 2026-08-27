@@ -1,3 +1,4 @@
+# Jobs are gated on the repository name: forks/mirrors lack the hosted-infra secrets and environments these deploys need.
 name: Deploy Preview
 
 on:
@@ -23,6 +24,7 @@ jobs:
   deploy-database:
     name: Deploy Database (Neon)
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
 
     steps:
@@ -80,6 +82,7 @@ jobs:
   deploy-api:
     name: Deploy API
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
     needs: deploy-database
 
@@ -251,6 +254,7 @@ jobs:
   deploy-web:
     name: Deploy Web
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment:
       name: preview
       url: https://${{ env.WEB_ALIAS }}
@@ -372,6 +376,7 @@ jobs:
   deploy-marketing:
     name: Deploy Marketing
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
     needs: deploy-database
 
@@ -486,6 +491,7 @@ jobs:
   deploy-admin:
     name: Deploy Admin
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
     needs: deploy-database
 
@@ -604,6 +610,7 @@ jobs:
   deploy-docs:
     name: Deploy Docs
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
     needs: deploy-database
 
@@ -687,7 +694,7 @@ jobs:
   post-final-comment:
     name: Post Deployment Comment
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && github.repository == 'superset-sh/superset'
     needs: [deploy-database, deploy-api, deploy-web, deploy-marketing, deploy-admin, deploy-docs]
     permissions:
       contents: read
