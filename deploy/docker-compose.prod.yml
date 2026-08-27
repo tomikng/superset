@@ -1,0 +1,177 @@
+# =============================================================================
+# Superset — production backing services for host "ms1" (macOS / Docker Desktop)
+#
+# Derived from the repo's docker-compose.yml. Only the four backing services
+# live here; apps/api, apps/web and apps/relay run natively on the host under
+# Bun 1.3.14 (see .bun-version) and reach these over the loopback interface.
+#
+# HARDENING vs. the repo file:
+#   1. Every published port is bound to 127.0.0.1 explicitly. Cloudflare Tunnel
+#      is the only public ingress; nothing here may be reachable from the LAN.
+#   2. Postgres credentials come from the environment and must be set. No
+#      postgres/postgres fallback — the `:?` form makes compose refuse to start
+#      rather than quietly boot an insecure default.
+#   3. restart: unless-stopped on every service.
+#   4. Volumes are declared with explicit `name:` so they survive a rename of
+#      this directory and can never be silently re-created empty.
+#   5. Healthchecks from the repo file are retained (and made credential-aware).
+#   6. SRH_TOKEN is configurable and required.
+#   7. Log rotation caps, so a long-running MacBook does not fill its disk.
+#
+# Usage (by hand):
+#   docker compose -p superset -f docker-compose.prod.yml --env-file .env.docker up -d
+#
+# In production this file is started by the launchd job
+# dev.tom-nguyen.superset.stack, which runs exactly that command attached, with
+# absolute paths and project name `superset` (see deploy/launchd/README.md).
+# smoke-test.sh probes the same project/file/env-file triple.
+#
+# The variables below are read by COMPOSE ITSELF from that --env-file, not by
+# the application. The application reads the monorepo-root .env separately.
+# =============================================================================
+
+name: superset
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: superset-postgres
+    restart: unless-stopped
+    environment:
+      # Generate once, store in .env.docker (chmod 600), never commit:
+      #   openssl rand -hex 32
+      # Keep it hex/alphanumeric: this value is also embedded in the URLs below
+      # and in DATABASE_URL, where reserved characters would need percent-encoding.
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set in .env.docker}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env.docker}
+      POSTGRES_DB: ${POSTGRES_DB:-main}
+      # Deterministic collation/encoding for a fresh cluster.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      # Loopback only. Consumed by DATABASE_URL_UNPOOLED (direct connection,
+      # used by db:migrate / db:push / pg_dump from the host) — never by the LAN.
+      - "127.0.0.1:${LOCAL_PG_PORT:-5432}:5432"
+    volumes:
+      - superset_db_data:/var/lib/postgresql/data
+    shm_size: 256mb
+    stop_grace_period: 1m
+    healthcheck:
+      # Same check as the repo file, but no longer hardcodes the `postgres`
+      # role, since the role is now a generated credential.
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\" -h 127.0.0.1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # The app queries Postgres through the Neon serverless HTTP driver
+  # (packages/db/src/client.ts -> neon()). That driver speaks HTTP, not the
+  # Postgres wire protocol, so this proxy is mandatory, not a convenience.
+  #
+  # packages/db/src/local-proxy.ts activates the proxy path ONLY when
+  # DATABASE_URL's hostname is exactly "db.localtest.me", and it derives the
+  # fetch endpoint as http://<host>:<port>/sql from that same URL. So
+  # DATABASE_URL must be:
+  #   postgres://<POSTGRES_USER>:<POSTGRES_PASSWORD>@db.localtest.me:<LOCAL_NEON_PROXY_PORT>/<POSTGRES_DB>
+  # db.localtest.me is a public DNS name that resolves to 127.0.0.1, which is
+  # exactly the interface this service binds to.
+  neon-proxy:
+    image: ghcr.io/timowilhelm/local-neon-http-proxy:main
+    container_name: superset-neon-proxy
+    restart: unless-stopped
+    environment:
+      PG_CONNECTION_STRING: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:-main}
+    ports:
+      - "127.0.0.1:${LOCAL_NEON_PROXY_PORT:-4444}:4444"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # NOTE: intentionally no healthcheck. The repo file has none either, and I
+    # could not verify that this image ships curl/wget, which any HTTP probe
+    # would need. Readiness is probed from the host instead — see the note.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Backs the relay's host directory (apps/relay/src/directory.ts). No volume,
+  # deliberately: the directory is TTL-scoped presence data (OWNER/META hashes
+  # plus a ZSET keyed on expiry) and is MEANT to be lost on restart. Persisting
+  # it would resurrect stale tunnel ownership records after a reboot. Hosts
+  # re-register on reconnect. See the companion note.
+  redis:
+    image: redis:7-alpine
+    container_name: superset-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${LOCAL_REDIS_PORT:-6379}:6379"
+    # Presence data only; an in-memory-only server with no RDB/AOF snapshotting
+    # matches the "no volume" intent and avoids writing snapshots into the
+    # container's writable layer.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # @upstash/redis (apps/relay/src/directory.ts) speaks Upstash's HTTP REST
+  # protocol, not the Redis wire protocol, so a plain redis-server cannot answer
+  # it. SRH is the HTTP shim in front — the same role neon-proxy plays for
+  # Postgres above.
+  #
+  # SRH_TOKEN is the bearer token SRH requires; it MUST equal the app's
+  # KV_REST_API_TOKEN, and KV_REST_API_URL must be
+  # http://127.0.0.1:<LOCAL_SRH_PORT> (IPv4 literal — this publish is IPv4-only
+  # and macOS resolves localhost to ::1 first).
+  serverless-redis-http:
+    image: hiett/serverless-redis-http:latest
+    container_name: superset-srh
+    restart: unless-stopped
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: ${SRH_TOKEN:?SRH_TOKEN must be set in .env.docker and must match KV_REST_API_TOKEN}
+      SRH_CONNECTION_STRING: "redis://redis:6379"
+      # If you also set a redis password (see below), this becomes:
+      #   SRH_CONNECTION_STRING: "redis://:${REDIS_PASSWORD}@redis:6379"
+      # UNVERIFIED: I did not confirm against this image that SRH parses a
+      # password out of the connection string, so it is left off by default.
+      # Redis is loopback-bound and holds only TTL presence data.
+    ports:
+      # Container listens on 80; published on the host loopback only.
+      - "127.0.0.1:${LOCAL_SRH_PORT:-8079}:80"
+    depends_on:
+      redis:
+        condition: service_healthy
+    # NOTE: intentionally no healthcheck, same reason as neon-proxy.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  # Explicit name: the volume is addressable as `superset_db_data_prod`
+  # regardless of the compose project name or this directory's name, so a
+  # rename can never silently hand Postgres an empty data directory.
+  superset_db_data:
+    name: superset_db_data_prod
+
+networks:
+  default:
+    name: superset_prod_net

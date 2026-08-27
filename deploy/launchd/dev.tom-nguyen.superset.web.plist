@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  dev.tom-nguyen.superset.web   ->  superset-app.tom-nguyen.dev  ->  127.0.0.1:3100
+
+  Start command is apps/web/package.json "start":  next start
+  Note the difference from apps/api: web's "start" carries NO --port flag, so the
+  port comes from $PORT (Next's default is 3100).  That matters here because
+  .superset/setup.local.sh writes a bare `PORT` into the repo-root .env holding
+  the *streams* port, not the web port.  If that .env were copied to ms1, sourcing
+  it would silently move the web server off 3100 and Cloudflare Tunnel would
+  point at nothing.  So PORT is re-exported AFTER the .env is sourced.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.tom-nguyen.superset.web</string>
+
+	<key>WorkingDirectory</key>
+	<string>__SUPERSET_ROOT__/apps/web</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>-c</string>
+		<string>set -a; . __SUPERSET_ROOT__/.env; set +a; unset SUPERSET_ALLOW_SIGNUP; export PORT=3100; for i in $(seq 1 60); do /usr/bin/nc -z 127.0.0.1 3101 &amp;&amp; break; echo "[web] waiting for api on 3101"; sleep 3; done; exec __BUN_BIN__ run start</string>
+	</array>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>__HOME__</string>
+		<key>PATH</key>
+		<string>__BUN_DIR__:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>NODE_ENV</key>
+		<string>production</string>
+		<!-- SKIP_ENV_VALIDATION deliberately not set — see the api plist for the
+		     reasoning and for the one case that would justify adding it back. -->
+	</dict>
+
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>20</integer>
+
+	<key>ProcessType</key>
+	<string>Interactive</string>
+
+	<key>SoftResourceLimits</key>
+	<dict>
+		<key>NumberOfFiles</key>
+		<integer>8192</integer>
+	</dict>
+	<key>HardResourceLimits</key>
+	<dict>
+		<key>NumberOfFiles</key>
+		<integer>16384</integer>
+	</dict>
+
+	<key>StandardOutPath</key>
+	<string>__HOME__/Library/Logs/superset/web.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>__HOME__/Library/Logs/superset/web.err.log</string>
+</dict>
+</plist>

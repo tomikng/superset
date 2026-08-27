@@ -1,0 +1,121 @@
+# ============================================================================
+# Cloudflare Tunnel config for the "ms1" tunnel (Superset self-host)
+#
+# INSTALL THIS AS:  ~/.cloudflared/ms1.yml
+#          NOT AS:  ~/.cloudflared/config.yml
+#
+# ~/.cloudflared/config.yml already exists on ms1 and pins the *rc-hub* tunnel.
+# cloudflared reads that path by default, so this file MUST live under a
+# different name and be selected explicitly with `--config`. See README.md
+# ("Keeping ms1 and rc-hub from colliding") for the launchd wiring.
+#
+# Substitute before use:
+#   <USER>              macOS login account on ms1 (owner of ~/.cloudflared)
+#   <MS1_TUNNEL_UUID>   UUID printed by `cloudflared tunnel create ms1`
+# ============================================================================
+
+tunnel: ms1
+
+# Absolute path on purpose: the launchd job may run with a different HOME than
+# the account that ran `cloudflared tunnel create`. Tilde is not expanded here.
+# Note this is the per-tunnel credentials JSON, not ~/.cloudflared/cert.pem —
+# cert.pem is only needed for create/route/delete, never for `tunnel run`.
+credentials-file: /Users/<USER>/.cloudflared/<MS1_TUNNEL_UUID>.json
+
+# --- Edge transport -------------------------------------------------------
+# Pinned to quic deliberately. The default is `auto`, which starts on quic and
+# silently falls back to http2 when outbound UDP/7844 is blocked. WebSocket
+# upgrades over the http2 edge transport have a standing 502 report
+# (cloudflare/cloudflared#1208), and superset-relay.tom-nguyen.dev is entirely
+# WebSocket traffic — a silent downgrade would look like "the relay randomly
+# stopped working". Pinning quic converts that into a loud, obvious failure to
+# connect at startup.
+#
+# If the tunnel will not register at all from this home network, the router is
+# blocking UDP/7844. Fix the router. Only as a last resort change this to
+# `auto` and then re-run the WebSocket upgrade check in README.md, because on
+# http2 it may not pass.
+protocol: quic
+
+loglevel: info
+
+# Explicit, and deliberately NOT the cloudflared default (20241): the rc-hub
+# cloudflared process on this same machine may already hold that port. This
+# endpoint is the primary liveness probe — see README.md "Verify".
+metrics: 127.0.0.1:20251
+
+# --- Origin defaults (apply to every ingress rule unless overridden) -------
+originRequest:
+  # Time to open the TCP connection to the local app. These origins are on
+  # loopback, so 30s (the default) only ever delays surfacing a dead process.
+  connectTimeout: 10s
+
+  # false is the default and must stay false. All three origins are plaintext
+  # HTTP on loopback; noTLSVerify only has meaning for an `https://` service
+  # and is a no-op here. Stated explicitly so nobody "fixes" a 502 by adding it.
+  noTLSVerify: false
+
+  # false is the default and must stay false. Both origin servers are
+  # HTTP/1.1-only: apps/web and apps/api are `next start` (Node http), and
+  # apps/relay is @hono/node-server's `serve()`, which is also node:http.
+  # Neither speaks h2c, so http2Origin: true would break every rule here.
+  http2Origin: false
+
+  # false is the default. Only relevant to WSGI/IIS origins that mishandle
+  # chunked bodies; it has no bearing on WebSocket upgrades.
+  disableChunkedEncoding: false
+
+# --- Ingress --------------------------------------------------------------
+# Rules are evaluated top-to-bottom; the last rule must be a catch-all with no
+# hostname or cloudflared refuses to start.
+#
+# Origins are written as 127.0.0.1, never `localhost`. On macOS `localhost`
+# resolves to both ::1 and 127.0.0.1, which drags cloudflared's Happy Eyeballs
+# into the path and can produce an intermittent first-connect stall when an
+# origin is bound IPv4-only. Using a literal address removes the ambiguity, so
+# `noHappyEyeballs` is not needed and is intentionally not set.
+ingress:
+  # --- Next.js API (apps/api) ---------------------------------------------
+  # Port 3101 is fixed by apps/api/package.json: "start": "next start --port 3101".
+  - hostname: superset-api.tom-nguyen.dev
+    service: http://127.0.0.1:3101
+
+  # --- Next.js web (apps/web) ---------------------------------------------
+  # apps/web/package.json has "start": "next start" with no --port, so this is
+  # Next's default 3100. NOTE: the repo's WEB_PORT variable is read only by the
+  # *dev* script; `next start` ignores it and honours PORT. If you launch web
+  # with PORT set to anything else, change this line to match.
+  - hostname: superset-app.tom-nguyen.dev
+    service: http://127.0.0.1:3100
+
+  # --- Relay (apps/relay) — long-lived WebSockets -------------------------
+  # Port 3102 is RELAY_PORT's default in apps/relay/src/env.ts. The process
+  # binds hostname "::" (dual-stack), so it accepts the IPv4-mapped connection
+  # from 127.0.0.1 above.
+  #
+  # No `ws://` service scheme is used or needed: cloudflared proxies a
+  # WebSocket upgrade through an `http://` service automatically, detecting the
+  # 101 and switching that response body to bidirectional streaming. A `ws://`
+  # scheme is not a valid cloudflared service type here.
+  #
+  # There is deliberately NO idle/read timeout override below, because
+  # cloudflared has no such knob for an upgraded connection, and the app
+  # already handles idleness itself: apps/relay/src/tunnel.ts pings every
+  # 30s (PING_INTERVAL_MS) and the host side does the same, which keeps every
+  # socket under Cloudflare's 100s edge idle timeout. See README.md.
+  - hostname: superset-relay.tom-nguyen.dev
+    service: http://127.0.0.1:3102
+    originRequest:
+      # Interval at which a TCP keepalive probe is sent on the origin
+      # connection. 30s is the default; restated here because this is the one
+      # rule where a half-open loopback socket would strand a live tunnel.
+      tcpKeepAlive: 30s
+      # Loopback origin: fail fast if the relay process is down.
+      connectTimeout: 10s
+      # Restated for the same reason as the global block — this is the rule
+      # people will be tempted to "fix" with http2Origin when a WS 502 appears.
+      http2Origin: false
+
+  # Required catch-all. Anything that reaches the tunnel without matching a
+  # hostname above gets a 404 instead of being routed somewhere surprising.
+  - service: http_status:404

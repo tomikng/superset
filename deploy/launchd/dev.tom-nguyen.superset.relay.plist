@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  dev.tom-nguyen.superset.relay  ->  superset-relay.tom-nguyen.dev  ->  127.0.0.1:3102
+
+  Start command is apps/relay/package.json "start":  bun run src/index.ts
+  (the "dev" script is the one that passes --env-file=../../.env; "start" does
+  NOT, which is exactly why the wrapper below sources the .env itself).
+
+  Port: apps/relay/src/env.ts declares RELAY_PORT with .default(3102), and
+  apps/relay/src/index.ts serves on { port: env.RELAY_PORT, hostname: "::" }.
+  apps/relay/fly.toml pins RELAY_PORT="3102" the same way.
+
+  The relay's env module is the only one in this repo that would reject a missing
+  KV_REST_API_URL / KV_REST_API_TOKEN / NEXT_PUBLIC_API_URL — those must be real
+  (SRH + the api hostname), not placeholders.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.tom-nguyen.superset.relay</string>
+
+	<key>WorkingDirectory</key>
+	<string>__SUPERSET_ROOT__/apps/relay</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>-c</string>
+		<string>set -a; . __SUPERSET_ROOT__/.env; set +a; unset SUPERSET_ALLOW_SIGNUP; : "${RELAY_PORT:=3102}"; export RELAY_PORT; for i in $(seq 1 60); do /usr/bin/nc -z 127.0.0.1 "${LOCAL_SRH_PORT:-8079}" &amp;&amp; break; echo "[relay] waiting for serverless-redis-http on ${LOCAL_SRH_PORT:-8079}"; sleep 3; done; exec __BUN_BIN__ run start</string>
+	</array>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>__HOME__</string>
+		<key>PATH</key>
+		<string>__BUN_DIR__:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>NODE_ENV</key>
+		<string>production</string>
+		<!-- Fly-only identity vars.  apps/relay/src/env.ts defaults all three to
+		     "local"; they are set explicitly here so the /health payload and the
+		     Redis host-directory keys identify this box rather than reading
+		     "local" on a machine that is anything but. -->
+		<key>FLY_REGION</key>
+		<string>ms1</string>
+		<key>FLY_MACHINE_ID</key>
+		<string>ms1</string>
+		<key>FLY_APP_NAME</key>
+		<string>superset-relay-selfhost</string>
+	</dict>
+
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>20</integer>
+
+	<!-- apps/relay/src/index.ts installs SIGINT and SIGTERM handlers that close
+	     the listener, drain every open tunnel with the WS_CLOSE_DRAIN code and
+	     clear this machine's directory entries before exiting.  fly.toml allows
+	     10s for that; launchd's default ExitTimeOut is 20s, raised to 30 so the
+	     drain is never cut short by SIGKILL (a hard kill leaves stale entries in
+	     the Redis host directory and TCP-RSTs every connected host-service). -->
+	<key>ExitTimeOut</key>
+	<integer>30</integer>
+
+	<key>ProcessType</key>
+	<string>Interactive</string>
+
+	<!-- The relay is the WebSocket terminator for every host-service tunnel.
+	     fly.toml sets an http_service soft connection limit of 2000, so 256 fds
+	     (the launchd agent default) is nowhere near enough. -->
+	<key>SoftResourceLimits</key>
+	<dict>
+		<key>NumberOfFiles</key>
+		<integer>16384</integer>
+	</dict>
+	<key>HardResourceLimits</key>
+	<dict>
+		<key>NumberOfFiles</key>
+		<integer>32768</integer>
+	</dict>
+
+	<key>StandardOutPath</key>
+	<string>__HOME__/Library/Logs/superset/relay.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>__HOME__/Library/Logs/superset/relay.err.log</string>
+</dict>
+</plist>

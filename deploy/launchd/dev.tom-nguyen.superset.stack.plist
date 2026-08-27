@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  dev.tom-nguyen.superset.stack
+  Backing services: postgres:17, neon-proxy, redis:7-alpine, serverless-redis-http.
+  Run FIRST; api/web/relay wait on it.
+
+  COMPOSE FILE: deploy/docker-compose.prod.yml, NOT the repo-root docker-compose.yml.
+  The repo file is the dev stack: it hardcodes postgres/postgres and
+  SRH_TOKEN=local_dev_token.  The production file takes POSTGRES_USER /
+  POSTGRES_PASSWORD / POSTGRES_DB / SRH_TOKEN from deploy/.env.docker (compose's
+  own --env-file; it is NOT the application .env) and binds every published port
+  to 127.0.0.1.  Running the two against the same project name would collide on
+  container names and use a different Postgres volume.
+
+  Placeholders substituted by install.sh:
+    __SUPERSET_ROOT__  absolute path of the repo clone on ms1
+    __DEPLOY_DIR__     directory holding docker-compose.prod.yml and .env.docker
+                       (this deploy/ directory; conventionally <root>/deploy)
+    __HOME__           /Users/<deploy user>
+    __BUN_DIR__        directory containing the bun binary
+    __DOCKER_BIN__     absolute path of the docker CLI
+
+  `docker compose up` is run ATTACHED (no -d) on purpose: launchd supervises a
+  process, not a daemon that forks away.  Detached compose would exit 0 straight
+  away and launchd would respawn it forever.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.tom-nguyen.superset.stack</string>
+
+	<!-- docker-compose.prod.yml interpolates ${POSTGRES_USER}, ${POSTGRES_PASSWORD},
+	     ${POSTGRES_DB}, ${SRH_TOKEN}, ${LOCAL_PG_PORT}, ${LOCAL_NEON_PROXY_PORT},
+	     ${LOCAL_REDIS_PORT}, ${LOCAL_SRH_PORT}.  They come from the explicit
+	     --env-file below, not from the repo-root .env: the application .env holds
+	     shell-quoted values compose would interpolate differently, and the four
+	     compose secrets deliberately live only in deploy/.env.docker. -->
+	<key>WorkingDirectory</key>
+	<string>__DEPLOY_DIR__</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>-c</string>
+		<string>until __DOCKER_BIN__ info &gt;/dev/null 2&gt;&amp;1; do echo "[stack] waiting for docker engine"; sleep 5; done; exec __DOCKER_BIN__ compose -p superset -f __DEPLOY_DIR__/docker-compose.prod.yml --env-file __DEPLOY_DIR__/.env.docker up --remove-orphans</string>
+	</array>
+
+	<!-- launchd starts jobs with PATH=/usr/bin:/bin:/usr/sbin:/sbin and nothing
+	     else.  docker shells out to helpers (docker-credential-*, compose plugin),
+	     so its own directory has to be on PATH even though ProgramArguments uses
+	     an absolute path. -->
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>__HOME__</string>
+		<key>PATH</key>
+		<string>__BUN_DIR__:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>COMPOSE_PROJECT_NAME</key>
+		<string>superset</string>
+	</dict>
+
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+
+	<!-- 30s: after a cold boot the Docker/OrbStack VM can take 30-60s to answer
+	     `docker info`.  A tighter throttle just burns respawns during that window. -->
+	<key>ThrottleInterval</key>
+	<integer>30</integer>
+
+	<!-- Give compose room to stop four containers cleanly (postgres needs a
+	     clean shutdown) before launchd escalates to SIGKILL. -->
+	<key>ExitTimeOut</key>
+	<integer>60</integer>
+
+	<key>ProcessType</key>
+	<string>Interactive</string>
+
+	<key>StandardOutPath</key>
+	<string>__HOME__/Library/Logs/superset/stack.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>__HOME__/Library/Logs/superset/stack.err.log</string>
+</dict>
+</plist>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  dev.tom-nguyen.superset.api   ->  superset-api.tom-nguyen.dev  ->  127.0.0.1:3101
+
+  Start command is apps/api/package.json "start":  next start --port 3101
+  Invoked as `bun run start` from WorkingDirectory=<root>/apps/api.
+  The port is baked into that script, so nothing here needs to set PORT.
+
+  WHY THE .env IS SOURCED IN THE SHELL AND NOT LISTED IN <EnvironmentVariables>:
+  apps/api/next.config.ts loads ../../.env only when NODE_ENV !== "production";
+  `next start` sets NODE_ENV=production, so in production the app inherits
+  NOTHING from the repo-root .env on its own.  launchd's EnvironmentVariables is
+  a static dict and cannot read a file, so the wrapper below does the loading.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.tom-nguyen.superset.api</string>
+
+	<key>WorkingDirectory</key>
+	<string>__SUPERSET_ROOT__/apps/api</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>-c</string>
+		<string>set -a; . __SUPERSET_ROOT__/.env; set +a; unset SUPERSET_ALLOW_SIGNUP; for i in $(seq 1 60); do /usr/bin/nc -z 127.0.0.1 "${LOCAL_NEON_PROXY_PORT:-4444}" &amp;&amp; break; echo "[api] waiting for neon-proxy on ${LOCAL_NEON_PROXY_PORT:-4444}"; sleep 3; done; exec __BUN_BIN__ run start</string>
+	</array>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>__HOME__</string>
+		<!-- The classic launchd failure: no interactive shell means no ~/.zshrc,
+		     so ~/.bun/bin is not on PATH.  Next spawns child processes that must
+		     still find bun and node-ish tooling. -->
+		<key>PATH</key>
+		<string>__BUN_DIR__:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>NODE_ENV</key>
+		<string>production</string>
+		<!-- SKIP_ENV_VALIDATION is deliberately NOT set, matching the policy
+		     stated in deploy/env.production.template ("do not set it in
+		     production unless you want to silence a genuine misconfiguration").
+		     Every required key in apps/api/src/env.ts, apps/web/src/env.ts and
+		     packages/trpc/src/env.ts has a value in that template — the unused
+		     Stripe/Resend/GOOGLE_CLIENT_*/GH_APP_* entries are non-empty
+		     placeholders, which is exactly what the schemas ask for — so
+		     validation passes and stays a loud boot-time tripwire for a missing
+		     or empty variable.
+		     If api/web crash-loop on first boot with a t3-env error, read
+		     api.err.log: it names the offending key. The one unverified case is
+		     the `vercel()` preset apps/web/src/env.ts extends (node_modules was
+		     not installed in the reference clone); if that turns out to demand
+		     VERCEL_* off-Vercel, add
+		       <key>SKIP_ENV_VALIDATION</key><string>1</string>
+		     back here and in the web plist. -->
+	</dict>
+
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+
+	<!-- 20s.  launchd's default is 10s and it prints
+	     "Service only ran for 0 seconds. Pushing respawn out by 10 seconds."
+	     20s is long enough that a boot-order crash loop (DB not up yet) settles
+	     without hammering, short enough that a real crash recovers fast. -->
+	<key>ThrottleInterval</key>
+	<integer>20</integer>
+
+	<key>ProcessType</key>
+	<string>Interactive</string>
+
+	<!-- launchd agents inherit a 256 open-file limit; a Next server with keepalive
+	     connections from three orgs plus Postgres sockets will exhaust that. -->
+	<key>SoftResourceLimits</key>
+	<dict>
+		<key>NumberOfFiles</key>
+		<integer>8192</integer>
+	</dict>
+	<key>HardResourceLimits</key>
+	<dict>
+		<key>NumberOfFiles</key>
+		<integer>16384</integer>
+	</dict>
+
+	<key>StandardOutPath</key>
+	<string>__HOME__/Library/Logs/superset/api.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>__HOME__/Library/Logs/superset/api.err.log</string>
+</dict>
+</plist>
