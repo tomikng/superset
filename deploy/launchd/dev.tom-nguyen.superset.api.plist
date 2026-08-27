@@ -4,7 +4,9 @@
   dev.tom-nguyen.superset.api   ->  superset-api.tom-nguyen.dev  ->  127.0.0.1:3101
 
   Start command is apps/api/package.json "start":  next start --port 3101
-  Invoked as `bun run start` from WorkingDirectory=<root>/apps/api.
+  Invoked as `bun x next start --port 3101`: apps/api's own "start" script hardcodes
+  --port 3001, and an explicit flag beats the PORT env var, so `bun run start`
+  would bind the wrong port.
   The port is baked into that script, so nothing here needs to set PORT.
 
   WHY THE .env IS SOURCED IN THE SHELL AND NOT LISTED IN <EnvironmentVariables>:
@@ -25,7 +27,7 @@
 	<array>
 		<string>/bin/bash</string>
 		<string>-c</string>
-		<string>set -a; . __SUPERSET_ROOT__/.env; set +a; unset SUPERSET_ALLOW_SIGNUP; for i in $(seq 1 60); do /usr/bin/nc -z 127.0.0.1 "${LOCAL_NEON_PROXY_PORT:-4444}" &amp;&amp; break; echo "[api] waiting for neon-proxy on ${LOCAL_NEON_PROXY_PORT:-4444}"; sleep 3; done; exec __BUN_BIN__ run start</string>
+		<string>set -a; . __SUPERSET_ROOT__/.env; set +a; unset SUPERSET_ALLOW_SIGNUP; for i in $(seq 1 60); do /usr/bin/nc -z 127.0.0.1 "${LOCAL_NEON_PROXY_PORT:-4444}" &amp;&amp; break; echo "[api] waiting for neon-proxy on ${LOCAL_NEON_PROXY_PORT:-4444}"; sleep 3; done; exec __BUN_BIN__ x next start --port 3101</string>
 	</array>
 
 	<key>EnvironmentVariables</key>
