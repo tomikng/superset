@@ -13,6 +13,11 @@
 # Re-runnable: it boots out an existing job before replacing its plist.
 set -euo pipefail
 
+# A non-interactive shell (an `ssh ms1 '…'` command, the Actions runner) gets
+# macOS's bare /usr/bin:/bin:/usr/sbin:/sbin — no bun, no docker. Append the
+# usual install locations so `command -v` below finds them either way.
+export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin:$HOME/.bun/bin"
+
 SUPERSET_ROOT="${1:-}"
 if [ -z "$SUPERSET_ROOT" ]; then
   echo "usage: $0 /absolute/path/to/superset/clone" >&2
@@ -45,9 +50,6 @@ fi
 # `command -v` here runs in THIS interactive-ish shell, which is the only place
 # bun is on PATH. launchd will get the absolute path baked into the plist.
 BUN_BIN="$(command -v bun || true)"
-# Non-interactive shells (an ssh command, the Actions runner) have no bun on
-# PATH; fall back to the official installer location before giving up.
-[ -n "$BUN_BIN" ] || [ ! -x "$HOME/.bun/bin/bun" ] || BUN_BIN="$HOME/.bun/bin/bun"
 [ -n "$BUN_BIN" ] || { echo "bun not on PATH; see README 'Finding the bun binary'" >&2; exit 1; }
 # Resolve symlinks/shims (mise, asdf, Homebrew) down to the real executable.
 BUN_BIN="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$BUN_BIN")"
