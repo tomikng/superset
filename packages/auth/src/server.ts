@@ -173,25 +173,22 @@ export const auth = betterAuth({
 			generateId: false,
 		},
 	},
-	// Credential sign-IN stays available in production for the App Store
-	// review demo account (see seed-review-account.ts); sign-UP remains
-	// dev/preview-only.
+	// SELF-HOSTED: this instance is invitation-only. Credential sign-IN is the
+	// only way in; sign-UP is closed except while an operator is running
+	// `db:seed-teams`, which is the sole path to a new account.
+	//
+	// Upstream gated sign-UP on NODE_ENV/VERCEL_ENV. That is replaced by an
+	// explicit flag so the seed script can open it deliberately for one run
+	// rather than the instance depending on NODE_ENV to stay closed.
 	emailAndPassword: {
 		enabled: true,
-		disableSignUp:
-			process.env.NODE_ENV !== "development" &&
-			process.env.VERCEL_ENV !== "preview",
+		disableSignUp: process.env.SUPERSET_ALLOW_SIGNUP !== "true",
 		autoSignIn: true,
 	},
+	// SELF-HOSTED: github/google removed — no OAuth login on this instance, so
+	// GH_CLIENT_* and GOOGLE_CLIENT_* are unused by auth. (GOOGLE_CLIENT_* is
+	// still read by the Gmail/Drive integration routes in apps/api.)
 	socialProviders: {
-		github: {
-			clientId: env.GH_CLIENT_ID,
-			clientSecret: env.GH_CLIENT_SECRET,
-		},
-		google: {
-			clientId: env.GOOGLE_CLIENT_ID,
-			clientSecret: env.GOOGLE_CLIENT_SECRET,
-		},
 		apple: {
 			clientId: env.APPLE_CLIENT_ID,
 			clientSecret: env.APPLE_CLIENT_SECRET,

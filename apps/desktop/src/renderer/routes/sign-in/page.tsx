@@ -1,16 +1,19 @@
-import { type AuthProvider, COMPANY } from "@superset/shared/constants";
-import {
-	DEV_EMAIL,
-	DEV_NAME,
-	DEV_PASSWORD,
-} from "@superset/shared/dev-credentials";
-import { Badge } from "@superset/ui/badge";
+/**
+ * SELF-HOSTED: credential sign-in only.
+ *
+ * Upstream offered GitHub, Google, and a hardcoded dev-account button. This
+ * instance is invitation-only — accounts exist only because an operator ran
+ * `db:seed-teams` — so the page is a plain email/password form. The token
+ * exchange below is the same one the dev button used: POST the credentials,
+ * persist the returned token, navigate.
+ */
+import { COMPANY } from "@superset/shared/constants";
 import { Button } from "@superset/ui/button";
+import { Input } from "@superset/ui/input";
+import { Label } from "@superset/ui/label";
 import { Spinner } from "@superset/ui/spinner";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { FaGithub } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
+import { type FormEvent, useState } from "react";
 import { Redirect } from "renderer/components/Redirect";
 import { env } from "renderer/env.renderer";
 import { useDelayElapsed } from "renderer/hooks/useDelayElapsed";
@@ -24,31 +27,22 @@ export const Route = createFileRoute("/sign-in/")({
 	component: SignInPage,
 });
 
-const LAST_USED_METHOD_KEY = "superset-last-auth-method";
-
 const workspaceRedirect = <Redirect to="/workspace" replace />;
 
 const SESSION_PENDING_TIMEOUT_MS = 15_000;
 
-type AuthMethod = AuthProvider | "dev";
-
-function readLastUsedMethod(): AuthMethod | null {
-	const stored = window.localStorage.getItem(LAST_USED_METHOD_KEY);
-	return stored === "github" || stored === "google" || stored === "dev"
-		? stored
-		: null;
-}
+const TOKEN_LIFETIME_MS = 1000 * 60 * 60 * 24 * 30;
 
 function SignInPage() {
-	const signInMutation = electronTrpc.auth.signIn.useMutation();
 	const persistToken = electronTrpc.auth.persistToken.useMutation();
 	const navigate = useNavigate();
-	const [isLoadingDev, setIsLoadingDev] = useState(false);
-	const [devError, setDevError] = useState<string | null>(null);
-	const [lastUsedMethod, setLastUsedMethod] = useState(readLastUsedMethod);
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const { hasLocalToken, isPending, session } = useSessionRecovery();
 	// A session fetch that never settles must not trap the user on a spinner —
-	// fall through to the sign-in buttons after a while (#5729).
+	// fall through to the form after a while (#5729).
 	const pendingTimedOut = useDelayElapsed(
 		isPending,
 		SESSION_PENDING_TIMEOUT_MS,
@@ -73,80 +67,59 @@ function SignInPage() {
 		return workspaceRedirect;
 	}
 
-	const rememberLastUsedMethod = (method: AuthMethod) => {
-		window.localStorage.setItem(LAST_USED_METHOD_KEY, method);
-		setLastUsedMethod(method);
-	};
+	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		if (isSubmitting) return;
 
-	const signIn = (provider: AuthProvider) => {
-		track("auth_started", { provider });
-		rememberLastUsedMethod(provider);
-		signInMutation.mutate({ provider });
-	};
+		setIsSubmitting(true);
+		setError(null);
+		track("auth_started", { provider: "password" });
 
-	const signInAsDev = async () => {
-		setIsLoadingDev(true);
-		setDevError(null);
-		rememberLastUsedMethod("dev");
+		try {
+			const response = await fetch(
+				`${env.NEXT_PUBLIC_API_URL}/api/auth/sign-in/email`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					credentials: "omit",
+					body: JSON.stringify({
+						email: email.trim(),
+						password,
+					}),
+				},
+			);
 
-		const postAuth = async (path: string, body: Record<string, unknown>) => {
-			const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				credentials: "omit",
-				body: JSON.stringify(body),
-			});
 			const data = (await response.json().catch(() => ({}))) as {
 				token?: string;
 				code?: string;
 				message?: string;
 			};
-			return { ok: response.ok, status: response.status, data };
-		};
 
-		try {
-			let result = await postAuth("/api/auth/sign-in/email", {
-				email: DEV_EMAIL,
-				password: DEV_PASSWORD,
-			});
-			if (!result.ok && result.data.code === "INVALID_EMAIL_OR_PASSWORD") {
-				const signUp = await postAuth("/api/auth/sign-up/email", {
-					email: DEV_EMAIL,
-					password: DEV_PASSWORD,
-					name: DEV_NAME,
-				});
-				if (!signUp.ok) {
-					throw new Error(
-						signUp.data.message ?? `Sign-up failed (${signUp.status})`,
-					);
-				}
-				result = await postAuth("/api/auth/sign-in/email", {
-					email: DEV_EMAIL,
-					password: DEV_PASSWORD,
-				});
-			}
-			if (!result.ok) {
+			if (!response.ok) {
+				// Never distinguish "no such account" from "wrong password" —
+				// on a closed instance that difference tells an outsider whether
+				// an address is on the allow-list.
 				throw new Error(
-					result.data.message ?? `Sign-in failed (${result.status})`,
+					data.code === "INVALID_EMAIL_OR_PASSWORD"
+						? "Incorrect email or password."
+						: (data.message ?? `Sign-in failed (${response.status})`),
 				);
 			}
-			const token = result.data.token;
+
+			const token = data.token;
 			if (!token) throw new Error("Sign-in did not return a token");
-			const expiresAt = new Date(
-				Date.now() + 1000 * 60 * 60 * 24 * 30,
-			).toISOString();
+
+			const expiresAt = new Date(Date.now() + TOKEN_LIFETIME_MS).toISOString();
 			await persistToken.mutateAsync({ token, expiresAt });
 			setAuthToken(token);
 			await navigate({ to: "/workspace", replace: true });
-		} catch (error) {
-			setDevError(
-				error instanceof Error ? error.message : "Dev sign-in failed",
+		} catch (caught) {
+			setError(
+				caught instanceof Error ? caught.message : "Sign-in failed",
 			);
-			setIsLoadingDev(false);
+			setIsSubmitting(false);
 		}
 	};
-
-	const lastUsedBadge = <Badge variant="secondary">Last used</Badge>;
 
 	return (
 		<div className="flex flex-col h-full w-full bg-background">
@@ -160,59 +133,60 @@ function SignInPage() {
 
 					<div className="text-center mb-8">
 						<h1 className="text-xl font-semibold text-foreground mb-2">
-							Welcome to Superset
+							Sign in to Superset
 						</h1>
 						<p className="text-sm text-muted-foreground">
 							{hasLocalToken
 								? "Restoring your session"
-								: "Sign in to get started"}
+								: "Use the credentials your administrator issued"}
 						</p>
 					</div>
 
-					<div className="flex flex-col gap-3 w-full max-w-xs">
-						{env.NODE_ENV === "development" && (
-							<Button
-								variant="outline"
-								size="lg"
-								onClick={signInAsDev}
-								className="w-full gap-3"
-								disabled={isLoadingDev}
-							>
-								{isLoadingDev
-									? "Signing in..."
-									: "Sign in as Local Admin (dev)"}
-								{lastUsedMethod === "dev" && lastUsedBadge}
-							</Button>
-						)}
-						{devError && (
+					<form
+						onSubmit={handleSubmit}
+						className="flex flex-col gap-4 w-full max-w-xs"
+					>
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="email">Email</Label>
+							<Input
+								id="email"
+								type="email"
+								autoComplete="username"
+								required
+								value={email}
+								onChange={(event) => setEmail(event.target.value)}
+								disabled={isSubmitting}
+							/>
+						</div>
+
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="password">Password</Label>
+							<Input
+								id="password"
+								type="password"
+								autoComplete="current-password"
+								required
+								value={password}
+								onChange={(event) => setPassword(event.target.value)}
+								disabled={isSubmitting}
+							/>
+						</div>
+
+						{error && (
 							<p className="text-xs text-destructive text-center select-text cursor-text">
-								{devError}
+								{error}
 							</p>
 						)}
-						<Button
-							variant="outline"
-							size="lg"
-							onClick={() => signIn("github")}
-							className="w-full gap-3"
-							disabled={signInMutation.isPending}
-						>
-							<FaGithub className="size-5" />
-							Continue with GitHub
-							{lastUsedMethod === "github" && lastUsedBadge}
-						</Button>
 
 						<Button
-							variant="outline"
+							type="submit"
 							size="lg"
-							onClick={() => signIn("google")}
-							className="w-full gap-3"
-							disabled={signInMutation.isPending}
+							className="w-full"
+							disabled={isSubmitting}
 						>
-							<FcGoogle className="size-5" />
-							Continue with Google
-							{lastUsedMethod === "google" && lastUsedBadge}
+							{isSubmitting ? "Signing in..." : "Sign in"}
 						</Button>
-					</div>
+					</form>
 
 					<p className="mt-8 text-xs text-muted-foreground/70 text-center max-w-xs">
 						By signing in, you agree to our{" "}
