@@ -183,8 +183,11 @@ jobs:
         run: bun install --frozen --ignore-scripts
 
       - name: Typecheck
-        # Cap turbo concurrency: forks get small (2-core/7GB) runners and 30+ parallel tsc tasks get OOM-killed.
-        run: bun run typecheck -- --concurrency=3
+        # Forks get small (2-core/7GB) runners: cap turbo concurrency so parallel tsc tasks don't exhaust
+        # the box, and raise V8's heap cap so the desktop tsc alone doesn't hit "Reached heap limit".
+        env:
+          NODE_OPTIONS: --max-old-space-size=5120
+        run: bun run typecheck -- --concurrency=2
 
   build:
     name: Build
