@@ -3,9 +3,9 @@
  *
  * Upstream offered GitHub, Google, and a hardcoded dev-account button. This
  * instance is invitation-only — accounts exist only because an operator ran
- * `db:seed-teams` — so the page is a plain email/password form. The token
- * exchange below is the same one the dev button used: POST the credentials,
- * persist the returned token, navigate.
+ * `db:seed-teams` — so the page is a plain email/password form. The
+ * credential POST is done by the main process (see auth.signInWithPassword)
+ * because the packaged renderer's file:// origin fails Better Auth's CSRF check.
  */
 import { COMPANY } from "@superset/shared/constants";
 import { Button } from "@superset/ui/button";
@@ -31,10 +31,8 @@ const workspaceRedirect = <Redirect to="/workspace" replace />;
 
 const SESSION_PENDING_TIMEOUT_MS = 15_000;
 
-const TOKEN_LIFETIME_MS = 1000 * 60 * 60 * 24 * 30;
-
 function SignInPage() {
-	const persistToken = electronTrpc.auth.persistToken.useMutation();
+	const signInWithPassword = electronTrpc.auth.signInWithPassword.useMutation();
 	const navigate = useNavigate();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -76,47 +74,15 @@ function SignInPage() {
 		track("auth_started", { provider: "password" });
 
 		try {
-			const response = await fetch(
-				`${env.NEXT_PUBLIC_API_URL}/api/auth/sign-in/email`,
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					credentials: "omit",
-					body: JSON.stringify({
-						email: email.trim(),
-						password,
-					}),
-				},
-			);
+			// The POST happens in the main process: the packaged renderer runs
+			// from file://, whose `Origin: null` Better Auth rejects.
+			const result = await signInWithPassword.mutateAsync({ email, password });
+			if (!result.success) throw new Error(result.error);
 
-			const data = (await response.json().catch(() => ({}))) as {
-				token?: string;
-				code?: string;
-				message?: string;
-			};
-
-			if (!response.ok) {
-				// Never distinguish "no such account" from "wrong password" —
-				// on a closed instance that difference tells an outsider whether
-				// an address is on the allow-list.
-				throw new Error(
-					data.code === "INVALID_EMAIL_OR_PASSWORD"
-						? "Incorrect email or password."
-						: (data.message ?? `Sign-in failed (${response.status})`),
-				);
-			}
-
-			const token = data.token;
-			if (!token) throw new Error("Sign-in did not return a token");
-
-			const expiresAt = new Date(Date.now() + TOKEN_LIFETIME_MS).toISOString();
-			await persistToken.mutateAsync({ token, expiresAt });
-			setAuthToken(token);
+			setAuthToken(result.token);
 			await navigate({ to: "/workspace", replace: true });
 		} catch (caught) {
-			setError(
-				caught instanceof Error ? caught.message : "Sign-in failed",
-			);
+			setError(caught instanceof Error ? caught.message : "Sign-in failed");
 			setIsSubmitting(false);
 		}
 	};

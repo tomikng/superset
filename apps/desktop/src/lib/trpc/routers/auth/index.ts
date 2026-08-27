@@ -18,6 +18,8 @@ import {
 	stateStore,
 } from "./utils/auth-functions";
 
+const PASSWORD_TOKEN_LIFETIME_MS = 1000 * 60 * 60 * 24 * 30;
+
 export const createAuthRouter = () => {
 	return router({
 		getStoredToken: publicProcedure.query(() => loadToken()),
@@ -118,6 +120,62 @@ export const createAuthRouter = () => {
 							err instanceof Error ? err.message : "Failed to open browser",
 					};
 				}
+			}),
+
+		/**
+		 * SELF-HOSTED: credential sign-in, performed from the main process.
+		 *
+		 * The packaged renderer is served from file://, so a browser fetch to
+		 * the API carries `Origin: null` plus Sec-Fetch-* headers and Better
+		 * Auth's CSRF middleware rejects it ("Missing or null Origin"). A Node
+		 * fetch sends neither, which Better Auth treats as a non-browser client
+		 * and validates on credentials alone. The token is persisted here so the
+		 * renderer only has to hydrate it.
+		 */
+		signInWithPassword: publicProcedure
+			.input(z.object({ email: z.string(), password: z.string() }))
+			.mutation(async ({ input }) => {
+				const response = await fetch(
+					`${env.NEXT_PUBLIC_API_URL}/api/auth/sign-in/email`,
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							email: input.email.trim(),
+							password: input.password,
+						}),
+					},
+				);
+				const data = (await response.json().catch(() => ({}))) as {
+					token?: string;
+					code?: string;
+					message?: string;
+				};
+
+				if (!response.ok) {
+					// Never distinguish "no such account" from "wrong password" —
+					// on a closed instance that difference tells an outsider whether
+					// an address is on the allow-list.
+					return {
+						success: false as const,
+						error:
+							data.code === "INVALID_EMAIL_OR_PASSWORD"
+								? "Incorrect email or password."
+								: (data.message ?? `Sign-in failed (${response.status})`),
+					};
+				}
+				if (!data.token) {
+					return {
+						success: false as const,
+						error: "Sign-in did not return a token",
+					};
+				}
+
+				const expiresAt = new Date(
+					Date.now() + PASSWORD_TOKEN_LIFETIME_MS,
+				).toISOString();
+				await saveToken({ token: data.token, expiresAt });
+				return { success: true as const, token: data.token, expiresAt };
 			}),
 
 		signOut: publicProcedure.mutation(async () => {
