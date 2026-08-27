@@ -18,6 +18,18 @@ Files here:
 - `config.yml` — install as `~/.cloudflared/ms1.yml` (**not** `config.yml`; see below)
 - `ws-verify.ts` — Bun harness that proves a WebSocket survives past the edge idle timeout
 
+> **What is actually live on ms1 (2026-08-27).** The tunnel ended up as the system
+> LaunchDaemon `com.cloudflare.cloudflared` running
+> `/usr/local/bin/cloudflared --config /etc/cloudflared/config.yml tunnel run`, and that
+> file carries the ssh/dashboard hostnames *as well as* the Superset rules below — it is a
+> superset of this `config.yml`, so **merge rule changes into it, never copy over it**.
+> `/etc/cloudflared/` is root-owned but `config.yml` is owned by the deploy user: edit it
+> with `cat new > /etc/cloudflared/config.yml` (in-place tools can't create their temp file
+> there), validate with `cloudflared --config /etc/cloudflared/config.yml tunnel ingress
+> validate`, then `sudo launchctl kickstart -k system/com.cloudflare.cloudflared` — this
+> cloudflared build does not hot-reload ingress rules. ssh to ms1 rides the same tunnel, so
+> expect a few seconds of disconnect. Keep a copy of the live file in `~` before editing.
+
 ---
 
 ## 1. Keeping `ms1` and `rc-hub` from colliding
