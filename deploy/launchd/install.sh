@@ -45,6 +45,9 @@ fi
 # `command -v` here runs in THIS interactive-ish shell, which is the only place
 # bun is on PATH. launchd will get the absolute path baked into the plist.
 BUN_BIN="$(command -v bun || true)"
+# Non-interactive shells (an ssh command, the Actions runner) have no bun on
+# PATH; fall back to the official installer location before giving up.
+[ -n "$BUN_BIN" ] || [ ! -x "$HOME/.bun/bin/bun" ] || BUN_BIN="$HOME/.bun/bin/bun"
 [ -n "$BUN_BIN" ] || { echo "bun not on PATH; see README 'Finding the bun binary'" >&2; exit 1; }
 # Resolve symlinks/shims (mise, asdf, Homebrew) down to the real executable.
 BUN_BIN="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$BUN_BIN")"
