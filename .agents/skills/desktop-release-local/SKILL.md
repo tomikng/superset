@@ -133,3 +133,18 @@ non-negotiable 2 that means bumping desktop, host-service and cli together.
 - `spctl` checks above; `xcrun stapler validate` on both app and DMG.
 - Mount the DMG, launch the app from it once (no right-click → Open needed) and
   sign in against the ms1 backend.
+
+## Known gotchas (seen on 1.25.1 / 1.25.2, 2026-08-27)
+
+- **The `hive-notary` keychain item can vanish after electron-builder's app
+  notarization.** Twice in a row it worked for the `.app` inside `bun run
+  package` and was gone (`No Keychain password item found`) by the time the
+  DMG was submitted minutes later; nothing in the repo or `@electron/notarize`
+  deletes it. Until the cause is known: run the DMG `notarytool submit`
+  *immediately* after packaging, and if it fails, re-store the profile
+  (`xcrun notarytool store-credentials hive-notary --apple-id <apple-id>
+  --team-id Q89XY3A42H`, fresh app-specific password) and retry.
+- **Do not call the auth API with `fetch` from the main process.** Electron's
+  main-process fetch is undici and sends `Sec-Fetch-Mode: cors`; Better Auth
+  then force-validates the (absent) Origin → "Missing or null Origin". Use a
+  bare `node:https` request (see `auth.signInWithPassword`).
