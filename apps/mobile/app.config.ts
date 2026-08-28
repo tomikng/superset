@@ -52,6 +52,9 @@ export default ({ config }: ConfigContext) => ({
 		// Apple sign-in is off — the self-host only has password accounts.
 		bundleIdentifier: "dev.tomnguyen.superset",
 		appleTeamId: "Q89XY3A42H",
+		// TestFlight needs a unique, increasing build number per upload.
+		// scripts/testflight.sh sets a timestamp; local runs default to 1.
+		buildNumber: process.env.MOBILE_BUILD_NUMBER ?? "1",
 		infoPlist: {
 			ITSAppUsesNonExemptEncryption: false,
 			// Dictation is native now (`modules/composer`), so no config plugin

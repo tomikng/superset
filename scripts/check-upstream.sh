@@ -22,7 +22,8 @@ set -uo pipefail
 
 UPSTREAM_REMOTE="${UPSTREAM_REMOTE:-upstream}"
 UPSTREAM_BRANCH="${UPSTREAM_BRANCH:-main}"
-UPSTREAM_REF="${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}"
+# UPSTREAM_REF may be given directly (e.g. a release tag such as desktop-v1.25.0).
+UPSTREAM_REF="${UPSTREAM_REF:-${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}}"
 
 # Discord notification. The webhook is a credential — it lives in an untracked
 # file, never in this repo. Anyone holding it can post to the channel.
@@ -51,6 +52,10 @@ PATCHED_FILES=(
   "apps/desktop/src/renderer/routes/sign-in/page.tsx"
   "apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx"
   "package.json"
+  "apps/mobile/app.config.ts"
+  "apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx"
+  "apps/mobile/lib/posthog/client.ts"
+  "patches/README.md"
 )
 
 # Files the self-host depends on but does not patch. Upstream changes here

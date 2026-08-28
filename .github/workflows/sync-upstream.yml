@@ -1,0 +1,136 @@
+# Watches superset-sh/superset for new desktop releases (tags `desktop-vX.Y.Z`)
+# and opens a pull request merging that release into `selfhost`.
+#
+# The merge is never pushed to `selfhost` directly: merging the PR is the
+# human step, and it is what triggers deploy-selfhost.yml (ms1) and
+# testflight-mobile.yml (phone). The PR body carries the output of
+# scripts/check-upstream.sh — the files this fork patches and the behaviours
+# it depends on — so the review knows where to look.
+#
+# If the merge conflicts, the PR is still opened, from a branch that contains
+# the conflict markers, so the resolution can be done on that branch. Either
+# way a Discord message goes out when DISCORD_WEBHOOK_URL is set.
+#
+# Repository setting required once: Settings -> Actions -> General ->
+# "Allow GitHub Actions to create and approve pull requests".
+name: Sync upstream release
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily, 06:17 UTC
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Upstream tag to sync (default: latest desktop-v*)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'tomikng/superset'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      UPSTREAM: https://github.com/superset-sh/superset.git
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: selfhost
+          fetch-depth: 0
+
+      - name: Find the latest upstream release
+        id: upstream
+        run: |
+          git remote add upstream "$UPSTREAM"
+          git fetch -q upstream --tags
+          tag="${{ inputs.tag }}"
+          if [ -z "$tag" ]; then
+            tag=$(git tag -l 'desktop-v*' | grep -E '^desktop-v[0-9]+\.[0-9]+\.[0-9]+$' | sort -t v -k2 -V | tail -1)
+          fi
+          [ -n "$tag" ] || { echo "no desktop-v* tag found" >&2; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if git merge-base --is-ancestor "$tag" HEAD; then
+            echo "$tag is already in selfhost"; echo "state=merged" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if gh pr list --head "sync/$tag" --state open --json number --jq 'length' | grep -qv '^0$'; then
+            echo "PR for $tag already open"; echo "state=pending" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "state=new" >> "$GITHUB_OUTPUT"
+
+      - name: Drift report
+        if: steps.upstream.outputs.state == 'new'
+        id: report
+        run: |
+          UPSTREAM_REF="${{ steps.upstream.outputs.tag }}" \
+            ./scripts/check-upstream.sh --no-notify 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > /tmp/drift.txt || true
+          {
+            echo 'report<<EOF_REPORT'
+            head -c 60000 /tmp/drift.txt
+            echo 'EOF_REPORT'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Merge
+        if: steps.upstream.outputs.state == 'new'
+        id: merge
+        run: |
+          tag="${{ steps.upstream.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "sync/$tag"
+          if git merge --no-ff -m "merge upstream $tag into selfhost" "$tag"; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+            git diff --name-only --diff-filter=U > /tmp/conflicts.txt
+            git add -A
+            git -c core.editor=true merge --continue || git commit -q --no-verify -m "merge upstream $tag into selfhost (UNRESOLVED CONFLICTS)"
+          fi
+          git push -u origin "sync/$tag"
+
+      - name: Open pull request
+        if: steps.upstream.outputs.state == 'new'
+        id: pr
+        run: |
+          tag="${{ steps.upstream.outputs.tag }}"
+          if [ "${{ steps.merge.outputs.conflict }}" = "true" ]; then
+            title="Sync upstream $tag (conflicts to resolve)"
+            conflicts=$(sed 's/^/- `/; s/$/`/' /tmp/conflicts.txt)
+            head="> **This branch contains conflict markers.** Resolve on \`sync/$tag\`, then merge."$'\n\n'"Conflicting files:"$'\n'"$conflicts"
+          else
+            title="Sync upstream $tag"
+            head="Merged cleanly. Merging this PR deploys ms1 and uploads a TestFlight build."
+          fi
+          cat > /tmp/body.md <<BODY
+          $head
+
+          Release notes: https://github.com/superset-sh/superset/releases/tag/$tag
+
+          <details><summary>scripts/check-upstream.sh</summary>
+
+          \`\`\`
+          ${{ steps.report.outputs.report }}
+          \`\`\`
+          </details>
+          BODY
+          url=$(gh pr create --base selfhost --head "sync/$tag" --title "$title" --body-file /tmp/body.md)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "$url"
+
+      - name: Notify Discord
+        if: steps.upstream.outputs.state == 'new' && env.DISCORD_WEBHOOK_URL != ''
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          state="merged cleanly"
+          [ "${{ steps.merge.outputs.conflict }}" = "true" ] && state="has conflicts"
+          jq -n --arg c "Upstream ${{ steps.upstream.outputs.tag }} is out — sync PR $state: ${{ steps.pr.outputs.url }}" '{content:$c}' \
+            | curl -sf -H 'Content-Type: application/json' -d @- "$DISCORD_WEBHOOK_URL"

@@ -1,0 +1,75 @@
+# Builds the self-host mobile app and uploads it to TestFlight.
+#
+# Three triggers:
+#   - push to `selfhost` touching the app or the packages it bundles
+#     (so a merged upstream sync ships a new build by itself)
+#   - every 30 days: TestFlight builds expire after 90, so a fresh upload well
+#     inside that window keeps the installed app from ever going dead
+#   - manual
+#
+# Runs on the ms1 runner (Xcode + signed-in Docker/bun already there). The
+# runner needs Xcode with the iOS platform installed, CocoaPods, and the
+# repository secrets below; signing uses cloud signing via the API key, so no
+# certificate lives on the machine. See apps/mobile/scripts/testflight.sh.
+#
+# Secrets: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (base64 of the .p8)
+name: TestFlight (self-host mobile)
+
+on:
+  push:
+    branches: [selfhost]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
+      - "patches/**"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/testflight-mobile.yml"
+  schedule:
+    # 30-day cadence: 1st of every month, 05:00 UTC. TestFlight builds live 90 days.
+    - cron: "0 5 1 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: testflight-mobile
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    name: Archive and upload
+    if: github.repository == 'tomikng/superset'
+    runs-on: [self-hosted, macOS, ms1]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: selfhost
+
+      - name: Install dependencies
+        run: |
+          export PATH="$HOME/.bun/bin:$PATH"
+          bun install --frozen-lockfile
+
+      - name: Build and upload
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          export PATH="$HOME/.bun/bin:$PATH"
+          # run_number is monotonic per workflow; offset it so it can never
+          # collide with the timestamp-style numbers of local uploads.
+          export MOBILE_BUILD_NUMBER=$((300000000000 + MOBILE_BUILD_NUMBER))
+          apps/mobile/scripts/testflight.sh
+
+      - name: Keep the .ipa
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: superset-mobile-${{ github.run_number }}
+          path: |
+            apps/mobile/build/export/*.ipa
+            apps/mobile/build/*.log
+          retention-days: 30
+          if-no-files-found: ignore

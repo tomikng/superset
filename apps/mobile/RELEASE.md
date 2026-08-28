@@ -1,5 +1,28 @@
 # Mobile App Release Process
 
+## Self-host (this fork)
+
+The App Store process below is upstream's. This fork ships to **TestFlight
+only**, from the ms1 runner, with cloud signing — nothing here touches
+Superset's Apple team or EAS project.
+
+- `scripts/testflight.sh` archives, exports and uploads. Locally:
+  `ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_KEY_P8=~/path/AuthKey.p8 apps/mobile/scripts/testflight.sh`
+- `.github/workflows/testflight-mobile.yml` runs it on every push to
+  `selfhost` that touches the app, and on the 1st of each month so the
+  installed build never hits TestFlight's 90-day expiry.
+- `.github/workflows/sync-upstream.yml` opens a PR for each new upstream
+  `desktop-v*` release; merging it deploys ms1 and uploads a new build.
+- Build numbers: CI uses `300000000000 + run_number`; local uploads use a
+  `yyyyMMddHHmm` timestamp. Both are unique and increasing, never edit by hand.
+- One-time setup (App Store Connect API key, App record) is documented at the
+  top of `scripts/testflight.sh`; the runner needs Xcode with the iOS
+  platform, and the repo needs the `ASC_*` secrets.
+
+---
+
+# Upstream: App Store release process
+
 iOS only. Builds and submissions go through EAS; the App Store listing and the
 App Review notes live in [`store.config.js`](./store.config.js) and are pushed
 with `eas metadata:push`. This file is the runbook for shipping a build and for
