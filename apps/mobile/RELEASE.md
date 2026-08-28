@@ -8,11 +8,15 @@ Superset's Apple team or EAS project.
 
 - `scripts/testflight.sh` archives, exports and uploads. Locally:
   `ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_KEY_P8=~/path/AuthKey.p8 apps/mobile/scripts/testflight.sh`
-- `.github/workflows/testflight-mobile.yml` runs it on every push to
-  `selfhost` that touches the app, and on the 1st of each month so the
-  installed build never hits TestFlight's 90-day expiry.
+- `scripts/testflight-cron.sh` + `scripts/dev.tom-nguyen.superset.testflight.plist`:
+  launchd job on the development Mac, 1st of each month, so the installed
+  build never hits TestFlight's 90-day expiry. Reports to Discord. Run it by
+  hand after merging an upstream sync (`launchctl kickstart gui/$(id -u)/dev.tom-nguyen.superset.testflight`).
+- `.github/workflows/testflight-mobile.yml` is manual-only until ms1 has
+  Xcode; then its push/schedule triggers can replace the launchd job.
 - `.github/workflows/sync-upstream.yml` opens a PR for each new upstream
-  `desktop-v*` release; merging it deploys ms1 and uploads a new build.
+  `desktop-v*` release and pings Discord; merging it deploys ms1 — then run
+  the TestFlight job above.
 - Build numbers: CI uses `300000000000 + run_number`; local uploads use a
   `yyyyMMddHHmm` timestamp. Both are unique and increasing, never edit by hand.
 - One-time setup (App Store Connect API key, App record) is documented at the

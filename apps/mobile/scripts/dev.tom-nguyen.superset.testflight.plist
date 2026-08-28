@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  dev.tom-nguyen.superset.testflight — monthly TestFlight upload from the
+  development Mac (NOT ms1: ms1 has no Xcode). Runs testflight-cron.sh on the
+  1st of every month at 10:00 local time; launchd runs a missed calendar
+  slot at the next wake, so a closed lid on the 1st only delays it.
+  TestFlight builds expire after 90 days, so 30 days keeps the phone alive.
+
+  Install (substitute __SUPERSET_ROOT__ and __HOME__):
+    sed "s|__SUPERSET_ROOT__|$PWD|g; s|__HOME__|$HOME|g" \
+      apps/mobile/scripts/dev.tom-nguyen.superset.testflight.plist \
+      > ~/Library/LaunchAgents/dev.tom-nguyen.superset.testflight.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.tom-nguyen.superset.testflight.plist
+  Run now:  launchctl kickstart gui/$(id -u)/dev.tom-nguyen.superset.testflight
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.tom-nguyen.superset.testflight</string>
+
+	<key>WorkingDirectory</key>
+	<string>__SUPERSET_ROOT__</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>__SUPERSET_ROOT__/apps/mobile/scripts/testflight-cron.sh</string>
+	</array>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>__HOME__</string>
+	</dict>
+
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Day</key>
+		<integer>1</integer>
+		<key>Hour</key>
+		<integer>10</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
+
+	<key>ProcessType</key>
+	<string>Background</string>
+
+	<key>StandardOutPath</key>
+	<string>__HOME__/Library/Logs/superset/testflight.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>__HOME__/Library/Logs/superset/testflight.err.log</string>
+</dict>
+</plist>

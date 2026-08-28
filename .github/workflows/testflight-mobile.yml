@@ -1,33 +1,23 @@
 # Builds the self-host mobile app and uploads it to TestFlight.
 #
-# Three triggers:
-#   - push to `selfhost` touching the app or the packages it bundles
-#     (so a merged upstream sync ships a new build by itself)
-#   - every 30 days: TestFlight builds expire after 90, so a fresh upload well
-#     inside that window keeps the installed app from ever going dead
-#   - manual
+# MANUAL ONLY for now: ms1 has no Xcode, so the scheduled/push uploads run
+# from the development Mac instead (apps/mobile/scripts/testflight-cron.sh
+# under launchd, monthly, reporting to Discord). Once Xcode + CocoaPods are
+# on ms1, restore the triggers below:
 #
-# Runs on the ms1 runner (Xcode + signed-in Docker/bun already there). The
-# runner needs Xcode with the iOS platform installed, CocoaPods, and the
-# repository secrets below; signing uses cloud signing via the API key, so no
-# certificate lives on the machine. See apps/mobile/scripts/testflight.sh.
+#   push:
+#     branches: [selfhost]
+#     paths: ["apps/mobile/**", "packages/**", "patches/**", "package.json", "bun.lock"]
+#   schedule:
+#     - cron: "0 5 1 * *"   # monthly; TestFlight builds expire after 90 days
+#
+# Signing is cloud signing via the API key (role Admin), so no certificate
+# lives on the runner. See apps/mobile/scripts/testflight.sh.
 #
 # Secrets: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (base64 of the .p8)
 name: TestFlight (self-host mobile)
 
 on:
-  push:
-    branches: [selfhost]
-    paths:
-      - "apps/mobile/**"
-      - "packages/**"
-      - "patches/**"
-      - "package.json"
-      - "bun.lock"
-      - ".github/workflows/testflight-mobile.yml"
-  schedule:
-    # 30-day cadence: 1st of every month, 05:00 UTC. TestFlight builds live 90 days.
-    - cron: "0 5 1 * *"
   workflow_dispatch:
 
 concurrency:
