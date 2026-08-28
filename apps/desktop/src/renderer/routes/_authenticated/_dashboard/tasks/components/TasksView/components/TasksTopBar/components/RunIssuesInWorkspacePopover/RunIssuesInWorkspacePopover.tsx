@@ -1,3 +1,5 @@
+import { Plural, Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import { Button } from "@superset/ui/button";
 import {
 	Command,
@@ -244,7 +246,7 @@ export function RunIssuesInWorkspacePopover({
 		toast.promise(promise, {
 			loading: `Creating ${issues.length} workspace${issues.length === 1 ? "" : "s"}...`,
 			success: (count) => `Created ${count} workspace${count === 1 ? "" : "s"}`,
-			error: (err) => (err instanceof Error ? err.message : String(err)),
+			error: (err) => errorMessage(err),
 		});
 
 		setOpen(false);
@@ -260,7 +262,9 @@ export function RunIssuesInWorkspacePopover({
 					className="h-7 text-xs gap-1.5 bg-muted/50"
 				>
 					<HiMiniPlay className="size-3" />
-					Run in Workspace
+					<Trans id="dashboard.tasks.runIssuesPopover.trigger">
+						Run in Workspace
+					</Trans>
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent align="start" className="w-72 p-0">
@@ -293,7 +297,9 @@ export function RunIssuesInWorkspacePopover({
 										</>
 									) : (
 										<span className="text-muted-foreground">
-											Select project
+											<Trans id="dashboard.tasks.runIssuesPopover.selectProject">
+												Select project
+											</Trans>
 										</span>
 									)}
 								</span>
@@ -304,7 +310,11 @@ export function RunIssuesInWorkspacePopover({
 							<Command>
 								<CommandInput placeholder="Search projects..." />
 								<CommandList>
-									<CommandEmpty>No projects found.</CommandEmpty>
+									<CommandEmpty>
+										<Trans id="dashboard.tasks.runIssuesPopover.noProjects">
+											No projects found.
+										</Trans>
+									</CommandEmpty>
 									<CommandGroup>
 										{recentProjects.map((project) => (
 											<CommandItem
@@ -324,7 +334,9 @@ export function RunIssuesInWorkspacePopover({
 												<span className="flex-1 truncate">{project.name}</span>
 												{project.needsSetup === true && (
 													<span className="text-[10px] text-amber-500">
-														not set up
+														<Trans id="dashboard.tasks.runIssuesPopover.notSetUp">
+															not set up
+														</Trans>
 													</span>
 												)}
 												{project.id === selectedProjectId && (
@@ -364,7 +376,12 @@ export function RunIssuesInWorkspacePopover({
 						title={submitBlocker ?? undefined}
 						onClick={handleRun}
 					>
-						Run {issues.length} Workspace{issues.length === 1 ? "" : "s"}
+						<Plural
+							id="dashboard.tasks.runIssuesPopover.runCount"
+							value={issues.length}
+							one="Run # Workspace"
+							other="Run # Workspaces"
+						/>
 					</Button>
 				</div>
 			</PopoverContent>

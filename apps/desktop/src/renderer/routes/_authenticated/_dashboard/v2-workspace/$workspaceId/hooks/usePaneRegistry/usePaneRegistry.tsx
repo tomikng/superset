@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import type {
 	ContextMenuActionConfig,
 	PaneRegistry,
@@ -148,7 +150,7 @@ export function usePaneRegistry({
 			},
 			onError: (error) => {
 				toast.error("Failed to kill terminal session", {
-					description: error.message,
+					description: errorMessage(error),
 				});
 			},
 		});
@@ -212,8 +214,7 @@ export function usePaneRegistry({
 				}
 				return { terminalId };
 			} catch (error) {
-				const description =
-					error instanceof Error ? error.message : "Unknown error";
+				const description = errorMessage(error, "Unknown error");
 				toast.error("Couldn't start agent session", { description });
 				return null;
 			}
@@ -628,7 +629,9 @@ export function usePaneRegistry({
 					const data = ctx.pane.data as DevtoolsPaneData;
 					return (
 						<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-							Inspecting {data.targetTitle}
+							<Trans id="workspace.paneRegistry.inspecting">
+								Inspecting {data.targetTitle}
+							</Trans>
 						</div>
 					);
 				},

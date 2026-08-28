@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { formatDate as formatLocaleDate } from "@superset/i18n/format";
 import { Skeleton } from "@superset/ui/skeleton";
 import {
 	Table,
@@ -37,7 +39,7 @@ export function TeamsSettings() {
 
 	const formatDate = (date: Date | string) => {
 		const d = date instanceof Date ? date : new Date(date);
-		return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+		return formatLocaleDate(d, { month: "short", day: "numeric" });
 	};
 
 	if (!activeOrganizationId) {
@@ -53,8 +55,10 @@ export function TeamsSettings() {
 							<HighlightText text="Teams" query={searchQuery} />
 						</h2>
 						<p className="text-sm text-muted-foreground mt-1">
-							Organize your work into teams. Tasks and integrations can sync
-							per-team.
+							<Trans id="settings.teams.subtitle">
+								Organize your work into teams. Tasks and integrations can sync
+								per-team.
+							</Trans>
 						</p>
 					</div>
 					<CreateTeamButton organizationId={activeOrganizationId} />
@@ -77,15 +81,19 @@ export function TeamsSettings() {
 							</div>
 						) : teams.length === 0 ? (
 							<div className="text-center py-12 text-muted-foreground border rounded-lg">
-								No teams yet
+								<Trans id="settings.teams.emptyState">No teams yet</Trans>
 							</div>
 						) : (
 							<div className="border rounded-lg">
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>Name</TableHead>
-											<TableHead>Created</TableHead>
+											<TableHead>
+												<Trans id="settings.teams.columnName">Name</Trans>
+											</TableHead>
+											<TableHead>
+												<Trans id="settings.teams.columnCreated">Created</Trans>
+											</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>

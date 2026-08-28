@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import { alert } from "@superset/ui/atoms/Alert";
 import { toast } from "@superset/ui/sonner";
 import { useMutation } from "@tanstack/react-query";
@@ -79,9 +81,7 @@ function AutomationDetailPage() {
 			void utils.automation.list.invalidate();
 		},
 		onError: (error) =>
-			toast.error(
-				error instanceof Error ? error.message : "Failed to update automation",
-			),
+			toast.error(errorMessage(error, "Failed to update automation")),
 	});
 
 	const runNowMutation = useMutation({
@@ -121,9 +121,15 @@ function AutomationDetailPage() {
 			loadError.data?.code === "NOT_FOUND";
 		return (
 			<div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground select-text cursor-text">
-				{loadError && !isMissing
-					? `Couldn't load automation: ${loadError.message}`
-					: "Automation not found."}
+				{loadError && !isMissing ? (
+					<Trans id="dashboard.automations.detail.loadError">
+						Couldn't load automation: {loadError.message}
+					</Trans>
+				) : (
+					<Trans id="dashboard.automations.detail.notFound">
+						Automation not found.
+					</Trans>
+				)}
 			</div>
 		);
 	}

@@ -6,6 +6,7 @@ import {
 	writeSharedDisabledAgentIds,
 	writeSharedDisabledSkillIds,
 } from "@superset/agent-setup";
+import { initI18n, resolveLocale } from "@superset/i18n";
 import { settings } from "@superset/local-db";
 import { app, dialog, Notification, net, protocol, session } from "electron";
 import { makeAppSetup } from "lib/electron-app/factories/app/setup";
@@ -34,6 +35,7 @@ import { loadWebviewBrowserExtension } from "./lib/extensions";
 import { getHostServiceCoordinator } from "./lib/host-service-coordinator";
 import { localDb } from "./lib/local-db";
 import { requestLocalNetworkAccess } from "./lib/local-network-permission";
+import { menuEmitter } from "./lib/menu-events";
 import { PAGE_SCHEME, pageProtocolHandler } from "./lib/pageContent";
 import {
 	initTanstackDbPersistence,
@@ -209,6 +211,15 @@ export function exitImmediately(): void {
 	app.exit(0);
 }
 
+function getLanguageSetting(): string | null {
+	try {
+		const row = localDb.select().from(settings).get();
+		return row?.language ?? null;
+	} catch {
+		return null;
+	}
+}
+
 function getConfirmOnQuitSetting(): boolean {
 	try {
 		const row = localDb.select().from(settings).get();
@@ -358,15 +369,44 @@ if (!gotTheLock) {
 } else {
 	// Windows/Linux: protocol URL arrives as argv on the second instance
 	app.on("second-instance", async (_event, argv) => {
-		focusMainWindow();
+		// An auto-update restart spawns the replacement while this process
+		// still holds the single-instance lock; don't build windows mid-quit.
+		if (isQuitting) return;
 		const url = findDeepLinkInArgv(argv);
 		if (url) {
+			// processDeepLink focuses the window on every one of its paths.
 			await processDeepLink(url);
+			return;
 		}
+		// The desktop entry's "New Window" action (GNOME top-bar/dock app
+		// menus) relaunches the executable with --new-window, and the
+		// single-instance lock lands it here. A plain relaunch keeps the
+		// Electron-standard behavior of focusing the running app, so a
+		// Start-menu or launcher re-click never stacks extra windows. The
+		// listener-count check covers the boot window before initAppServices
+		// registers the handler; falling back to focus matches pre-ready
+		// behavior instead of dropping the event silently.
+		if (
+			argv.includes("--new-window") &&
+			menuEmitter.listenerCount("new-window") > 0
+		) {
+			console.log("[main] Second instance requested a new window");
+			menuEmitter.emit("new-window");
+			return;
+		}
+		focusMainWindow();
 	});
 
 	(async () => {
 		await app.whenReady();
+		// Persisted language setting wins; otherwise infer from OS preferences
+		// (plans/20260826-i18n-strategy.md).
+		initI18n(
+			resolveLocale([
+				...(getLanguageSetting() ? [getLanguageSetting() as string] : []),
+				...app.getPreferredSystemLanguages(),
+			]),
+		);
 		registerWithMacOSNotificationCenter();
 		requestAppleEventsAccess();
 		requestLocalNetworkAccess();

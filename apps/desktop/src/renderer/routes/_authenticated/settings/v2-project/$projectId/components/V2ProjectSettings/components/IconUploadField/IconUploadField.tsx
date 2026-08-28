@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import { Button } from "@superset/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@superset/ui/popover";
 import { toast } from "@superset/ui/sonner";
@@ -163,7 +165,7 @@ export function IconUploadField({
 				});
 				return true;
 			} catch (err) {
-				toast.error(err instanceof Error ? err.message : "Failed to set icon");
+				toast.error(errorMessage(err, "Failed to set icon"));
 				return false;
 			} finally {
 				setIsPending(false);
@@ -186,7 +188,7 @@ export function IconUploadField({
 				});
 				return true;
 			} catch (err) {
-				toast.error(err instanceof Error ? err.message : "Failed to set color");
+				toast.error(errorMessage(err, "Failed to set color"));
 				return false;
 			} finally {
 				setIsPending(false);
@@ -201,7 +203,7 @@ export function IconUploadField({
 			try {
 				dataUri = await glyphToDataUri(glyph, color);
 			} catch (err) {
-				toast.error(err instanceof Error ? err.message : "Could not set icon");
+				toast.error(errorMessage(err, "Could not set icon"));
 				return;
 			}
 			// Only a stored glyph may re-bake on later color picks.
@@ -248,9 +250,7 @@ export function IconUploadField({
 			try {
 				dataUri = await toIconDataUri(file);
 			} catch (err) {
-				toast.error(
-					err instanceof Error ? err.message : "Could not read selected file",
-				);
+				toast.error(errorMessage(err, "Could not read selected file"));
 				return;
 			}
 			setSessionGlyph(null);
@@ -280,7 +280,7 @@ export function IconUploadField({
 				<PopoverContent align="start" className="w-66 space-y-3">
 					<div>
 						<p className="mb-1.5 text-xs font-medium text-muted-foreground">
-							Color
+							<Trans id="settings.project.icon.colorLabel">Color</Trans>
 						</p>
 						<ColorSelector
 							includeDefault
@@ -293,7 +293,7 @@ export function IconUploadField({
 					</div>
 					<div>
 						<p className="mb-1.5 text-xs font-medium text-muted-foreground">
-							Icon
+							<Trans id="settings.project.icon.iconLabel">Icon</Trans>
 						</p>
 						<div className="grid grid-cols-6 gap-1">
 							{GLYPHS.map((glyph) => (
@@ -327,7 +327,9 @@ export function IconUploadField({
 							onClick={handleClickUpload}
 						>
 							<LuUpload className="size-3.5" />
-							Upload image…
+							<Trans id="settings.project.icon.uploadImage">
+								Upload image…
+							</Trans>
 						</Button>
 						{iconUrl && (
 							<Button
@@ -339,7 +341,7 @@ export function IconUploadField({
 									void setIcon(PROJECT_ICON_NONE);
 								}}
 							>
-								Remove icon
+								<Trans id="settings.project.icon.removeIcon">Remove icon</Trans>
 							</Button>
 						)}
 						{(hasCustomIcon || isIconRemoved) && (
@@ -352,7 +354,9 @@ export function IconUploadField({
 									void setIcon(null);
 								}}
 							>
-								Reset to default
+								<Trans id="settings.project.icon.resetToDefault">
+									Reset to default
+								</Trans>
 							</Button>
 						)}
 					</div>

@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import {
 	getAgentEffortSupport,
 	getAgentModelSupport,
@@ -470,7 +471,9 @@ export function PromptGroup({
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							Update naming instructions for {selectedProject.name}
+							<Trans id="dashboard.newWorkspaceModal.promptGroup.updateNamingInstructions">
+								Update naming instructions for {selectedProject.name}
+							</Trans>
 						</TooltipContent>
 					</Tooltip>
 				)}
@@ -496,6 +499,7 @@ export function PromptGroup({
 				multiple
 				maxFiles={5}
 				maxFileSize={10 * 1024 * 1024}
+				onError={(error) => toast.error(error.message)}
 				className="[&>[data-slot=input-group]]:rounded-[13px] [&>[data-slot=input-group]]:border-[0.5px] [&>[data-slot=input-group]]:shadow-none [&>[data-slot=input-group]]:bg-foreground/[0.02]"
 			>
 				{(linkedPR || linkedIssues.length > 0 || visibleFiles.length > 0) && (
@@ -713,7 +717,9 @@ export function PromptGroup({
 								className="flex items-center gap-1 text-xs text-muted-foreground"
 							>
 								<LuGitPullRequest className="size-3 shrink-0" />
-								based off PR #{linkedPR.prNumber}
+								<Trans id="dashboard.newWorkspaceModal.promptGroup.basedOffPr">
+									based off PR #{linkedPR.prNumber}
+								</Trans>
 							</motion.span>
 						) : (
 							<motion.div
@@ -740,7 +746,9 @@ export function PromptGroup({
 							className="h-6 px-2 text-[11px] text-amber-500 hover:text-amber-500"
 							onClick={handleGoToSetup}
 						>
-							Set up project…
+							<Trans id="dashboard.newWorkspaceModal.promptGroup.setUpProject">
+								Set up project…
+							</Trans>
 						</Button>
 					) : (
 						<span className="text-[11px] text-muted-foreground/50">

@@ -1,4 +1,6 @@
+import { Trans } from "@lingui/react/macro";
 import type { HostAgentConfig } from "@superset/host-service/settings";
+import { errorMessage } from "@superset/i18n/errors";
 import { AGENT_TYPES } from "@superset/shared/agent-command";
 import type { PromptTransport } from "@superset/shared/agent-prompt-launch";
 import { getPresetById } from "@superset/shared/host-agent-presets";
@@ -71,9 +73,7 @@ export function AgentDetail({
 				void electronUtils.settings.getAgentHooksDisabled.invalidate();
 			},
 			onError: (err) =>
-				toast.error(
-					err instanceof Error ? err.message : "Failed to update hooks",
-				),
+				toast.error(errorMessage(err, "Failed to update hooks")),
 		});
 
 	const [label, setLabel] = useState(config.label);
@@ -130,8 +130,7 @@ export function AgentDetail({
 			).settings.agentConfigs.update.mutate({ id: config.id, patch });
 		},
 		onSuccess: (updated) => onChanged(updated),
-		onError: (err) =>
-			toast.error(err instanceof Error ? err.message : "Failed to save"),
+		onError: (err) => toast.error(errorMessage(err, "Failed to save")),
 	});
 
 	const removeMutation = useMutation({
@@ -148,8 +147,7 @@ export function AgentDetail({
 			).settings.agentConfigs.remove.mutate({ id: config.id });
 		},
 		onSuccess: () => onDeleted(),
-		onError: (err) =>
-			toast.error(err instanceof Error ? err.message : "Failed to remove"),
+		onError: (err) => toast.error(errorMessage(err, "Failed to remove")),
 	});
 
 	const restoreDefaultMutation = useMutation({
@@ -170,9 +168,7 @@ export function AgentDetail({
 			toast.success(`${updated.label} restored to defaults`);
 		},
 		onError: (err) =>
-			toast.error(
-				err instanceof Error ? err.message : "Failed to restore defaults",
-			),
+			toast.error(errorMessage(err, "Failed to restore defaults")),
 	});
 
 	const handleLabelBlur = () => {
@@ -269,22 +265,30 @@ export function AgentDetail({
 						<div className="flex items-center justify-between gap-8">
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-1.5">
-									<div className="text-sm font-medium">Superset hooks</div>
+									<div className="text-sm font-medium">
+										<Trans id="settings.agents.detail.hooksTitle">
+											Superset hooks
+										</Trans>
+									</div>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 										</TooltipTrigger>
 										<TooltipContent side="top" className="max-w-[320px]">
-											Registers lifecycle hooks in this agent's global config so
-											Superset can show status and send notifications. Turning
-											this off removes Superset's entries everywhere — status
-											and notifications stop for this agent, including inside
-											Superset.
+											<Trans id="settings.agents.detail.hooksTooltip">
+												Registers lifecycle hooks in this agent's global config
+												so Superset can show status and send notifications.
+												Turning this off removes Superset's entries everywhere —
+												status and notifications stop for this agent, including
+												inside Superset.
+											</Trans>
 										</TooltipContent>
 									</Tooltip>
 								</div>
 								<p className="text-sm text-muted-foreground mt-0.5">
-									Show status and send notifications for this agent.
+									<Trans id="settings.agents.detail.hooksHint">
+										Show status and send notifications for this agent.
+									</Trans>
 								</p>
 							</div>
 							<Switch
@@ -310,10 +314,16 @@ export function AgentDetail({
 					<div className="pt-2">
 						<div className="flex items-center justify-between gap-8">
 							<div className="min-w-0 flex-1">
-								<div className="text-sm font-medium">Restore default</div>
+								<div className="text-sm font-medium">
+									<Trans id="settings.agents.detail.restoreDefaultTitle">
+										Restore default
+									</Trans>
+								</div>
 								<p className="text-sm text-muted-foreground mt-0.5">
-									Replace this agent's launch settings with the current bundled
-									configuration.
+									<Trans id="settings.agents.detail.restoreDefaultHint">
+										Replace this agent's launch settings with the current
+										bundled configuration.
+									</Trans>
 								</p>
 							</div>
 							<AlertDialog>
@@ -325,26 +335,36 @@ export function AgentDetail({
 										className="shrink-0 gap-1.5"
 									>
 										<RotateCcw className="size-3.5" />
-										Restore
+										<Trans id="settings.agents.detail.restore">Restore</Trans>
 									</Button>
 								</AlertDialogTrigger>
 								<AlertDialogContent>
 									<AlertDialogHeader>
 										<AlertDialogTitle>
-											Restore {config.label} to defaults?
+											<Trans id="settings.agents.detail.restoreDialogTitle">
+												Restore {config.label} to defaults?
+											</Trans>
 										</AlertDialogTitle>
 										<AlertDialogDescription>
-											This replaces its label, command, arguments, prompt and
-											resume settings, environment variables, and icon with the
-											current bundled configuration.
+											<Trans id="settings.agents.detail.restoreDialogHint">
+												This replaces its label, command, arguments, prompt and
+												resume settings, environment variables, and icon with
+												the current bundled configuration.
+											</Trans>
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<AlertDialogFooter>
-										<AlertDialogCancel>Cancel</AlertDialogCancel>
+										<AlertDialogCancel>
+											<Trans id="settings.agents.detail.restoreCancel">
+												Cancel
+											</Trans>
+										</AlertDialogCancel>
 										<AlertDialogAction
 											onClick={() => restoreDefaultMutation.mutate()}
 										>
-											Restore defaults
+											<Trans id="settings.agents.detail.restoreConfirm">
+												Restore defaults
+											</Trans>
 										</AlertDialogAction>
 									</AlertDialogFooter>
 								</AlertDialogContent>
@@ -356,9 +376,15 @@ export function AgentDetail({
 				<div className={hasBundledDefault ? "pt-6" : "pt-2"}>
 					<div className="flex items-center justify-between gap-8">
 						<div className="min-w-0 flex-1">
-							<div className="text-sm font-medium">Delete agent</div>
+							<div className="text-sm font-medium">
+								<Trans id="settings.agents.detail.deleteTitle">
+									Delete agent
+								</Trans>
+							</div>
 							<p className="text-sm text-muted-foreground mt-0.5">
-								Removes this agent from this device only.
+								<Trans id="settings.agents.detail.deleteHint">
+									Removes this agent from this device only.
+								</Trans>
 							</p>
 						</div>
 						<Button
@@ -369,7 +395,7 @@ export function AgentDetail({
 							className="shrink-0 gap-1.5"
 						>
 							<Trash2 className="size-3.5" />
-							Delete
+							<Trans id="settings.agents.detail.delete">Delete</Trans>
 						</Button>
 					</div>
 				</div>

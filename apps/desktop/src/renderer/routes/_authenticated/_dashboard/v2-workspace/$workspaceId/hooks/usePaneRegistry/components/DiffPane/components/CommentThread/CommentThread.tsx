@@ -1,3 +1,5 @@
+import { Plural, Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import { Avatar, AvatarFallback, AvatarImage } from "@superset/ui/avatar";
 import { Button } from "@superset/ui/button";
 import {
@@ -86,7 +88,7 @@ export function CommentThread({
 			},
 			onError: (error) => {
 				toast.error("Couldn't update thread", {
-					description: error.message,
+					description: errorMessage(error),
 				});
 			},
 		},
@@ -113,18 +115,21 @@ export function CommentThread({
 						)}
 					/>
 					<span className="shrink-0">
-						{comments.length === 1
-							? "1 comment"
-							: `${comments.length} comments`}
+						<Plural
+							id="workspace.diffPane.commentCount"
+							value={comments.length}
+							one="# comment"
+							other="# comments"
+						/>
 					</span>
 					{isOutdated && (
 						<span className="shrink-0 rounded-sm border border-border px-1 py-px text-[10px] font-medium uppercase tracking-wide">
-							Outdated
+							<Trans id="workspace.diffPane.threadOutdated">Outdated</Trans>
 						</span>
 					)}
 					{isResolved && (
 						<span className="shrink-0 rounded-sm border border-border px-1 py-px text-[10px] font-medium uppercase tracking-wide">
-							Resolved
+							<Trans id="workspace.diffPane.threadResolved">Resolved</Trans>
 						</span>
 					)}
 				</CollapsibleTrigger>

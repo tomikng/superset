@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import {
 	ContextMenuItem,
 	ContextMenuSeparator,
@@ -28,7 +30,7 @@ export function PathActionsMenuItems({
 		toast.promise(copyToClipboard(path), {
 			success: successMessage,
 			error: (err: unknown) =>
-				`Failed to copy path: ${err instanceof Error ? err.message : "Unknown error"}`,
+				`Failed to copy path: ${errorMessage(err, "Unknown error")}`,
 		});
 	};
 
@@ -37,7 +39,7 @@ export function PathActionsMenuItems({
 			await electronTrpcClient.external.openInFinder.mutate(absolutePath);
 		} catch (error) {
 			toast.error(
-				`Failed to reveal in Finder: ${error instanceof Error ? error.message : "Unknown error"}`,
+				`Failed to reveal in Finder: ${errorMessage(error, "Unknown error")}`,
 			);
 		}
 	};
@@ -47,21 +49,27 @@ export function PathActionsMenuItems({
 			<>
 				<DropdownMenuItem onSelect={handleRevealInFinder}>
 					<FolderOpen />
-					Reveal in Finder
+					<Trans id="workspace.pathActionsMenuItems.dropdownRevealInFinder">
+						Reveal in Finder
+					</Trans>
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					onSelect={() => handleCopy(absolutePath, "Path copied")}
 				>
 					<Clipboard />
-					Copy Path
+					<Trans id="workspace.pathActionsMenuItems.dropdownCopyPath">
+						Copy Path
+					</Trans>
 				</DropdownMenuItem>
 				{relativePath && (
 					<DropdownMenuItem
 						onSelect={() => handleCopy(relativePath, "Relative path copied")}
 					>
 						<Copy />
-						Copy Relative Path
+						<Trans id="workspace.pathActionsMenuItems.dropdownCopyRelativePath">
+							Copy Relative Path
+						</Trans>
 					</DropdownMenuItem>
 				)}
 			</>
@@ -72,19 +80,25 @@ export function PathActionsMenuItems({
 		<>
 			<ContextMenuItem onSelect={handleRevealInFinder}>
 				<FolderOpen />
-				Reveal in Finder
+				<Trans id="workspace.pathActionsMenuItems.contextRevealInFinder">
+					Reveal in Finder
+				</Trans>
 			</ContextMenuItem>
 			<ContextMenuSeparator />
 			<ContextMenuItem onSelect={() => handleCopy(absolutePath, "Path copied")}>
 				<Clipboard />
-				Copy Path
+				<Trans id="workspace.pathActionsMenuItems.contextCopyPath">
+					Copy Path
+				</Trans>
 			</ContextMenuItem>
 			{relativePath && (
 				<ContextMenuItem
 					onSelect={() => handleCopy(relativePath, "Relative path copied")}
 				>
 					<Copy />
-					Copy Relative Path
+					<Trans id="workspace.pathActionsMenuItems.contextCopyRelativePath">
+						Copy Relative Path
+					</Trans>
 				</ContextMenuItem>
 			)}
 		</>
