@@ -60,7 +60,7 @@ echo "==> build ${MOBILE_BUILD_NUMBER} (team ${APPLE_TEAM_ID})"
 
 # --- native project --------------------------------------------------------
 # --clean regenerates ios/ from app.config.ts and runs pod install.
-npx expo prebuild --platform ios --clean
+bunx expo prebuild --platform ios --clean
 
 # patches/expo-modules-jsi@*.patch: bun applies it to node_modules/expo-modules-jsi,
 # but Expo autolinking compiles the copy in bun's store, which bun leaves as
