@@ -20,7 +20,8 @@
 #
 # One-time setup, in App Store Connect:
 #   1. Users and Access -> Integrations -> App Store Connect API -> Team key,
-#      role "App Manager". Download the .p8 (only offered once).
+#      role "Admin" — cloud signing (minting the distribution certificate)
+#      is refused for App Manager keys. Download the .p8 (only offered once).
 #   2. Apps -> "+" -> New App: platform iOS, bundle id dev.tomnguyen.superset
 #      (register the identifier at developer.apple.com first if it is not
 #      offered), SKU anything. Add yourself as an internal tester under

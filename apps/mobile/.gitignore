@@ -42,3 +42,6 @@ yarn-error.*
 
 # storybook (generated on start)
 .rnstorybook/storybook.requires.ts
+
+# testflight.sh output
+/build
