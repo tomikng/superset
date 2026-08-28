@@ -32,6 +32,15 @@ cd "$(dirname "$0")/.."
 MOBILE_DIR=$(pwd)
 REPO_ROOT=$(cd ../.. && pwd)
 
+# launchd/CI shells have no nvm: the expo CLI is `#!/usr/bin/env node`, so
+# put the newest nvm node (or Homebrew's) on PATH when none is found.
+if ! command -v node >/dev/null 2>&1; then
+  nvm_default=$(cat "$HOME/.nvm/alias/default" 2>/dev/null || true)
+  nvm_node=$(ls -d "$HOME"/.nvm/versions/node/*/bin 2>/dev/null | { [ -n "$nvm_default" ] && grep "/v${nvm_default#v}[./]" || cat; } | sort -V | tail -1)
+  export PATH="${nvm_node:-/opt/homebrew/opt/node/bin}:$PATH"
+fi
+command -v node >/dev/null || { echo "node not found (install nvm node or brew node)" >&2; exit 1; }
+
 : "${ASC_KEY_ID:?set ASC_KEY_ID}"
 : "${ASC_ISSUER_ID:?set ASC_ISSUER_ID}"
 : "${ASC_KEY_P8:?set ASC_KEY_P8 (path or base64 contents)}"
