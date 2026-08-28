@@ -96,6 +96,7 @@
 		"expo-status-bar": "57.0.1",
 		"expo-store-review": "57.0.2",
 		"expo-system-ui": "57.0.2",
+		"expo-updates": "57.0.18",
 		"expo-web-browser": "57.0.2",
 		"katex": "0.17.0",
 		"lucide-react-native": "0.562.0",

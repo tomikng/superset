@@ -40,6 +40,18 @@ export default ({ config }: ConfigContext) => ({
 	icon: "./assets/icon.png",
 	userInterfaceStyle: "dark",
 	scheme: "superset",
+	// Over-the-air JS updates (EAS Update). The binary carries this URL and
+	// channel; `apps/mobile/scripts/ota.sh` publishes to it. The fingerprint
+	// policy hashes the native side, so a binary only accepts updates built
+	// from the same native dependencies — an upstream merge that changes a
+	// native module needs a TestFlight build, and this makes that automatic.
+	updates: {
+		url: "https://u.expo.dev/f501cafd-9f75-4f43-99fc-611cce656403",
+		requestHeaders: { "expo-channel-name": "selfhost" },
+		checkAutomatically: "ON_LOAD" as const,
+		fallbackToCacheTimeout: 0,
+	},
+	runtimeVersion: { policy: "fingerprint" as const },
 	splash: {
 		image: "./assets/splash-icon.png",
 		resizeMode: "contain" as const,
@@ -110,9 +122,14 @@ export default ({ config }: ConfigContext) => ({
 		"expo-image",
 		"expo-secure-store",
 		"expo-status-bar",
+		"expo-updates",
 		"expo-web-browser",
 	],
 	extra: {
 		router: {},
+		eas: {
+			projectId: "f501cafd-9f75-4f43-99fc-611cce656403",
+		},
 	},
+	owner: "tomikng",
 });

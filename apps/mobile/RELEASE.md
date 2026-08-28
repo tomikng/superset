@@ -17,6 +17,11 @@ Superset's Apple team or EAS project.
 - `.github/workflows/sync-upstream.yml` opens a PR for each new upstream
   `desktop-v*` release and pings Discord; merging it deploys ms1 — then run
   the TestFlight job above.
+- **OTA:** `scripts/ota.sh` publishes the current JS to the installed app via
+  EAS Update (project `@tomikng/superset`, channel `selfhost`); the app picks
+  it up on its next launch. Runtime version is the native fingerprint, so
+  after an upstream merge that touches native modules the update is ignored
+  until a new TestFlight build ships — run both when unsure.
 - Build numbers: CI uses `300000000000 + run_number`; local uploads use a
   `yyyyMMddHHmm` timestamp. Both are unique and increasing, never edit by hand.
 - One-time setup (App Store Connect API key, App record) is documented at the
