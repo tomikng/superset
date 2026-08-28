@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -18,7 +20,7 @@ export function PathActions({ absolutePath, relativePath }: PathActionsProps) {
 		toast.promise(copyToClipboard(path), {
 			success: successMessage,
 			error: (err: unknown) =>
-				`Failed to copy path: ${err instanceof Error ? err.message : "Unknown error"}`,
+				`Failed to copy path: ${errorMessage(err, "Unknown error")}`,
 		});
 	};
 	const handleRevealInFinder = async () => {
@@ -26,7 +28,7 @@ export function PathActions({ absolutePath, relativePath }: PathActionsProps) {
 			await electronTrpcClient.external.openInFinder.mutate(absolutePath);
 		} catch (error) {
 			toast.error(
-				`Failed to reveal in Finder: ${error instanceof Error ? error.message : "Unknown error"}`,
+				`Failed to reveal in Finder: ${errorMessage(error, "Unknown error")}`,
 			);
 		}
 	};
@@ -34,21 +36,25 @@ export function PathActions({ absolutePath, relativePath }: PathActionsProps) {
 		<>
 			<DropdownMenuItem onSelect={handleRevealInFinder}>
 				<FolderOpen />
-				Reveal in Finder
+				<Trans id="workspace.pathActions.revealInFinder">
+					Reveal in Finder
+				</Trans>
 			</DropdownMenuItem>
 			<DropdownMenuSeparator />
 			<DropdownMenuItem
 				onSelect={() => handleCopy(absolutePath, "Path copied")}
 			>
 				<Clipboard />
-				Copy Path
+				<Trans id="workspace.pathActions.copyPath">Copy Path</Trans>
 			</DropdownMenuItem>
 			{relativePath && (
 				<DropdownMenuItem
 					onSelect={() => handleCopy(relativePath, "Relative path copied")}
 				>
 					<Copy />
-					Copy Relative Path
+					<Trans id="workspace.pathActions.copyRelativePath">
+						Copy Relative Path
+					</Trans>
 				</DropdownMenuItem>
 			)}
 		</>

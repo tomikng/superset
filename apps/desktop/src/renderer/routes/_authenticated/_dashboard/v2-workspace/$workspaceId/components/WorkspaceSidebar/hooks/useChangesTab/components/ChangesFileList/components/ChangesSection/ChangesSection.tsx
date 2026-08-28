@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -58,7 +60,7 @@ export function ChangesSection({
 		onSuccess: invalidate,
 		onError: (err) => {
 			toast.error("Couldn't discard unstaged changes", {
-				description: err.message,
+				description: errorMessage(err),
 			});
 		},
 	});
@@ -66,20 +68,22 @@ export function ChangesSection({
 		onSuccess: invalidate,
 		onError: (err) => {
 			toast.error("Couldn't discard staged changes", {
-				description: err.message,
+				description: errorMessage(err),
 			});
 		},
 	});
 	const stageAll = workspaceTrpc.git.stageAll.useMutation({
 		onSuccess: invalidate,
 		onError: (err) => {
-			toast.error("Couldn't stage changes", { description: err.message });
+			toast.error("Couldn't stage changes", { description: errorMessage(err) });
 		},
 	});
 	const unstageAll = workspaceTrpc.git.unstageAll.useMutation({
 		onSuccess: invalidate,
 		onError: (err) => {
-			toast.error("Couldn't unstage changes", { description: err.message });
+			toast.error("Couldn't unstage changes", {
+				description: errorMessage(err),
+			});
 		},
 	});
 
@@ -154,7 +158,9 @@ export function ChangesSection({
 								</button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Discard all {stagingActions.kind}
+								<Trans id="workspace.changesSection.discardAllTooltip">
+									Discard all {stagingActions.kind}
+								</Trans>
 							</TooltipContent>
 						</Tooltip>
 						<Tooltip>

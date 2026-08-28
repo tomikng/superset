@@ -1,7 +1,12 @@
+import { Trans } from "@lingui/react/macro";
 import { Tabs, TabsList, TabsTrigger } from "@superset/ui/tabs";
 import { cn } from "@superset/ui/utils";
 import { useState } from "react";
 import { LuX } from "react-icons/lu";
+import {
+	getPresetIcon,
+	useIsDarkTheme,
+} from "renderer/assets/app-icons/preset-icons";
 import { useHostUsageHistory } from "../../hooks/useHostUsageHistory";
 import { UsageAreaChart } from "./components/UsageAreaChart";
 import { UsageMetricTiles } from "./components/UsageMetricTiles";
@@ -10,6 +15,7 @@ import { UsageProjectBars } from "./components/UsageProjectBars";
 import type { HistoryMetric } from "./constants";
 import {
 	PROVIDER_CHART_CONFIG,
+	PROVIDER_ICON_KEY,
 	PROVIDER_ORDER,
 	RANGE_OPTIONS,
 } from "./constants";
@@ -26,6 +32,7 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 	const [selectedDay, setSelectedDay] = useState<string | null>(null);
 	const historyQuery = useHostUsageHistory(hostUrl, days);
 	const history = historyQuery.data ?? null;
+	const isDark = useIsDarkTheme();
 
 	const firstDay = history?.buckets[0]?.day;
 	const lastDay = history?.buckets[history.buckets.length - 1]?.day;
@@ -34,14 +41,37 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 			? (history.buckets.find((bucket) => bucket.day === selectedDay) ?? null)
 			: null;
 
+	// Only providers with usage in range get a share row — nine zero rows
+	// would drown the two that matter. No usage at all: show the classic two.
+	const activeProviders = (() => {
+		const withUsage = PROVIDER_ORDER.filter((provider) =>
+			history?.buckets.some((bucket) => bucket.providers[provider]),
+		);
+		return withUsage.length > 0
+			? withUsage
+			: (["claude", "codex"] satisfies Provider[]);
+	})();
+
+	// A range switch can leave every active series hidden by stale toggles —
+	// ignore the stored hides then, rather than render an empty chart.
+	const effectiveHidden = activeProviders.some(
+		(provider) => !hiddenProviders.has(provider),
+	)
+		? hiddenProviders
+		: new Set<Provider>();
+
 	const toggleProvider = (provider: Provider) => {
 		setHiddenProviders((previous) => {
 			const next = new Set(previous);
 			if (next.has(provider)) {
 				next.delete(provider);
-			} else if (next.size < PROVIDER_ORDER.length - 1) {
-				// Never hide the last visible series — an empty chart reads as broken.
-				next.add(provider);
+			} else {
+				// Never hide the last visible series — an empty chart reads as
+				// broken. Count only active providers; hidden inactive ones don't.
+				const visibleActive = activeProviders.filter(
+					(active) => !next.has(active),
+				).length;
+				if (visibleActive > 1) next.add(provider);
 			}
 			return next;
 		});
@@ -51,12 +81,14 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 		<div className="flex min-h-0 flex-1 flex-col gap-3 border-t pt-3">
 			<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
 				<h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-					Token usage
+					<Trans id="settings.usage.history.title">Token usage</Trans>
 				</h2>
 				{firstDay && lastDay && (
 					<span className="text-[10px] text-muted-foreground">
-						{formatDayLabel(firstDay)} – {formatDayLabel(lastDay)} · API-rate
-						estimate from local session logs
+						<Trans id="settings.usage.history.rangeSummary">
+							{formatDayLabel(firstDay)} – {formatDayLabel(lastDay)} · API-rate
+							estimate from local session logs
+						</Trans>
 					</span>
 				)}
 				<div className="ml-auto flex items-center gap-1.5">
@@ -66,10 +98,10 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 					>
 						<TabsList className="h-6">
 							<TabsTrigger value="usd" className="h-4 px-1.5 text-[10px]">
-								Cost
+								<Trans id="settings.usage.history.metricCost">Cost</Trans>
 							</TabsTrigger>
 							<TabsTrigger value="tokens" className="h-4 px-1.5 text-[10px]">
-								Tokens
+								<Trans id="settings.usage.history.metricTokens">Tokens</Trans>
 							</TabsTrigger>
 						</TabsList>
 					</Tabs>
@@ -94,9 +126,15 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 
 			{!history ? (
 				<div className="py-6 text-center text-xs text-muted-foreground">
-					{historyQuery.isError
-						? "Couldn't read usage history from this host."
-						: "Scanning transcript logs…"}
+					{historyQuery.isError ? (
+						<Trans id="settings.usage.history.loadError">
+							Couldn't read usage history from this host.
+						</Trans>
+					) : (
+						<Trans id="settings.usage.history.scanning">
+							Scanning transcript logs…
+						</Trans>
+					)}
 				</div>
 			) : (
 				<div
@@ -114,18 +152,26 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 										: formatTokens(history.totals.tokens)}
 								</div>
 								<div className="text-[10px] text-muted-foreground">
-									{metric === "usd"
-										? "* if billed at full API rate"
-										: "input, cache and output tokens"}
+									{metric === "usd" ? (
+										<Trans id="settings.usage.history.fullApiRateNote">
+											* if billed at full API rate
+										</Trans>
+									) : (
+										<Trans id="settings.usage.history.tokenKindsNote">
+											input, cache and output tokens
+										</Trans>
+									)}
 								</div>
 								{metric === "usd" && (
 									<div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-										Cost to you: $0
+										<Trans id="settings.usage.history.costToYouZero">
+											Cost to you: $0
+										</Trans>
 									</div>
 								)}
 							</div>
 							<div className="flex flex-col gap-1.5">
-								{PROVIDER_ORDER.map((provider) => {
+								{activeProviders.map((provider) => {
 									const totalsFor = history.buckets.reduce(
 										(acc, bucket) => {
 											const slot = bucket.providers[provider];
@@ -144,7 +190,11 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 											? (metric === "usd" ? totalsFor.usd : totalsFor.tokens) /
 												denominator
 											: 0;
-									const hidden = hiddenProviders.has(provider);
+									const hidden = effectiveHidden.has(provider);
+									const icon = getPresetIcon(
+										PROVIDER_ICON_KEY[provider],
+										isDark,
+									);
 									return (
 										<button
 											key={provider}
@@ -165,6 +215,9 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 													background: PROVIDER_CHART_CONFIG[provider].color,
 												}}
 											/>
+											{icon && (
+												<img src={icon} alt="" className="size-3.5 shrink-0" />
+											)}
 											<span className="min-w-0 truncate">
 												{PROVIDER_CHART_CONFIG[provider].label}
 											</span>
@@ -195,9 +248,13 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 											<LuX className="size-3" />
 										</button>
 									</div>
-									{PROVIDER_ORDER.map((provider) => {
+									{activeProviders.map((provider) => {
 										const slot = selectedBucket.providers[provider];
 										if (!slot) return null;
+										const icon = getPresetIcon(
+											PROVIDER_ICON_KEY[provider],
+											isDark,
+										);
 										return (
 											<div
 												key={provider}
@@ -209,6 +266,9 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 														background: PROVIDER_CHART_CONFIG[provider].color,
 													}}
 												/>
+												{icon && (
+													<img src={icon} alt="" className="size-3 shrink-0" />
+												)}
 												<span className="text-muted-foreground">
 													{PROVIDER_CHART_CONFIG[provider].label}
 												</span>
@@ -228,7 +288,7 @@ export function UsageHistorySection({ hostUrl }: { hostUrl: string | null }) {
 						<UsageAreaChart
 							history={history}
 							metric={metric}
-							hiddenProviders={hiddenProviders}
+							hiddenProviders={effectiveHidden}
 							selectedDay={selectedDay}
 							onSelectDay={setSelectedDay}
 						/>

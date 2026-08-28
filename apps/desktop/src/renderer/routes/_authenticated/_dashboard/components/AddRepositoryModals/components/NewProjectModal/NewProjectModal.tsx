@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage, rawErrorMessage } from "@superset/i18n/errors";
 import { Button } from "@superset/ui/button";
 import {
 	Dialog,
@@ -92,7 +94,7 @@ export function NewProjectModal({
 				setParentDir(result.path);
 			}
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : String(err));
+			toast.error(errorMessage(err));
 		}
 	};
 
@@ -142,7 +144,7 @@ export function NewProjectModal({
 			reset();
 			onOpenChange(false);
 		} catch (err) {
-			const raw = err instanceof Error ? err.message : String(err);
+			const raw = rawErrorMessage(err);
 			// Drizzle / pg errors arrive as "Failed query: insert into ..."
 			// which is useless to a user. Hide that envelope in favor of a
 			// short generic message; details land in the console for devs.
@@ -150,7 +152,7 @@ export function NewProjectModal({
 			if (isLeakedSql) console.error("[NewProjectModal] create failed", err);
 			const message = isLeakedSql
 				? "Could not create project. Please try a different name or check the logs."
-				: raw;
+				: errorMessage(err);
 			toast.error("Could not create project", { description: message });
 			onError?.(message);
 		} finally {
@@ -162,16 +164,24 @@ export function NewProjectModal({
 		<Dialog open={open} onOpenChange={handleOpenChange} modal>
 			<DialogContent className="max-w-[420px]">
 				<DialogHeader>
-					<DialogTitle>Clone a repository</DialogTitle>
+					<DialogTitle>
+						<Trans id="dashboard.newProjectModal.title">
+							Clone a repository
+						</Trans>
+					</DialogTitle>
 					<DialogDescription className="sr-only">
-						Create a new project by cloning a repository or local path.
+						<Trans id="dashboard.newProjectModal.description">
+							Create a new project by cloning a repository or local path.
+						</Trans>
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4">
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="clone-url" className="text-xs">
-							Repository URL or path
+							<Trans id="dashboard.newProjectModal.repoUrlLabel">
+								Repository URL or path
+							</Trans>
 						</Label>
 						<Input
 							id="clone-url"
@@ -191,7 +201,9 @@ export function NewProjectModal({
 					{isV2CloudEnabled && (
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor="project-name" className="text-xs">
-								Project name
+								<Trans id="dashboard.newProjectModal.projectNameLabel">
+									Project name
+								</Trans>
 							</Label>
 							<Input
 								id="project-name"
@@ -208,7 +220,9 @@ export function NewProjectModal({
 
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="project-path" className="text-xs">
-							Location
+							<Trans id="dashboard.newProjectModal.locationLabel">
+								Location
+							</Trans>
 						</Label>
 						<div className="flex gap-1.5">
 							<Input
@@ -240,16 +254,16 @@ export function NewProjectModal({
 						onClick={() => handleOpenChange(false)}
 						disabled={working}
 					>
-						Cancel
+						<Trans id="dashboard.newProjectModal.cancel">Cancel</Trans>
 					</Button>
 					<Button onClick={() => void createFromClone()} disabled={working}>
 						{working ? (
 							<>
 								<LuLoaderCircle className="size-4 animate-spin" />
-								Cloning…
+								<Trans id="dashboard.newProjectModal.cloning">Cloning…</Trans>
 							</>
 						) : (
-							"Clone"
+							<Trans id="dashboard.newProjectModal.clone">Clone</Trans>
 						)}
 					</Button>
 				</DialogFooter>

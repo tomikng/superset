@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import {
 	getAvailableRoleChanges,
 	getRoleLevel,
@@ -86,13 +88,13 @@ export function MemberActions({
 			toast.promise(leaveOrganization(), {
 				loading: "Leaving organization...",
 				success: "Left organization",
-				error: (err) => err.message || "Failed to leave organization",
+				error: (err) => errorMessage(err, "Failed to leave organization"),
 			});
 		} else {
 			toast.promise(removeMember(), {
 				loading: "Removing member...",
 				success: "Member removed",
-				error: (err) => err.message || "Failed to remove member",
+				error: (err) => errorMessage(err, "Failed to remove member"),
 			});
 		}
 	}
@@ -130,9 +132,7 @@ export function MemberActions({
 			await utils.organization.listMembers.invalidate();
 			toast.success(`Role changed to ${ORGANIZATION_ROLES[newRole].name}`);
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Failed to change role",
-			);
+			toast.error(errorMessage(error, "Failed to change role"));
 		} finally {
 			setIsChangingRole(false);
 		}
@@ -171,7 +171,7 @@ export function MemberActions({
 				{availableRoles.length > 0 && (
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger disabled={isChangingRole}>
-							Change role
+							<Trans id="settings.members.changeRole">Change role</Trans>
 						</DropdownMenuSubTrigger>
 						<DropdownMenuSubContent>
 							{availableRoles.map((role) => (
@@ -180,7 +180,9 @@ export function MemberActions({
 									onSelect={() => handleRoleSelection(role)}
 									disabled={isChangingRole}
 								>
-									Change to {ORGANIZATION_ROLES[role].name}
+									<Trans id="settings.members.changeToRole">
+										Change to {ORGANIZATION_ROLES[role].name}
+									</Trans>
 								</DropdownMenuItem>
 							))}
 						</DropdownMenuSubContent>
@@ -193,7 +195,11 @@ export function MemberActions({
 						onSelect={handleRemoveClick}
 					>
 						<HiOutlineTrash className="h-4 w-4 text-destructive" />
-						<span>Leave organization...</span>
+						<span>
+							<Trans id="settings.members.leaveOrganization">
+								Leave organization...
+							</Trans>
+						</span>
 					</DropdownMenuItem>
 				) : canRemove ? (
 					<DropdownMenuItem
@@ -201,7 +207,9 @@ export function MemberActions({
 						onSelect={handleRemoveClick}
 					>
 						<HiOutlineTrash className="h-4 w-4 text-destructive" />
-						<span>Remove member</span>
+						<span>
+							<Trans id="settings.members.removeMember">Remove member</Trans>
+						</span>
 					</DropdownMenuItem>
 				) : null}
 			</DropdownMenuContent>

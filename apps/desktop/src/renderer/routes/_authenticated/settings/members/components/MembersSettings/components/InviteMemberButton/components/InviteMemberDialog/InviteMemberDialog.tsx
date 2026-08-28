@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import {
 	canInvite,
 	ORGANIZATION_ROLES,
@@ -68,9 +70,7 @@ export function InviteMemberDialog({
 			setRole("member");
 			onOpenChange(false);
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Failed to send invitation",
-			);
+			toast.error(errorMessage(error, "Failed to send invitation"));
 		} finally {
 			setIsInviting(false);
 		}
@@ -80,15 +80,22 @@ export function InviteMemberDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Invite Member</DialogTitle>
+					<DialogTitle>
+						<Trans id="settings.members.inviteDialogTitle">Invite Member</Trans>
+					</DialogTitle>
 					<DialogDescription>
-						Send an invitation to join {organizationName}. Expires in 48 hours.
+						<Trans id="settings.members.inviteDialogDescription">
+							Send an invitation to join {organizationName}. Expires in 48
+							hours.
+						</Trans>
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="space-y-4 py-4">
 					<div className="space-y-2">
-						<Label htmlFor="email">Email</Label>
+						<Label htmlFor="email">
+							<Trans id="settings.members.emailLabel">Email</Trans>
+						</Label>
 						<Input
 							id="email"
 							type="email"
@@ -105,7 +112,9 @@ export function InviteMemberDialog({
 					</div>
 
 					<div className="space-y-2">
-						<Label htmlFor="role">Role</Label>
+						<Label htmlFor="role">
+							<Trans id="settings.members.roleLabel">Role</Trans>
+						</Label>
 						<Select
 							value={role}
 							onValueChange={(val) => setRole(val as OrganizationRole)}
@@ -130,10 +139,14 @@ export function InviteMemberDialog({
 						onClick={() => onOpenChange(false)}
 						disabled={isInviting}
 					>
-						Cancel
+						<Trans id="settings.members.inviteCancel">Cancel</Trans>
 					</Button>
 					<Button onClick={handleInvite} disabled={isInviting || !email}>
-						{isInviting ? "Sending..." : "Send Invitation"}
+						{isInviting ? (
+							<Trans id="settings.members.sendingButton">Sending...</Trans>
+						) : (
+							<Trans id="settings.members.sendButton">Send Invitation</Trans>
+						)}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

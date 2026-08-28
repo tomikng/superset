@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
 import {
 	PromptInputProvider,
 	usePromptInputController,
@@ -60,8 +62,7 @@ export function NewWorkspaceModal() {
 			await openNew();
 		} catch (error) {
 			toast.error("Failed to open project", {
-				description:
-					error instanceof Error ? error.message : "An unknown error occurred",
+				description: errorMessage(error, "An unknown error occurred"),
 			});
 		}
 	};
@@ -82,8 +83,16 @@ export function NewWorkspaceModal() {
 					onOpenChange={(open) => !open && closeModal()}
 				>
 					<DialogHeader className="sr-only">
-						<DialogTitle>New Workspace</DialogTitle>
-						<DialogDescription>Create a new workspace</DialogDescription>
+						<DialogTitle>
+							<Trans id="components.newWorkspaceModal.title">
+								New Workspace
+							</Trans>
+						</DialogTitle>
+						<DialogDescription>
+							<Trans id="components.newWorkspaceModal.description">
+								Create a new workspace
+							</Trans>
+						</DialogDescription>
 					</DialogHeader>
 					<DialogContent
 						showCloseButton={false}

@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import type {
 	CodeViewItem,
 	DiffLineAnnotation,
@@ -10,6 +11,7 @@ import {
 	type CodeViewHandle,
 	EditProvider,
 } from "@pierre/diffs/react";
+import { errorMessage } from "@superset/i18n/errors";
 
 import type { RendererContext } from "@superset/panes";
 import { alert } from "@superset/ui/atoms/Alert";
@@ -221,7 +223,7 @@ export function DiffPane({
 				return true;
 			} catch (error) {
 				toast.error("Couldn't save edits", {
-					description: error instanceof Error ? error.message : String(error),
+					description: errorMessage(error),
 				});
 				return false;
 			}
@@ -650,14 +652,18 @@ function BinaryDiffPlaceholder({
 	return (
 		<div className="flex flex-col items-center justify-center gap-3 bg-muted/30 py-8 text-muted-foreground">
 			<LuFileCode className="size-8" />
-			<p className="cursor-text select-text text-sm">Binary file hidden</p>
+			<p className="cursor-text select-text text-sm">
+				<Trans id="workspace.diffPane.binaryFileHidden">
+					Binary file hidden
+				</Trans>
+			</p>
 			{canOpen ? (
 				<Button
 					variant="outline"
 					size="sm"
 					onClick={() => onOpenFile(file.path)}
 				>
-					Open file
+					<Trans id="workspace.diffPane.openFile">Open file</Trans>
 				</Button>
 			) : null}
 		</div>

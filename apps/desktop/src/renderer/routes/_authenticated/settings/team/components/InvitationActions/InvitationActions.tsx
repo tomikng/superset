@@ -1,4 +1,6 @@
+import { Trans } from "@lingui/react/macro";
 import type { SelectInvitation } from "@superset/db/schema";
+import { errorMessage } from "@superset/i18n/errors";
 import { Button } from "@superset/ui/button";
 import {
 	DropdownMenu,
@@ -26,9 +28,7 @@ export function InvitationActions({ invitation }: InvitationActionsProps) {
 			});
 			toast.success("Invitation canceled");
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Failed to cancel invitation",
-			);
+			toast.error(errorMessage(error, "Failed to cancel invitation"));
 		} finally {
 			setIsCanceling(false);
 		}
@@ -48,7 +48,7 @@ export function InvitationActions({ invitation }: InvitationActionsProps) {
 					className="text-destructive gap-2"
 				>
 					<HiOutlineXMark className="h-4 w-4" />
-					Cancel
+					<Trans id="settings.team.invitationCancel">Cancel</Trans>
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
