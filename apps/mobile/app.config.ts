@@ -9,6 +9,27 @@ config({
 	override: true,
 	quiet: true,
 });
+// Self-host defaults (public URLs). Never overrides the shell or the root .env.
+config({
+	path: path.resolve(__dirname, "selfhost.env"),
+	override: false,
+	quiet: true,
+});
+
+// Sentry's config plugin adds an Xcode phase that uploads source maps and
+// needs an auth token; without one the phase only logs a warning, but there is
+// no Sentry project on the self-host, so leave the plugin out entirely.
+const sentryPlugin = process.env.SENTRY_AUTH_TOKEN
+	? [
+			[
+				"@sentry/react-native/expo",
+				{
+					organization: "superset-sh",
+					project: "mobile",
+				},
+			],
+		]
+	: [];
 
 export default ({ config }: ConfigContext) => ({
 	...config,
@@ -26,8 +47,11 @@ export default ({ config }: ConfigContext) => ({
 	},
 	ios: {
 		supportsTablet: false,
-		bundleIdentifier: "sh.superset.mobile",
-		usesAppleSignIn: true,
+		// Own bundle id + team: `sh.superset.mobile` belongs to Superset's Apple
+		// team, and a personal build needs an App ID this team can sign for.
+		// Apple sign-in is off — the self-host only has password accounts.
+		bundleIdentifier: "dev.tomnguyen.superset",
+		appleTeamId: "Q89XY3A42H",
 		infoPlist: {
 			ITSAppUsesNonExemptEncryption: false,
 			// Dictation is native now (`modules/composer`), so no config plugin
@@ -43,7 +67,7 @@ export default ({ config }: ConfigContext) => ({
 			foregroundImage: "./assets/adaptive-icon.png",
 			backgroundColor: "#ffffff",
 		},
-		package: "sh.superset.mobile",
+		package: "dev.tomnguyen.superset",
 		predictiveBackGestureEnabled: false,
 	},
 	web: {
@@ -53,15 +77,8 @@ export default ({ config }: ConfigContext) => ({
 	plugins: [
 		[withIosAccentColor, { color: "#FFFFFF" }],
 		"expo-router",
-		[
-			"@sentry/react-native/expo",
-			{
-				organization: "superset-sh",
-				project: "mobile",
-			},
-		],
+		...sentryPlugin,
 		"expo-localization",
-		"expo-apple-authentication",
 		[
 			"expo-image-picker",
 			{
@@ -94,9 +111,5 @@ export default ({ config }: ConfigContext) => ({
 	],
 	extra: {
 		router: {},
-		eas: {
-			projectId: "fa9332a8-896a-4d2a-be5b-d82469b46e5d",
-		},
 	},
-	owner: "supserset-sh",
 });

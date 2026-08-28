@@ -20,8 +20,13 @@ export const posthogConfig = {
  * $screen: child effects run first, so the screen tracker captures before the
  * properties exist (measured — that event went out with no `app_name`).
  */
+/** The self-host ships the placeholder key; nothing should leave the device. */
+const analyticsDisabled =
+	!posthogConfig.apiKey || posthogConfig.apiKey === "phc_unused_selfhosted";
+
 export const posthog = new PostHog(posthogConfig.apiKey, {
 	host: posthogConfig.host,
+	disabled: analyticsDisabled,
 	enableSessionReplay: posthogConfig.options.enableSessionReplay,
 	sessionReplayConfig: posthogConfig.options.sessionReplayConfig,
 	// The provider only defaults this on when it builds the client itself.

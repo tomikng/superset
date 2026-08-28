@@ -153,3 +153,31 @@ bun test apps/desktop/src/pty-crash-ports-patch.test.ts
 ports on the spawn attributes it already builds in `pty_posix_spawn`
 (`posix_spawnattr_setexceptionports_np`). If node-pty ships that, drop the patch
 and the `patchedDependencies` entry.
+
+## expo-modules-jsi (`expo-modules-jsi@<version>.patch`)
+
+**Why:** Xcode 26.2 ships Swift 6.2.3, whose C++ importer rejects
+`SWIFT_RETURNS_RETAINED` on the constructors of a `SWIFT_SHARED_REFERENCE`
+class ("cannot be annotated ... because it is not returning a
+SWIFT_SHARED_REFERENCE type"). `apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h`
+annotates both `RuntimeScheduler` constructors that way, so every local iOS
+build on that toolchain fails in ExpoModulesJSI. 57.0.6 has the same header.
+
+**What it changes:** drops the annotation from the two constructors. Swift
+already treats a shared-reference constructor as returning +1, so ownership is
+unchanged; the annotation was redundant on older toolchains and an error now.
+
+**Guard test:** `apps/mobile/expo-modules-jsi-xcode26-patch.test.ts`.
+
+**Regenerating after a version bump** (~2 min):
+
+```bash
+bun patch expo-modules-jsi
+sed -i '' 's/  SWIFT_RETURNS_RETAINED RuntimeScheduler(/  RuntimeScheduler(/' \
+  node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h
+bun patch --commit 'node_modules/expo-modules-jsi'
+bun test apps/mobile/expo-modules-jsi-xcode26-patch.test.ts
+```
+
+Check first whether upstream removed the annotations; if so delete the patch
+and the `patchedDependencies` entry, and update (not delete) the guard test.
