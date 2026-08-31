@@ -28,9 +28,16 @@ set -uo pipefail
 # ---------------------------------------------------------------------------
 
 # Public hostnames (flat, one subdomain level: Cloudflare Universal SSL).
-API_HOST="${API_HOST:-superset-api.tom-nguyen.dev}"
-WEB_HOST="${WEB_HOST:-superset-app.tom-nguyen.dev}"
-RELAY_HOST="${RELAY_HOST:-superset-relay.tom-nguyen.dev}"
+# Default to the deployed values in the repo-root .env (NEXT_PUBLIC_*_URL).
+_env_host() {
+  sed -n "s#^$1=https\{0,1\}://##p" "$(dirname "$0")/../.env" 2>/dev/null | head -1 | cut -d/ -f1
+}
+API_HOST="${API_HOST:-$(_env_host NEXT_PUBLIC_API_URL)}"
+WEB_HOST="${WEB_HOST:-$(_env_host NEXT_PUBLIC_WEB_URL)}"
+RELAY_HOST="${RELAY_HOST:-$(_env_host NEXT_PUBLIC_RELAY_URL)}"
+for _v in API_HOST WEB_HOST RELAY_HOST; do
+  [ -n "${!_v}" ] || { echo "$_v is not set and the repo-root .env has no URL for it" >&2; exit 2; }
+done
 
 # Local listen ports.
 #   API_PORT   — apps/api "start": next start --port 3101

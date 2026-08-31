@@ -18,6 +18,7 @@ import { randomBytes } from "node:crypto";
 import { chmodSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { env } from "./env";
 import { db } from "@superset/db/client";
 import { accounts, users } from "@superset/db/schema";
 import { hashPassword, verifyPassword } from "better-auth/crypto";
@@ -77,7 +78,7 @@ async function main(): Promise<void> {
 		OUT_FILE,
 		`Superset self-host credentials\n` +
 			`rotated: ${stamp}\n\n` +
-			`url:      https://superset-app.tom-nguyen.dev\n` +
+			`url:      ${env.NEXT_PUBLIC_WEB_URL}\n` +
 			`email:    ${email}\n` +
 			`password: ${password}\n`,
 		{ mode: 0o600 },
