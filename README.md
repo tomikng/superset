@@ -1,3 +1,24 @@
+> [!NOTE]
+> **This is a personal self-hosted fork of [superset-sh/superset](https://github.com/superset-sh/superset). It is not the official Superset repository and is not affiliated with the Superset team.**
+>
+> If you want Superset, go upstream: [releases](https://github.com/superset-sh/superset/releases), [docs](https://docs.superset.sh), [issues](https://github.com/superset-sh/superset/issues). Bug reports and pull requests for the product belong there, not here — this repository is not looking for contributions and issues are not monitored.
+>
+> **Why it exists.** A copy of Superset adapted to run on a single self-managed machine for a small private team, with the hosted-only pieces (Stripe, OAuth providers, Vercel, Neon, …) turned off or stubbed. It is public so that GitHub-hosted CI can run against it; nothing else about it is meant for general use.
+>
+> **What differs from upstream** (all under `deploy/`, `packages/auth/`, and a few app files):
+> - invitation-only email + password sign-in, team seeding script, no third-party OAuth
+> - deployment scripts for a macOS host (Docker for Postgres/Redis, launchd services, Cloudflare Tunnel) with push-to-deploy
+> - a self-hosted desktop update feed and locally built desktop/mobile apps pointed at the self-host
+> - an upstream drift check and a daily job that opens a PR whenever a new upstream `desktop-v*` release appears
+>
+> **Branches.** `main` tracks upstream `main` and is re-synced periodically. `selfhost` is what is actually deployed; `release-selfhost-2` is the working branch it is cut from.
+>
+> **License.** Unchanged: [Elastic License 2.0](LICENSE.md), exactly as upstream. All credit for Superset goes to its authors; "Superset" and its branding are theirs.
+>
+> Everything below this line is the upstream README as of the last sync.
+
+---
+
 <div align="center">
 
 <img width="full" alt="Claude and OpenCode working in parallel Superset workspaces with live diffs" src="apps/marketing/public/images/readme-hero.gif" />
