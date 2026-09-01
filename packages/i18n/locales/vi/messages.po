@@ -30432,6 +30432,152 @@ msgid "web.integrations.teams.notListening"
 msgstr "Chưa nhận được sự kiện: Microsoft Graph đã từ chối các đăng ký thông báo. Hãy kiểm tra phần cấp quyền quản trị và phê duyệt API bảo vệ của ứng dụng, rồi kết nối lại."
 
 #. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.approximateHint"
+msgstr "Một số mô hình được tính giá theo mức dự phòng"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.cost"
+msgstr "Chi phí"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.developer"
+msgstr "Lập trình viên"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.sessions"
+msgstr "Phiên"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.tier"
+msgstr "Hạng"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.tokens"
+msgstr "Token"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.empty.optIn"
+msgstr "Chọn tham gia từ ứng dụng Superset trên máy tính ở Cài đặt → Tài khoản."
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.empty.title"
+msgstr "Chưa ai tham gia bảng xếp hạng."
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.error"
+msgstr "Không thể tải bảng xếp hạng."
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.loading"
+msgstr "Đang tải…"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.loadMore"
+msgstr "Tải thêm"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.metric.ariaLabel"
+msgstr "Xếp hạng theo"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.metric.cost"
+msgstr "Chi phí"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.metric.tokens"
+msgstr "Token"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.30d"
+msgstr "30N"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.7d"
+msgstr "7N"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.all"
+msgstr "Tất cả"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.allTime"
+msgstr "Toàn thời gian"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.ariaLabel"
+msgstr "Khoảng thời gian"
+
+#. js-lingui-explicit-id
+#. placeholder {0}: rows.length
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.shownOfTotal"
+msgstr "{0} trong {total}"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.cacheRead"
+msgstr "Đọc cache"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.cacheReadHint"
+msgstr "trên tổng số token"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.cost"
+msgstr "Chi phí"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.costHint"
+msgstr "quy đổi theo API"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.developers"
+msgstr "Lập trình viên"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.tokens"
+msgstr "Token"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/page.tsx
+msgid "web.leaderboard.tagline"
+msgstr "Sử dụng tác nhân, xếp hạng. Chỉ số lượng token và tên mô hình, được xuất bản bởi những người chọn tham gia."
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.tier.unranked"
+msgstr "Chưa xếp hạng"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/page.tsx
+msgid "web.leaderboard.title"
+msgstr "Bảng xếp hạng"
+
+#. js-lingui-explicit-id
 #: ../../apps/web/src/components/MobileTerminalInput/MobileTerminalInput.tsx
 msgid "web.mobileTerminalInput.ariaLabel"
 msgstr "Ô nhập terminal"
@@ -30707,6 +30853,11 @@ msgstr "Trang chủ"
 #: ../../apps/web/src/app/(dashboard-legacy)/components/SidebarNav/SidebarNav.tsx
 msgid "web.sidebarNav.integrations"
 msgstr "Tích hợp"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/components/SidebarNav/SidebarNav.tsx
+msgid "web.sidebarNav.leaderboard"
+msgstr "Bảng xếp hạng"
 
 #. js-lingui-explicit-id
 #: ../../apps/web/src/app/(auth)/sign-up/[[...sign-up]]/page.tsx

@@ -14,6 +14,10 @@ const navItems: { href: string; label: MessageDescriptor }[] = [
 		label: msg({ id: "web.sidebarNav.integrations", message: "Integrations" }),
 	},
 	{
+		href: "/leaderboard",
+		label: msg({ id: "web.sidebarNav.leaderboard", message: "Leaderboard" }),
+	},
+	{
 		href: "/settings/account",
 		label: msg({ id: "web.sidebarNav.account", message: "Account" }),
 	},

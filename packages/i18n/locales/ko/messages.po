@@ -30432,6 +30432,152 @@ msgid "web.integrations.teams.notListening"
 msgstr "아직 이벤트를 받지 못하고 있습니다. Microsoft Graph가 알림 구독을 거부했습니다. 앱의 관리자 동의와 보호된 API 승인을 확인한 뒤 다시 연결하세요."
 
 #. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.approximateHint"
+msgstr "일부 모델은 대체 단가로 계산했습니다"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.cost"
+msgstr "비용"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.developer"
+msgstr "개발자"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.sessions"
+msgstr "세션"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.tier"
+msgstr "등급"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.column.tokens"
+msgstr "토큰"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.empty.optIn"
+msgstr "Superset 데스크톱 앱의 설정 → 계정 에서 옵트인하세요."
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.empty.title"
+msgstr "아직 순위표에 참여한 사람이 없습니다."
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.error"
+msgstr "리더보드를 불러올 수 없습니다."
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.loading"
+msgstr "불러오는 중…"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.loadMore"
+msgstr "더 보기"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.metric.ariaLabel"
+msgstr "정렬 기준"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.metric.cost"
+msgstr "비용"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.metric.tokens"
+msgstr "토큰"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.30d"
+msgstr "30일"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.7d"
+msgstr "7일"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.all"
+msgstr "전체"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.allTime"
+msgstr "전체 기간"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.range.ariaLabel"
+msgstr "기간"
+
+#. js-lingui-explicit-id
+#. placeholder {0}: rows.length
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.shownOfTotal"
+msgstr "{total}개 중 {0}개"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.cacheRead"
+msgstr "캐시 읽기"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.cacheReadHint"
+msgstr "전체 토큰 대비"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.cost"
+msgstr "비용"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.costHint"
+msgstr "API 환산"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.developers"
+msgstr "개발자"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/LeaderboardBoard.tsx
+msgid "web.leaderboard.stats.tokens"
+msgstr "토큰"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/page.tsx
+msgid "web.leaderboard.tagline"
+msgstr "에이전트 사용량, 순위 지정됨. 토큰 수와 모델 이름만, 옵트인한 사람들이 게시."
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/components/LeaderboardBoard/components/LeaderboardTable/LeaderboardTable.tsx
+msgid "web.leaderboard.tier.unranked"
+msgstr "순위 없음"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/leaderboard/page.tsx
+msgid "web.leaderboard.title"
+msgstr "리더보드"
+
+#. js-lingui-explicit-id
 #: ../../apps/web/src/components/MobileTerminalInput/MobileTerminalInput.tsx
 msgid "web.mobileTerminalInput.ariaLabel"
 msgstr "터미널 입력"
@@ -30707,6 +30853,11 @@ msgstr "홈"
 #: ../../apps/web/src/app/(dashboard-legacy)/components/SidebarNav/SidebarNav.tsx
 msgid "web.sidebarNav.integrations"
 msgstr "연동"
+
+#. js-lingui-explicit-id
+#: ../../apps/web/src/app/(dashboard-legacy)/components/SidebarNav/SidebarNav.tsx
+msgid "web.sidebarNav.leaderboard"
+msgstr "리더보드"
 
 #. js-lingui-explicit-id
 #: ../../apps/web/src/app/(auth)/sign-up/[[...sign-up]]/page.tsx
