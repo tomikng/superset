@@ -48,7 +48,9 @@ if [ -n "$PREV" ] && git cat-file -e "$PREV" 2>/dev/null; then
 else
   CHANGED="EVERYTHING"
 fi
-touched() { [ "$CHANGED" = "EVERYTHING" ] || printf '%s\n' "$CHANGED" | grep -q -E "$1"; }
+# A here-string, not a pipe: `grep -q` exits at the first match and a large
+# diff then kills printf with SIGPIPE, which pipefail reports as "not touched".
+touched() { [ "$CHANGED" = "EVERYTHING" ] || grep -q -E "$1" <<<"$CHANGED"; }
 
 SHARED='^(packages/|bun\.lock$|package\.json$|turbo\.jsonc?$|\.bun-version$|tsconfig)'
 NEED_INSTALL=0; NEED_MIGRATE=0; BUILD=(); RESTART=()
