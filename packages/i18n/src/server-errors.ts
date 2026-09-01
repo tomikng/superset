@@ -102,11 +102,6 @@ export const serverErrorMessages: Record<
 			id: "serverError.chat.chatSessionNotFound",
 			message: "Chat session not found",
 		}),
-	"serverError.chat.failedToRecordChatAttachment": () =>
-		i18n._({
-			id: "serverError.chat.failedToRecordChatAttachment",
-			message: "Failed to record chat attachment",
-		}),
 	"serverError.chat.noActiveOrganizationSelected": () =>
 		i18n._({
 			id: "serverError.chat.noActiveOrganizationSelected",
@@ -374,11 +369,6 @@ export const serverErrorMessages: Record<
 			id: "serverError.pageComment.failedToCreateThread",
 			message: "Failed to create thread",
 		}),
-	"serverError.pageComment.onlyAPersonCanHand": () =>
-		i18n._({
-			id: "serverError.pageComment.onlyAPersonCanHand",
-			message: "Only a person can hand a thread to an agent",
-		}),
 	"serverError.pageComment.onlyTheAuthorCanEdit": () =>
 		i18n._({
 			id: "serverError.pageComment.onlyTheAuthorCanEdit",
@@ -398,7 +388,7 @@ export const serverErrorMessages: Record<
 		i18n._({
 			id: "serverError.pageComment.thisThreadHasNotBeenHanded",
 			message:
-				"This thread has not been handed to an agent. Someone has to hand it off from the page first.",
+				"This thread is not open to agents. A person has to comment on it before an agent can reply.",
 		}),
 	"serverError.pageComment.threadNotFound": () =>
 		i18n._({

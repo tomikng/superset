@@ -58,12 +58,26 @@ export function AutomationBody({
 		// own result — the picker relabels, the toggle flips — but a saved
 		// trigger set looks exactly like the unsaved one it replaced.
 		onSuccess: (_result, patch) => {
-			if (patch.triggers) toast.success("Triggers saved");
+			if (patch.triggers)
+				toast.success(
+					t({
+						id: "dashboard.automations.body.triggersSavedToast",
+						message: "Triggers saved",
+					}),
+				);
 		},
 		// The pickers re-render from the Electric-synced row, so a rejected
 		// update silently snaps back without this.
 		onError: (error) =>
-			toast.error(errorMessage(error, "Failed to update automation")),
+			toast.error(
+				errorMessage(
+					error,
+					t({
+						id: "dashboard.automations.body.updateFailedToast",
+						message: "Failed to update automation",
+					}),
+				),
+			),
 	});
 
 	const setPromptMutation = useMutation({
@@ -78,7 +92,15 @@ export function AutomationBody({
 			});
 		},
 		onError: (error) =>
-			toast.error(errorMessage(error, "Failed to update prompt")),
+			toast.error(
+				errorMessage(
+					error,
+					t({
+						id: "dashboard.automations.body.promptUpdateFailedToast",
+						message: "Failed to update prompt",
+					}),
+				),
+			),
 	});
 
 	const searchFiles = useProjectFileSearch({
@@ -100,8 +122,11 @@ export function AutomationBody({
 		!matchAgentChoice(hostAgents, automation.agent);
 
 	return (
-		<div className="flex-1 overflow-y-auto px-8 py-8">
-			<div className="mx-auto flex w-full max-w-3xl flex-col">
+		<div className="flex-1 overflow-y-auto px-12 py-8">
+			{/* Full width, not a centered max-w column: a Slack sentence is wider
+			    than 3xl and would wrap onto a second line, shifting the rows below
+			    every time one renders. */}
+			<div className="flex w-full flex-col">
 				<EmojiTextInput
 					value={name}
 					onChange={setName}
@@ -113,7 +138,10 @@ export function AutomationBody({
 							updateMutation.mutate({ name: trimmed });
 						}
 					}}
-					placeholder="Automation title"
+					placeholder={t({
+						id: "dashboard.automations.body.titlePlaceholder",
+						message: "Automation title",
+					})}
 					className="mb-3 text-2xl font-semibold"
 				/>
 				<div className="flex items-center gap-2 text-sm">
@@ -122,7 +150,15 @@ export function AutomationBody({
 						onCheckedChange={onToggleEnabled}
 						disabled={readOnly || toggleDisabled}
 						aria-label={
-							automation.enabled ? "Pause automation" : "Resume automation"
+							automation.enabled
+								? t({
+										id: "dashboard.automations.body.pauseAriaLabel",
+										message: "Pause automation",
+									})
+								: t({
+										id: "dashboard.automations.body.resumeAriaLabel",
+										message: "Resume automation",
+									})
 						}
 					/>
 					<span className="text-muted-foreground">
@@ -220,7 +256,10 @@ export function AutomationBody({
 											setPromptMutation.mutate(next);
 										}
 									}}
-									placeholder="Add prompt e.g. look for crashes in $sentry"
+									placeholder={t({
+										id: "dashboard.automations.body.promptPlaceholder",
+										message: "Add prompt e.g. look for crashes in $sentry",
+									})}
 									searchFiles={searchFiles}
 								/>
 							</div>

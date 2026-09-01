@@ -1,4 +1,5 @@
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { formatRelativeTime } from "@superset/i18n/format";
 import { Button } from "@superset/ui/button";
 import {
 	DropdownMenu,
@@ -6,11 +7,19 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@superset/ui/dropdown-menu";
+import { DeletePageDialog } from "@superset/ui/page-comments";
 import { toast } from "@superset/ui/sonner";
 import { cn } from "@superset/ui/utils";
-import { formatDistanceToNowStrict } from "date-fns";
-import { Globe, Link2, Lock, MoreVertical, Pin, PinOff } from "lucide-react";
-import type { MouseEvent } from "react";
+import {
+	Globe,
+	Link2,
+	Lock,
+	MoreVertical,
+	Pin,
+	PinOff,
+	Trash2,
+} from "lucide-react";
+import { type MouseEvent, useState } from "react";
 import { PageThumbnail } from "./components/PageThumbnail";
 
 export interface PageCardItem {
@@ -18,42 +27,61 @@ export interface PageCardItem {
 	slug: string;
 	title: string;
 	url: string;
+	thumbnailUrl: string | null;
 	visibility: string;
 	createdAt: Date | string;
 	updatedAt: Date | string;
+	latestVersion: number | null;
+	sharedVersion: number | null;
+	createdByUserId: string | null;
+	ownerName: string | null;
 }
 
 interface PageCardProps {
 	page: PageCardItem;
 	isPinned: boolean;
+	currentUserId: string | undefined;
 	onOpen: (page: PageCardItem, event: MouseEvent) => void;
 	onTogglePin: (pageId: string) => void;
+	onDelete: (pageId: string) => Promise<void>;
 }
 
 export function PageCard({
 	page,
 	isPinned,
+	currentUserId,
 	onOpen,
 	onTogglePin,
+	onDelete,
 }: PageCardProps) {
+	const { t } = useLingui();
+	const [deleteOpen, setDeleteOpen] = useState(false);
 	const isShared = page.visibility === "org";
+	const isOwner =
+		currentUserId !== undefined && currentUserId === page.createdByUserId;
+	const ownerName = isOwner ? null : page.ownerName;
 	const VisibilityIcon = isShared ? Globe : Lock;
 	const edited = new Date(page.updatedAt).getTime();
 	const created = new Date(page.createdAt).getTime();
 	const wasEdited = edited - created > 60_000;
-	const timestamp = formatDistanceToNowStrict(
-		new Date(wasEdited ? edited : created),
-		{
-			addSuffix: true,
-		},
-	);
+	const timestamp = formatRelativeTime(wasEdited ? edited : created);
 
 	const copyLink = async () => {
 		try {
 			await navigator.clipboard.writeText(page.url);
-			toast.success("Link copied");
+			toast.success(
+				t({
+					id: "dashboard.pages.pageCard.linkCopied",
+					message: "Link copied",
+				}),
+			);
 		} catch {
-			toast.error("Could not copy the link");
+			toast.error(
+				t({
+					id: "dashboard.pages.pageCard.copyLinkFailed",
+					message: "Could not copy the link",
+				}),
+			);
 		}
 	};
 
@@ -64,7 +92,7 @@ export function PageCard({
 				onClick={(event) => onOpen(page, event)}
 				className="flex flex-1 flex-col text-left"
 			>
-				<PageThumbnail slug={page.slug} pageId={page.id} />
+				<PageThumbnail src={page.thumbnailUrl} />
 				<div className="flex flex-col gap-1 border-border/60 border-t px-3 py-2.5">
 					<span className="truncate font-medium text-sm">{page.title}</span>
 					<span className="flex items-center gap-1.5 text-muted-foreground text-xs">
@@ -78,6 +106,12 @@ export function PageCard({
 							)}{" "}
 							{timestamp}
 						</span>
+						{ownerName ? (
+							<>
+								<span aria-hidden="true">·</span>
+								<span className="truncate">{ownerName}</span>
+							</>
+						) : null}
 					</span>
 				</div>
 			</button>
@@ -92,7 +126,10 @@ export function PageCard({
 						type="button"
 						variant="ghost"
 						size="icon-sm"
-						aria-label={`Actions for ${page.title}`}
+						aria-label={t({
+							id: "dashboard.pages.pageCard.actionsFor",
+							message: `Actions for ${page.title}`,
+						})}
 						className={cn(
 							"absolute top-2 right-2 size-7 bg-background/80 backdrop-blur transition-opacity",
 							"opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100",
@@ -118,8 +155,25 @@ export function PageCard({
 						<Link2 className="size-4" />
 						<Trans id="dashboard.pages.pageCard.copyLink">Copy link</Trans>
 					</DropdownMenuItem>
+					{isOwner ? (
+						<DropdownMenuItem
+							variant="destructive"
+							onSelect={() => setDeleteOpen(true)}
+						>
+							<Trash2 className="size-4" />
+							<Trans id="dashboard.pages.pageCard.delete">Delete</Trans>
+						</DropdownMenuItem>
+					) : null}
 				</DropdownMenuContent>
 			</DropdownMenu>
+
+			<DeletePageDialog
+				open={deleteOpen}
+				onOpenChange={setDeleteOpen}
+				title={page.title}
+				versionCount={page.latestVersion ?? 1}
+				onConfirm={() => onDelete(page.id)}
+			/>
 		</div>
 	);
 }

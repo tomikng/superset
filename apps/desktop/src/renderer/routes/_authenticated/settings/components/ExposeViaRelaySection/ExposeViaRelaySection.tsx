@@ -1,4 +1,4 @@
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { COMPANY } from "@superset/shared/constants";
 import { Label } from "@superset/ui/label";
 import { toast } from "@superset/ui/sonner";
@@ -12,6 +12,7 @@ import { HighlightText } from "renderer/routes/_authenticated/settings/component
 import { useSettingsSearchQuery } from "renderer/stores/settings-state";
 
 export function ExposeViaRelaySection() {
+	const { t } = useLingui();
 	const searchQuery = useSettingsSearchQuery();
 	const utils = electronTrpc.useUtils();
 	const { data: exposeEnabled, isLoading } =
@@ -44,12 +45,33 @@ export function ExposeViaRelaySection() {
 
 	const runToggle = (enabled: boolean) => {
 		toast.promise(setExpose.mutateAsync({ enabled }), {
-			loading: "Restarting host services…",
-			success: ({ restartedOrgCount }) =>
-				restartedOrgCount > 0
-					? `Restarted ${restartedOrgCount} host service${restartedOrgCount === 1 ? "" : "s"}`
-					: "Setting saved",
-			error: (err: Error) => err.message ?? "Failed to update setting",
+			loading: t({
+				id: "settings.components.exposeViaRelay.restartingToast",
+				message: "Restarting host services…",
+			}),
+			success: ({ restartedOrgCount }) => {
+				if (restartedOrgCount === 0) {
+					return t({
+						id: "settings.components.exposeViaRelay.savedToast",
+						message: "Setting saved",
+					});
+				}
+				return restartedOrgCount === 1
+					? t({
+							id: "settings.components.exposeViaRelay.restartedOneToast",
+							message: "Restarted 1 host service",
+						})
+					: t({
+							id: "settings.components.exposeViaRelay.restartedManyToast",
+							message: `Restarted ${restartedOrgCount} host services`,
+						});
+			},
+			error: (err: Error) =>
+				err.message ??
+				t({
+					id: "settings.components.exposeViaRelay.updateFailedToast",
+					message: "Failed to update setting",
+				}),
 		});
 	};
 
@@ -60,7 +82,7 @@ export function ExposeViaRelaySection() {
 
 	const handleChange = (next: boolean) => {
 		if (next) {
-			gateFeature(GATED_FEATURES.REMOTE_WORKSPACES, () => openConfirm(true));
+			gateFeature(GATED_FEATURES.REMOTE_ACCESS, () => openConfirm(true));
 		} else {
 			openConfirm(false);
 		}
@@ -75,17 +97,19 @@ export function ExposeViaRelaySection() {
 						className="text-sm font-medium"
 					>
 						<HighlightText
-							text="Allow remote workspaces to access this device via relay"
+							text={t({
+								id: "settings.components.exposeViaRelay.label",
+								message: "Allow remote access to this device via relay",
+							})}
 							query={searchQuery}
 						/>
 					</Label>
 					<p className="text-xs text-muted-foreground">
 						<Trans id="settings.components.exposeViaRelay.hint">
-							When off, remote workspaces can't access the files and tools on
-							this device. You can still connect out to remote sandboxes from
-							here.{" "}
+							When off, nothing else can reach the files and tools on this
+							device. You can still connect out to remote sandboxes from here.{" "}
 							<a
-								href={`${COMPANY.DOCS_URL}/remote-workspaces`}
+								href={`${COMPANY.DOCS_URL}/remote-access`}
 								target="_blank"
 								rel="noopener noreferrer"
 								className="inline-flex items-center gap-1 text-primary hover:underline"

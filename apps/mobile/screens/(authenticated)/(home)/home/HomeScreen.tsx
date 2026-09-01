@@ -1,4 +1,6 @@
 import { LegendList } from "@legendapp/list/react-native";
+import { useLingui } from "@lingui/react/macro";
+import { i18n } from "@superset/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import { isAfter } from "date-fns";
 import * as Haptics from "expo-haptics";
@@ -27,6 +29,8 @@ import { usePinnedWorkspacesStore } from "@/screens/(authenticated)/stores/pinne
 import { pullRequestStatus } from "@/screens/(authenticated)/workspace/[id]/utils/pullRequest";
 import { HostOfflineView } from "./components/HostOfflineView";
 import { NewChatWidget } from "./components/NewChatWidget";
+import { targetKeyFor } from "./components/NewChatWidget/hooks/useNewChatTargets";
+import { useNewSessionPreferencesStore } from "./components/NewChatWidget/stores/newSessionPreferencesStore";
 import { OrganizationHeaderButton } from "./components/OrganizationHeaderButton";
 import { ProjectSectionHeader } from "./components/ProjectSectionHeader";
 import { ScopeBar } from "./components/ScopeBar";
@@ -41,6 +45,7 @@ import {
 	collapsedProjectKey,
 	useCollapsedProjectsStore,
 } from "./stores/collapsedProjectsStore";
+import { useComposerFocusStore } from "./stores/composerFocusStore";
 import {
 	SORT_OPTIONS,
 	useWorkspacesFilterStore,
@@ -92,6 +97,7 @@ function homeListItemKey(item: HomeListItem): string {
 }
 
 export function HomeScreen() {
+	const { t } = useLingui();
 	const router = useRouter();
 	const sort = useWorkspacesFilterStore((store) => store.sort);
 	const hasHydrated = useWorkspacesFilterStore((store) => store.hasHydrated);
@@ -100,6 +106,12 @@ export function HomeScreen() {
 	const { height: windowHeight } = useWindowDimensions();
 	const insets = useSafeAreaInsets();
 	const queryClient = useQueryClient();
+	const setTargetKey = useNewSessionPreferencesStore(
+		(state) => state.setTargetKey,
+	);
+	const requestComposerFocus = useComposerFocusStore(
+		(state) => state.requestFocus,
+	);
 	const { isLoadingOrganizations, activeOrganization } = useOrganizations();
 
 	const selectedHost = useSelectedHost();
@@ -278,7 +290,7 @@ export function HomeScreen() {
 			items.push({
 				kind: "projectHeader",
 				projectId: "__none",
-				name: "No project",
+				name: t({ id: "mobile.home.noProject", message: "No project" }),
 				count: orphans.length,
 				collapsed: false,
 			});
@@ -298,6 +310,7 @@ export function HomeScreen() {
 		activityTs,
 		collapsed,
 		collapseHydrated,
+		t,
 	]);
 
 	const composerWorkspaces = useMemo(
@@ -424,6 +437,7 @@ export function HomeScreen() {
 			}
 			if (item.kind === "projectHeader") {
 				// Only a machine's projects get headers — Cloud is a flat scope.
+				const machineId = selectedHost?.machineId;
 				return (
 					<ProjectSectionHeader
 						name={item.name}
@@ -432,8 +446,19 @@ export function HomeScreen() {
 						collapsed={item.collapsed}
 						onToggle={() => {
 							void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-							toggleProject(selectedHost?.machineId ?? "", item.projectId);
+							toggleProject(machineId ?? "", item.projectId);
 						}}
+						onNewWorkspace={
+							// "__none" collects orphans of projects the host no longer
+							// reports — there is nothing to create into.
+							machineId && item.projectId !== "__none"
+								? () => {
+										void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+										setTargetKey(targetKeyFor(item.projectId, machineId));
+										requestComposerFocus();
+									}
+								: undefined
+						}
 					/>
 				);
 			}
@@ -469,17 +494,20 @@ export function HomeScreen() {
 			terminalsByWorkspace,
 			toggleProject,
 			selectedHost,
+			setTargetKey,
+			requestComposerFocus,
 		],
 	);
+
+	const sortOption = SORT_OPTIONS.find((option) => option.value === sort);
+	const sortLabel = sortOption ? i18n._(sortOption.label) : "";
 
 	const scopeBar = (
 		<ScopeBar
 			scope={cloudScope ? "cloud" : "host"}
 			hostName={selectedHost?.name ?? null}
 			hostOnline={selectedHost?.isOnline ?? false}
-			sortLabel={
-				SORT_OPTIONS.find((option) => option.value === sort)?.label ?? ""
-			}
+			sortLabel={sortLabel}
 			onPressScope={() => {
 				void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 				router.push("/(authenticated)/(home)/filter/scope");
@@ -511,7 +539,10 @@ export function HomeScreen() {
 				<Stack.Toolbar placement="right">
 					<Stack.Toolbar.Button
 						icon="magnifyingglass"
-						accessibilityLabel="Search workspaces"
+						accessibilityLabel={t({
+							id: "mobile.home.searchWorkspaces",
+							message: "Search workspaces",
+						})}
 						onPress={() => {
 							void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 							router.push("/(authenticated)/(home)/search");
@@ -557,8 +588,14 @@ export function HomeScreen() {
 							<View className="items-center justify-center py-20">
 								<Text className="text-center text-muted-foreground">
 									{cloudScope
-										? "No cloud workspaces yet"
-										: "No projects on this host yet"}
+										? t({
+												id: "mobile.home.emptyCloud",
+												message: "No cloud workspaces yet",
+											})
+										: t({
+												id: "mobile.home.emptyHost",
+												message: "No projects on this host yet",
+											})}
 								</Text>
 							</View>
 						) : null
