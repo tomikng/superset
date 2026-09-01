@@ -1,3 +1,4 @@
+import "./test-env";
 import { describe, expect, it } from "bun:test";
 import { buildHostRoutingKey } from "@superset/shared/host-routing";
 import {

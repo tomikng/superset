@@ -11,9 +11,10 @@
   apps/relay/src/index.ts serves on { port: env.RELAY_PORT, hostname: "::" }.
   apps/relay/fly.toml pins RELAY_PORT="3102" the same way.
 
-  The relay's env module is the only one in this repo that would reject a missing
-  KV_REST_API_URL / KV_REST_API_TOKEN / NEXT_PUBLIC_API_URL — those must be real
-  (SRH + the api hostname), not placeholders.
+  apps/relay/src/env.ts requires NEXT_PUBLIC_API_URL (the api hostname); the
+  relay speaks tunnel v2 with an in-memory host registry and no longer reads
+  KV_REST_API_URL / KV_REST_API_TOKEN, so it does not wait for
+  serverless-redis-http any more (apps/relay/README.md).
 -->
 <plist version="1.0">
 <dict>
@@ -27,7 +28,7 @@
 	<array>
 		<string>/bin/bash</string>
 		<string>-c</string>
-		<string>set -a; . __SUPERSET_ROOT__/.env; set +a; unset SUPERSET_ALLOW_SIGNUP; : "${RELAY_PORT:=3102}"; export RELAY_PORT; for i in $(seq 1 60); do /usr/bin/nc -z 127.0.0.1 "${LOCAL_SRH_PORT:-8079}" &amp;&amp; break; echo "[relay] waiting for serverless-redis-http on ${LOCAL_SRH_PORT:-8079}"; sleep 3; done; exec __BUN_BIN__ run start</string>
+		<string>set -a; . __SUPERSET_ROOT__/.env; set +a; unset SUPERSET_ALLOW_SIGNUP; : "${RELAY_PORT:=3102}"; export RELAY_PORT; exec __BUN_BIN__ run start</string>
 	</array>
 
 	<key>EnvironmentVariables</key>
@@ -38,16 +39,10 @@
 		<string>__BUN_DIR__:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
 		<key>NODE_ENV</key>
 		<string>production</string>
-		<!-- Fly-only identity vars.  apps/relay/src/env.ts defaults all three to
-		     "local"; they are set explicitly here so the /health payload and the
-		     Redis host-directory keys identify this box rather than reading
-		     "local" on a machine that is anything but. -->
+		<!-- Fly-era label. apps/relay/src/env.ts defaults it to "local"; set here
+		     so /health and /_whoowns identify this box. -->
 		<key>FLY_REGION</key>
 		<string>ms1</string>
-		<key>FLY_MACHINE_ID</key>
-		<string>ms1</string>
-		<key>FLY_APP_NAME</key>
-		<string>superset-relay-selfhost</string>
 	</dict>
 
 	<key>RunAtLoad</key>
@@ -58,11 +53,10 @@
 	<integer>20</integer>
 
 	<!-- apps/relay/src/index.ts installs SIGINT and SIGTERM handlers that close
-	     the listener, drain every open tunnel with the WS_CLOSE_DRAIN code and
-	     clear this machine's directory entries before exiting.  fly.toml allows
-	     10s for that; launchd's default ExitTimeOut is 20s, raised to 30 so the
-	     drain is never cut short by SIGKILL (a hard kill leaves stale entries in
-	     the Redis host directory and TCP-RSTs every connected host-service). -->
+	     the listener and every host control socket (1001) so host-services
+	     reconnect within seconds instead of waiting on their 75s watchdog after
+	     a TCP RST. launchd's default ExitTimeOut is 20s, raised to 30 so the
+	     drain is never cut short by SIGKILL. -->
 	<key>ExitTimeOut</key>
 	<integer>30</integer>
 

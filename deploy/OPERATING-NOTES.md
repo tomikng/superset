@@ -74,30 +74,27 @@ Three macOS-specific caveats:
 
 This is intentional and should not be "fixed" during a later hardening pass.
 
-Redis backs exactly one thing: the relay's host directory in
-`apps/relay/src/directory.ts`. That module stores three keys —
-`relay:tunnel-owner` and `relay:tunnel-meta` (hashes keyed by host id) and
-`relay:tunnel-ttl` (a sorted set scored by expiry). All of it is **TTL-scoped
-presence data**: which host is currently connected to which relay instance, and
-when it last ponged. It is a live view of open WebSocket connections, not a
-record of anything.
+Redis backs the API only: `packages/auth` rate limiting, the `/mcp`,
+automation-webhook and support-lookup routes, and the
+`/api/hosts/jobs/sync-presence` job (which reads an always-empty directory now
+and skips itself). **The relay no longer touches Redis.** Until 2026-09-01 the
+relay kept its host directory there (`relay:tunnel-owner`, `relay:tunnel-meta`,
+`relay:tunnel-ttl` from the old `apps/relay/src/directory.ts`) — TTL-scoped
+presence data, a live view of open WebSocket connections. That module is gone:
+the relay now speaks tunnel v2 with an in-memory `HostRegistry` as the single
+presence authority (`apps/relay/README.md`), which is why a single-instance
+self-host never needed a shared directory in the first place.
 
-Persisting it would be actively harmful. After a reboot, no host is connected —
-every WebSocket died with the process. Restoring a snapshot would repopulate
-`relay:tunnel-owner` with ownership claims for tunnels that no longer exist,
-and the relay would route requests toward a dead machine id until the sweep
-reclaimed them. Starting empty is the correct state: hosts re-register on
-reconnect, and the directory rebuilds itself within seconds.
+Persisting Redis would still be pointless for what remains (rate-limit
+counters, short-lived webhook state), so the prod file keeps the repo's "no
+volume" decision and goes one step further with
+`command: ["redis-server", "--save", "", "--appendonly", "no"]`, disabling RDB
+snapshots and AOF so Redis does not write persistence files into the
+container's writable layer either.
 
-The prod file therefore keeps the repo's "no volume" decision and goes one step
-further with `command: ["redis-server", "--save", "", "--appendonly", "no"]`,
-disabling RDB snapshots and AOF so Redis does not write persistence files into
-the container's writable layer either.
-
-The one consequence to know: **after any restart of the `redis` service, the
-directory is empty until each host reconnects.** Restarting Redis is a
-user-visible blip on the relay, not a no-op. `serverless-redis-http` sits in
-front of it and depends on it, so restart the pair together.
+Restarting Redis no longer affects host presence — the relay does not consult
+it. It only resets the API's rate-limit counters. `serverless-redis-http` sits
+in front of it and depends on it, so restart the pair together.
 
 ---
 
