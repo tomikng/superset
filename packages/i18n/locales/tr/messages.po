@@ -718,34 +718,19 @@ msgid "auth.createOrganization.title"
 msgstr "Kuruluş oluştur"
 
 #. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.continueWithGitHub"
-msgstr "GitHub ile devam et"
-
-#. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.continueWithGoogle"
-msgstr "Google ile devam et"
-
-#. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.lastUsed"
-msgstr "Son kullanılan"
-
-#. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/components/SupersetLogo/SupersetLogo.tsx
 msgid "auth.signIn.logoTitle"
 msgstr "Superset"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.restoringSession"
-msgstr "Oturumunuz geri yükleniyor"
+msgid "auth.signIn.passwordLabel"
+msgstr "Parola"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.subtitle"
-msgstr "Başlamak için oturum açın"
+msgid "auth.signIn.restoringSession"
+msgstr "Oturumunuz geri yükleniyor"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
@@ -17183,7 +17168,6 @@ msgstr "Diğer eylemler"
 #. js-lingui-explicit-id
 #: ../../apps/mobile/components/ai-elements/inline-citation.tsx
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.common.next"
 msgstr "Sonraki"
 
@@ -17243,9 +17227,7 @@ msgid "mobile.common.showMoreLines"
 msgstr "{0, plural, one {# satır daha göster} other {# satır daha göster}}"
 
 #. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.common.somethingWentWrong"
 msgstr "Bir şeyler ters gitti"
 
@@ -18547,49 +18529,19 @@ msgid "mobile.settings.section.support"
 msgstr "Destek"
 
 #. js-lingui-explicit-id
-#. placeholder {0}: PROVIDER_NAME[provider]
-#: ../../apps/mobile/screens/(auth)/sign-in/components/SocialButton/SocialButton.tsx
-msgid "mobile.signIn.continueWithProvider"
-msgstr "{0} ile devam et"
-
-#. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.confirm"
 msgstr "Oturum aç"
 
 #. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.emailLabel"
 msgstr "E-posta"
 
 #. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
-msgid "mobile.signIn.email.link"
-msgstr "E-posta ile oturum aç"
-
-#. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.passwordLabel"
 msgstr "{email} için parola"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
-msgid "mobile.signIn.email.promptTitle"
-msgstr "E-posta ile oturum aç"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
-msgid "mobile.signIn.legal"
-msgstr "Oturum açarak şunları kabul edersiniz:\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
-msgid "mobile.signIn.subtitle"
-msgstr "Başlamak için oturum açın"
 
 #. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
@@ -19681,6 +19633,7 @@ msgstr "Siliniyor…"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/_authenticated/settings/account/components/AccountSettings/AccountSettings.tsx
+#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
 msgid "settings.account.emailLabel"
 msgstr "E-posta"
 
@@ -30754,66 +30707,6 @@ msgstr "Ana sayfa"
 #: ../../apps/web/src/app/(dashboard-legacy)/components/SidebarNav/SidebarNav.tsx
 msgid "web.sidebarNav.integrations"
 msgstr "Entegrasyonlar"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.devButton"
-msgstr "Yerel yönetici olarak oturum aç (dev)"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.devError"
-msgstr "Dev oturum açma başarısız"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.error"
-msgstr "Oturum açılamadı. Lütfen yeniden deneyin."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.lastUsed"
-msgstr "Son kullanılan"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.legal"
-msgstr "Devam'a tıklayarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1> belgelerimizi kabul edersiniz."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.loading"
-msgstr "Yükleniyor..."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.signingIn"
-msgstr "Oturum açılıyor..."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.signUpPrompt"
-msgstr "Hesabınız yok mu? <0>Kaydolun</0>"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.subtitle"
-msgstr "Superset'e devam etmek için oturum açın"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.title"
-msgstr "Tekrar hoş geldiniz"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.withGithub"
-msgstr "GitHub ile oturum aç"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.withGoogle"
-msgstr "Google ile oturum aç"
 
 #. js-lingui-explicit-id
 #: ../../apps/web/src/app/(auth)/sign-up/[[...sign-up]]/page.tsx

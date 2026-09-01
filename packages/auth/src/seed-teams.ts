@@ -203,10 +203,7 @@ async function upsertMembership(
 
 	if (existing) {
 		if (existing.role !== role) {
-			await db
-				.update(members)
-				.set({ role })
-				.where(eq(members.id, existing.id));
+			await db.update(members).set({ role }).where(eq(members.id, existing.id));
 		}
 		return;
 	}
@@ -305,9 +302,11 @@ async function seedCliOAuthClient(): Promise<void> {
 		return;
 	}
 
-	await db
-		.insert(oauthClients)
-		.values({ clientId: CLI_CLIENT_ID, ...registration, createdAt: new Date() });
+	await db.insert(oauthClients).values({
+		clientId: CLI_CLIENT_ID,
+		...registration,
+		createdAt: new Date(),
+	});
 	console.log(`Seeded CLI OAuth client (web: ${webUrls.join(", ")})`);
 }
 

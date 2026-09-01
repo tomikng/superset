@@ -102,8 +102,8 @@ export default function SignInPage() {
 					{isLoading ? "Signing in..." : "Sign in"}
 				</Button>
 				<p className="text-muted-foreground px-8 text-center text-sm">
-					Accounts on this instance are created by an administrator. If you
-					need access, ask them to add you.
+					Accounts on this instance are created by an administrator. If you need
+					access, ask them to add you.
 				</p>
 				<p className="text-muted-foreground px-8 text-center text-sm">
 					By continuing, you agree to our{" "}

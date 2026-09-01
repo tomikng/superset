@@ -718,34 +718,19 @@ msgid "auth.createOrganization.title"
 msgstr "組織を作成"
 
 #. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.continueWithGitHub"
-msgstr "GitHubで続行"
-
-#. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.continueWithGoogle"
-msgstr "Googleで続行"
-
-#. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.lastUsed"
-msgstr "前回使用"
-
-#. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/components/SupersetLogo/SupersetLogo.tsx
 msgid "auth.signIn.logoTitle"
 msgstr "Superset"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.restoringSession"
-msgstr "セッションを復元中"
+msgid "auth.signIn.passwordLabel"
+msgstr "パスワード"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.subtitle"
-msgstr "サインインして始めましょう"
+msgid "auth.signIn.restoringSession"
+msgstr "セッションを復元中"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
@@ -17183,7 +17168,6 @@ msgstr "その他の操作"
 #. js-lingui-explicit-id
 #: ../../apps/mobile/components/ai-elements/inline-citation.tsx
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.common.next"
 msgstr "次へ"
 
@@ -17243,9 +17227,7 @@ msgid "mobile.common.showMoreLines"
 msgstr "{0, plural, one {さらに#行を表示} other {さらに#行を表示}}"
 
 #. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.common.somethingWentWrong"
 msgstr "問題が発生しました"
 
@@ -18546,49 +18528,19 @@ msgid "mobile.settings.section.support"
 msgstr "サポート"
 
 #. js-lingui-explicit-id
-#. placeholder {0}: PROVIDER_NAME[provider]
-#: ../../apps/mobile/screens/(auth)/sign-in/components/SocialButton/SocialButton.tsx
-msgid "mobile.signIn.continueWithProvider"
-msgstr "{0}で続行"
-
-#. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.confirm"
 msgstr "サインイン"
 
 #. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.emailLabel"
 msgstr "メール"
 
 #. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
-msgid "mobile.signIn.email.link"
-msgstr "メールでサインイン"
-
-#. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.passwordLabel"
 msgstr "{email}のパスワード"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
-msgid "mobile.signIn.email.promptTitle"
-msgstr "メールでサインイン"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
-msgid "mobile.signIn.legal"
-msgstr "サインインすると、以下に同意したことになります\n"
-""
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
-msgid "mobile.signIn.subtitle"
-msgstr "サインインして始めましょう"
 
 #. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
@@ -19680,6 +19632,7 @@ msgstr "削除中…"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/_authenticated/settings/account/components/AccountSettings/AccountSettings.tsx
+#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
 msgid "settings.account.emailLabel"
 msgstr "メール"
 
@@ -30753,66 +30706,6 @@ msgstr "ホーム"
 #: ../../apps/web/src/app/(dashboard-legacy)/components/SidebarNav/SidebarNav.tsx
 msgid "web.sidebarNav.integrations"
 msgstr "連携"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.devButton"
-msgstr "ローカル管理者としてサインイン (dev)"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.devError"
-msgstr "開発用サインインに失敗しました"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.error"
-msgstr "サインインに失敗しました。もう一度お試しください。"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.lastUsed"
-msgstr "前回使用"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.legal"
-msgstr "続行をクリックすると、<0>利用規約</0>と<1>プライバシーポリシー</1>に同意したことになります。"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.loading"
-msgstr "読み込み中..."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.signingIn"
-msgstr "サインイン中..."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.signUpPrompt"
-msgstr "アカウントをお持ちでない場合は<0>サインアップ</0>"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.subtitle"
-msgstr "サインインしてSupersetに進む"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.title"
-msgstr "おかえりなさい"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.withGithub"
-msgstr "GitHubでサインイン"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.withGoogle"
-msgstr "Googleでサインイン"
 
 #. js-lingui-explicit-id
 #: ../../apps/web/src/app/(auth)/sign-up/[[...sign-up]]/page.tsx

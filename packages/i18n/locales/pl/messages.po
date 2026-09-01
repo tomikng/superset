@@ -718,34 +718,19 @@ msgid "auth.createOrganization.title"
 msgstr "Utwórz organizację"
 
 #. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.continueWithGitHub"
-msgstr "Kontynuuj z GitHub"
-
-#. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.continueWithGoogle"
-msgstr "Kontynuuj z Google"
-
-#. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.lastUsed"
-msgstr "Ostatnio używane"
-
-#. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/components/SupersetLogo/SupersetLogo.tsx
 msgid "auth.signIn.logoTitle"
 msgstr "Superset"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.restoringSession"
-msgstr "Przywracanie sesji"
+msgid "auth.signIn.passwordLabel"
+msgstr "Hasło"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.subtitle"
-msgstr "Zaloguj się, aby zacząć"
+msgid "auth.signIn.restoringSession"
+msgstr "Przywracanie sesji"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
@@ -17183,7 +17168,6 @@ msgstr "Więcej akcji"
 #. js-lingui-explicit-id
 #: ../../apps/mobile/components/ai-elements/inline-citation.tsx
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.common.next"
 msgstr "Dalej"
 
@@ -17243,9 +17227,7 @@ msgid "mobile.common.showMoreLines"
 msgstr "{0, plural, one {Pokaż jeszcze # wiersz} few {Pokaż jeszcze # wiersze} many {Pokaż jeszcze # wierszy} other {Pokaż jeszcze # wiersza}}"
 
 #. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.common.somethingWentWrong"
 msgstr "Coś poszło nie tak"
 
@@ -18547,49 +18529,19 @@ msgid "mobile.settings.section.support"
 msgstr "Wsparcie"
 
 #. js-lingui-explicit-id
-#. placeholder {0}: PROVIDER_NAME[provider]
-#: ../../apps/mobile/screens/(auth)/sign-in/components/SocialButton/SocialButton.tsx
-msgid "mobile.signIn.continueWithProvider"
-msgstr "Kontynuuj z {0}"
-
-#. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.confirm"
 msgstr "Zaloguj się"
 
 #. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.emailLabel"
 msgstr "E-mail"
 
 #. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
-msgid "mobile.signIn.email.link"
-msgstr "Zaloguj się e-mailem"
-
-#. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.passwordLabel"
 msgstr "Hasło dla {email}"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
-msgid "mobile.signIn.email.promptTitle"
-msgstr "Zaloguj się e-mailem"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
-msgid "mobile.signIn.legal"
-msgstr "Logując się, akceptujesz nasze\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
-msgid "mobile.signIn.subtitle"
-msgstr "Zaloguj się, aby zacząć"
 
 #. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
@@ -19681,6 +19633,7 @@ msgstr "Usuwanie…"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/_authenticated/settings/account/components/AccountSettings/AccountSettings.tsx
+#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
 msgid "settings.account.emailLabel"
 msgstr "E-mail"
 
@@ -30754,66 +30707,6 @@ msgstr "Start"
 #: ../../apps/web/src/app/(dashboard-legacy)/components/SidebarNav/SidebarNav.tsx
 msgid "web.sidebarNav.integrations"
 msgstr "Integracje"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.devButton"
-msgstr "Zaloguj się jako Local Admin (dev)"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.devError"
-msgstr "Logowanie deweloperskie nie powiodło się"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.error"
-msgstr "Nie udało się zalogować. Spróbuj ponownie."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.lastUsed"
-msgstr "Ostatnio używane"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.legal"
-msgstr "Klikając „kontynuuj”, akceptujesz <0>Warunki korzystania z usługi</0> i <1>Politykę prywatności</1>."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.loading"
-msgstr "Wczytywanie..."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.signingIn"
-msgstr "Logowanie..."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.signUpPrompt"
-msgstr "Nie masz konta? <0>Zarejestruj się</0>"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.subtitle"
-msgstr "Zaloguj się, aby przejść do Superset"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.title"
-msgstr "Witamy ponownie"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.withGithub"
-msgstr "Zaloguj się przez GitHub"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.withGoogle"
-msgstr "Zaloguj się przez Google"
 
 #. js-lingui-explicit-id
 #: ../../apps/web/src/app/(auth)/sign-up/[[...sign-up]]/page.tsx

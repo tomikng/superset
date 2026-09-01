@@ -718,34 +718,19 @@ msgid "auth.createOrganization.title"
 msgstr "创建组织"
 
 #. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.continueWithGitHub"
-msgstr "使用GitHub继续"
-
-#. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.continueWithGoogle"
-msgstr "使用Google继续"
-
-#. js-lingui-explicit-id
-#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.lastUsed"
-msgstr "上次使用"
-
-#. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/components/SupersetLogo/SupersetLogo.tsx
 msgid "auth.signIn.logoTitle"
 msgstr "Superset"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.restoringSession"
-msgstr "正在恢复你的会话"
+msgid "auth.signIn.passwordLabel"
+msgstr "密码"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
-msgid "auth.signIn.subtitle"
-msgstr "登录即可开始"
+msgid "auth.signIn.restoringSession"
+msgstr "正在恢复你的会话"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
@@ -17183,7 +17168,6 @@ msgstr "更多操作"
 #. js-lingui-explicit-id
 #: ../../apps/mobile/components/ai-elements/inline-citation.tsx
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.common.next"
 msgstr "下一步"
 
@@ -17243,9 +17227,7 @@ msgid "mobile.common.showMoreLines"
 msgstr "{0, plural, one {再显示#行} other {再显示#行}}"
 
 #. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.common.somethingWentWrong"
 msgstr "出了点问题"
 
@@ -18546,49 +18528,19 @@ msgid "mobile.settings.section.support"
 msgstr "支持"
 
 #. js-lingui-explicit-id
-#. placeholder {0}: PROVIDER_NAME[provider]
-#: ../../apps/mobile/screens/(auth)/sign-in/components/SocialButton/SocialButton.tsx
-msgid "mobile.signIn.continueWithProvider"
-msgstr "使用{0}继续"
-
-#. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.confirm"
 msgstr "登录"
 
 #. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.emailLabel"
 msgstr "邮箱"
 
 #. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
-msgid "mobile.signIn.email.link"
-msgstr "使用邮箱登录"
-
-#. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/components/DevSignInOptions/DevSignInOptions.tsx
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
 msgid "mobile.signIn.email.passwordLabel"
 msgstr "{email}的密码"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/components/EmailSignInLink/EmailSignInLink.tsx
-msgid "mobile.signIn.email.promptTitle"
-msgstr "使用邮箱登录"
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
-msgid "mobile.signIn.legal"
-msgstr "登录即表示你同意我们的\n"
-""
-
-#. js-lingui-explicit-id
-#: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
-msgid "mobile.signIn.subtitle"
-msgstr "登录即可开始"
 
 #. js-lingui-explicit-id
 #: ../../apps/mobile/screens/(auth)/sign-in/SignInScreen.tsx
@@ -19680,6 +19632,7 @@ msgstr "正在删除…"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/routes/_authenticated/settings/account/components/AccountSettings/AccountSettings.tsx
+#: ../../apps/desktop/src/renderer/routes/sign-in/page.tsx
 msgid "settings.account.emailLabel"
 msgstr "邮箱"
 
@@ -30753,66 +30706,6 @@ msgstr "主页"
 #: ../../apps/web/src/app/(dashboard-legacy)/components/SidebarNav/SidebarNav.tsx
 msgid "web.sidebarNav.integrations"
 msgstr "集成"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.devButton"
-msgstr "以本地管理员身份登录（开发）"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.devError"
-msgstr "开发登录失败"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.error"
-msgstr "登录失败。请重试。"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.lastUsed"
-msgstr "上次使用"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.legal"
-msgstr "点击继续即表示你同意我们的<0>服务条款</0>和<1>隐私政策</1>。"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.loading"
-msgstr "加载中..."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.signingIn"
-msgstr "正在登录..."
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.signUpPrompt"
-msgstr "还没有账户？<0>注册</0>"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.subtitle"
-msgstr "登录以继续使用Superset"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.title"
-msgstr "欢迎回来"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.withGithub"
-msgstr "使用GitHub登录"
-
-#. js-lingui-explicit-id
-#: ../../apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
-msgid "web.signIn.withGoogle"
-msgstr "使用Google登录"
 
 #. js-lingui-explicit-id
 #: ../../apps/web/src/app/(auth)/sign-up/[[...sign-up]]/page.tsx

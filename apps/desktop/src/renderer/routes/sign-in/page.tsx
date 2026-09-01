@@ -7,6 +7,7 @@
  * credential POST is done by the main process (see auth.signInWithPassword)
  * because the packaged renderer's file:// origin fails Better Auth's CSRF check.
  */
+import { Trans } from "@lingui/react/macro";
 import { COMPANY } from "@superset/shared/constants";
 import { Button } from "@superset/ui/button";
 import { Input } from "@superset/ui/input";
@@ -99,12 +100,16 @@ function SignInPage() {
 
 					<div className="text-center mb-8">
 						<h1 className="text-xl font-semibold text-foreground mb-2">
-							Sign in to Superset
+							<Trans id="auth.signIn.welcomeTitle">Welcome to Superset</Trans>
 						</h1>
 						<p className="text-sm text-muted-foreground">
-							{hasLocalToken
-								? "Restoring your session"
-								: "Use the credentials your administrator issued"}
+							{hasLocalToken ? (
+								<Trans id="auth.signIn.restoringSession">
+									Restoring your session
+								</Trans>
+							) : (
+								"Use the credentials your administrator issued"
+							)}
 						</p>
 					</div>
 
@@ -113,7 +118,9 @@ function SignInPage() {
 						className="flex flex-col gap-4 w-full max-w-xs"
 					>
 						<div className="flex flex-col gap-2">
-							<Label htmlFor="email">Email</Label>
+							<Label htmlFor="email">
+								<Trans id="settings.account.emailLabel">Email</Trans>
+							</Label>
 							<Input
 								id="email"
 								type="email"
@@ -126,7 +133,9 @@ function SignInPage() {
 						</div>
 
 						<div className="flex flex-col gap-2">
-							<Label htmlFor="password">Password</Label>
+							<Label htmlFor="password">
+								<Trans id="auth.signIn.passwordLabel">Password</Trans>
+							</Label>
 							<Input
 								id="password"
 								type="password"
@@ -155,24 +164,26 @@ function SignInPage() {
 					</form>
 
 					<p className="mt-8 text-xs text-muted-foreground/70 text-center max-w-xs">
-						By signing in, you agree to our{" "}
-						<a
-							href={COMPANY.TERMS_URL}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="underline hover:text-muted-foreground transition-colors"
-						>
-							Terms of Service
-						</a>{" "}
-						and{" "}
-						<a
-							href={COMPANY.PRIVACY_URL}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="underline hover:text-muted-foreground transition-colors"
-						>
-							Privacy Policy
-						</a>
+						<Trans id="auth.signIn.termsAgreement">
+							By signing in, you agree to our{" "}
+							<a
+								href={COMPANY.TERMS_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="underline hover:text-muted-foreground transition-colors"
+							>
+								Terms of Service
+							</a>{" "}
+							and{" "}
+							<a
+								href={COMPANY.PRIVACY_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="underline hover:text-muted-foreground transition-colors"
+							>
+								Privacy Policy
+							</a>
+						</Trans>
 					</p>
 				</div>
 			</div>

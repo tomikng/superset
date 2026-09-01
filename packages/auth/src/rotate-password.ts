@@ -18,11 +18,11 @@ import { randomBytes } from "node:crypto";
 import { chmodSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { env } from "./env";
 import { db } from "@superset/db/client";
 import { accounts, users } from "@superset/db/schema";
 import { hashPassword, verifyPassword } from "better-auth/crypto";
 import { and, eq } from "drizzle-orm";
+import { env } from "./env";
 
 const CREDENTIAL_PROVIDER = "credential";
 const OUT_FILE = join(homedir(), "superset-credentials.txt");
@@ -86,7 +86,9 @@ async function main(): Promise<void> {
 	chmodSync(OUT_FILE, 0o600);
 
 	console.log(`Rotated the password for ${email}.`);
-	console.log(`Written to ${OUT_FILE} (mode 600). Not printed here on purpose.`);
+	console.log(
+		`Written to ${OUT_FILE} (mode 600). Not printed here on purpose.`,
+	);
 	console.log("Existing sessions stay valid; sign-in now needs the new one.");
 }
 
