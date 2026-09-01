@@ -30,7 +30,7 @@ self-host releases are built here and published by copying the artifacts to
 
 ## Identity / notary
 
-- `Developer ID Application: <Developer ID name> (Q89XY3A42H)` — in the login keychain
+- the `Developer ID Application: <name> (<team id>)` certificate — in the login keychain; its name without the prefix is `CSC_NAME` in `~/.superset-selfhost.env`
   (`security find-identity -v -p codesigning`).
 - Notary creds: keychain profile **`hive-notary`** (same Apple team; verify with
   `xcrun notarytool history --keychain-profile hive-notary`). If it's dead, ask the
@@ -48,17 +48,17 @@ export PATH="$HOME/.bun/bin:$PATH"
 cd ../superset-release && bun install --frozen
 cd apps/desktop
 export NODE_ENV=production TARGET_ARCH=arm64 SUPERSET_WORKSPACE_NAME=superset
-export NEXT_PUBLIC_API_URL=https://superset-api.tom-nguyen.dev
-export NEXT_PUBLIC_WEB_URL=https://superset-app.tom-nguyen.dev
-export NEXT_PUBLIC_DOCS_URL=https://superset-app.tom-nguyen.dev
-export NEXT_PUBLIC_MARKETING_URL=https://superset-app.tom-nguyen.dev
-export RELAY_URL=https://superset-relay.tom-nguyen.dev
+# Public URLs, signing identity and update feed are not in git. They live in
+# ~/.superset-selfhost.env (chmod 600): NEXT_PUBLIC_API_URL, NEXT_PUBLIC_WEB_URL,
+# NEXT_PUBLIC_DOCS_URL, NEXT_PUBLIC_MARKETING_URL, RELAY_URL,
+# DESKTOP_UPDATE_FEED_URL (the self-host's /releases — never the upstream feed),
+# CSC_NAME (cert name without the "Developer ID Application:" prefix —
+# electron-builder rejects it), APPLE_TEAM_ID.
+set -a; . "$HOME/.superset-selfhost.env"; set +a
 export NEXT_PUBLIC_POSTHOG_KEY=phc_unused_selfhosted NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
-export DESKTOP_UPDATE_FEED_URL=https://superset-app.tom-nguyen.dev/releases   # never the upstream feed
 bun run install:deps && bun run clean:dev && bun run generate:icons && bun run compile:app \
   && bun run copy:native-modules && bun run validate:native-runtime
-export CSC_NAME="<Developer ID name> (Q89XY3A42H)"   # no "Developer ID Application:" prefix — electron-builder rejects it
-export APPLE_KEYCHAIN_PROFILE=hive-notary APPLE_TEAM_ID=Q89XY3A42H
+export APPLE_KEYCHAIN_PROFILE=hive-notary
 bun run package -- --publish never --config electron-builder.ts --arm64
 ```
 
@@ -69,7 +69,7 @@ Output in `apps/desktop/release/`: `Superset-<ver>-arm64.dmg`,
 
 ```bash
 cd apps/desktop/release
-codesign --force -s Q89XY3A42H Superset-<ver>-arm64.dmg
+codesign --force -s "$APPLE_TEAM_ID" Superset-<ver>-arm64.dmg
 xcrun notarytool submit Superset-<ver>-arm64.dmg --keychain-profile hive-notary --wait
 xcrun stapler staple Superset-<ver>-arm64.dmg
 spctl -a -t open --context context:primary-signature -v Superset-<ver>-arm64.dmg   # "accepted source=Notarized Developer ID"
@@ -82,10 +82,10 @@ updater downloads the **zip**, and the yml's sha512 refers to the zip.
 ## Publish
 
 The feed is the static `releases` launchd job on ms1 serving
-`~/superset-releases` at `https://superset-app.tom-nguyen.dev/releases/`
-(deploy/launchd/README.md "Desktop update feed"). GitHub Releases can't be the
-feed: the mirror is private, so assets 404 for the anonymous updater. Publishing
-is four files over scp (`ms1` is an ssh alias):
+`~/superset-releases` at `$DESKTOP_UPDATE_FEED_URL/`
+(deploy/launchd/README.md "Desktop update feed"). GitHub Releases is
+deliberately not the feed: the self-host serves its own. Publishing is four
+files over scp (`ms1` is an ssh alias):
 
 ```bash
 cd apps/desktop/release
@@ -105,9 +105,9 @@ just for the record.
 Verify from outside:
 
 ```bash
-curl -s  https://superset-app.tom-nguyen.dev/releases/latest-mac.yml          # version: <ver>, path: Superset-<ver>-arm64-mac.zip
-curl -sI https://superset-app.tom-nguyen.dev/releases/Superset-<ver>-arm64-mac.zip | head -1   # 200
-curl -sI https://superset-app.tom-nguyen.dev/releases/Superset-arm64.dmg | head -1             # 200
+curl -s  "$DESKTOP_UPDATE_FEED_URL/latest-mac.yml"          # version: <ver>, path: Superset-<ver>-arm64-mac.zip
+curl -sI "$DESKTOP_UPDATE_FEED_URL/Superset-<ver>-arm64-mac.zip" | head -1   # 200
+curl -sI "$DESKTOP_UPDATE_FEED_URL/Superset-arm64.dmg" | head -1             # 200
 ```
 
 The GitHub release is now archive + changelog only — nothing reads it:
@@ -143,7 +143,7 @@ non-negotiable 2 that means bumping desktop, host-service and cli together.
   deletes it. Until the cause is known: run the DMG `notarytool submit`
   *immediately* after packaging, and if it fails, re-store the profile
   (`xcrun notarytool store-credentials hive-notary --apple-id <apple-id>
-  --team-id Q89XY3A42H`, fresh app-specific password) and retry.
+  --team-id "$APPLE_TEAM_ID"`, fresh app-specific password) and retry.
 - **Do not call the auth API with `fetch` from the main process.** Electron's
   main-process fetch is undici and sends `Sec-Fetch-Mode: cors`; Better Auth
   then force-validates the (absent) Origin → "Missing or null Origin". Use a

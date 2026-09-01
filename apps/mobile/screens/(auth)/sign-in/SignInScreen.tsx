@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import { Image, KeyboardAvoidingView, Platform, View } from "react-native";
 
@@ -50,7 +51,7 @@ export function SignInScreen() {
 
 			<View className="items-center gap-2">
 				<Text className="text-2xl font-semibold text-foreground">
-					Welcome to Superset
+					<Trans id="mobile.signIn.title">Welcome to Superset</Trans>
 				</Text>
 				<Text className="text-base text-muted-foreground">
 					{new URL(env.EXPO_PUBLIC_API_URL).host}

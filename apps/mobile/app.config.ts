@@ -9,12 +9,30 @@ config({
 	override: true,
 	quiet: true,
 });
-// Self-host defaults (public URLs). Never overrides the shell or the root .env.
+// Self-host settings: public URLs, bundle id, Apple team. The file is
+// gitignored (copy selfhost.env.example); CI passes the same names as
+// repository secrets. Never overrides the shell or the root .env.
 config({
 	path: path.resolve(__dirname, "selfhost.env"),
 	override: false,
 	quiet: true,
 });
+
+function required(name: string): string {
+	const value = process.env[name];
+	if (!value) {
+		throw new Error(
+			`${name} is not set — copy apps/mobile/selfhost.env.example to selfhost.env and fill it in`,
+		);
+	}
+	return value;
+}
+
+// Bundle identifier (iOS) / package name (Android) and the Apple team that
+// signs it. Upstream's `sh.superset.mobile` belongs to Superset's own team; a
+// personal build needs an App ID this team can sign for.
+const MOBILE_APP_ID = required("MOBILE_APP_ID");
+const APPLE_TEAM_ID = required("APPLE_TEAM_ID");
 
 // Sentry's config plugin adds an Xcode phase that uploads source maps and
 // needs an auth token; without one the phase only logs a warning, but there is
@@ -59,11 +77,9 @@ export default ({ config }: ConfigContext) => ({
 	},
 	ios: {
 		supportsTablet: false,
-		// Own bundle id + team: `sh.superset.mobile` belongs to Superset's Apple
-		// team, and a personal build needs an App ID this team can sign for.
 		// Apple sign-in is off — the self-host only has password accounts.
-		bundleIdentifier: "dev.tomnguyen.superset",
-		appleTeamId: "Q89XY3A42H",
+		bundleIdentifier: MOBILE_APP_ID,
+		appleTeamId: APPLE_TEAM_ID,
 		// TestFlight needs a unique, increasing build number per upload.
 		// scripts/testflight.sh sets a timestamp; local runs default to 1.
 		buildNumber: process.env.MOBILE_BUILD_NUMBER ?? "1",
@@ -82,7 +98,7 @@ export default ({ config }: ConfigContext) => ({
 			foregroundImage: "./assets/adaptive-icon.png",
 			backgroundColor: "#ffffff",
 		},
-		package: "dev.tomnguyen.superset",
+		package: MOBILE_APP_ID,
 		predictiveBackGestureEnabled: false,
 	},
 	web: {

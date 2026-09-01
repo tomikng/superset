@@ -13,8 +13,10 @@
 #   ASC_ISSUER_ID     App Store Connect issuer id (UUID)
 #   ASC_KEY_P8        the key: either a path to the .p8 file, or its contents
 #                     base64-encoded (what a CI secret holds)
+#   APPLE_TEAM_ID     Apple team id; MOBILE_APP_ID the bundle id. Both are read
+#                     from apps/mobile/selfhost.env when not already set (see
+#                     selfhost.env.example); CI passes them as secrets.
 # Optional:
-#   APPLE_TEAM_ID         default Q89XY3A42H (must match app.config.ts)
 #   MOBILE_BUILD_NUMBER   default: UTC timestamp yyyyMMddHHmm (unique, increasing)
 #   SKIP_UPLOAD=1         archive + export only (the .ipa lands in build/)
 #
@@ -22,7 +24,7 @@
 #   1. Users and Access -> Integrations -> App Store Connect API -> Team key,
 #      role "Admin" — cloud signing (minting the distribution certificate)
 #      is refused for App Manager keys. Download the .p8 (only offered once).
-#   2. Apps -> "+" -> New App: platform iOS, bundle id dev.tomnguyen.superset
+#   2. Apps -> "+" -> New App: platform iOS, bundle id $MOBILE_APP_ID
 #      (register the identifier at developer.apple.com first if it is not
 #      offered), SKU anything. Add yourself as an internal tester under
 #      TestFlight once the first build has processed.
@@ -31,6 +33,14 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 MOBILE_DIR=$(pwd)
 REPO_ROOT=$(cd ../.. && pwd)
+
+# Fill in anything selfhost.env defines that the environment does not.
+if [ -f "$MOBILE_DIR/selfhost.env" ]; then
+  while IFS='=' read -r k v; do
+    case "$k" in ''|\#*) continue ;; esac
+    [ -n "${!k:-}" ] || export "$k=$v"
+  done < "$MOBILE_DIR/selfhost.env"
+fi
 
 # launchd/CI shells have no nvm: the expo CLI is `#!/usr/bin/env node`, so
 # put the newest nvm node (or Homebrew's) on PATH when none is found.
@@ -44,7 +54,8 @@ command -v node >/dev/null || { echo "node not found (install nvm node or brew n
 : "${ASC_KEY_ID:?set ASC_KEY_ID}"
 : "${ASC_ISSUER_ID:?set ASC_ISSUER_ID}"
 : "${ASC_KEY_P8:?set ASC_KEY_P8 (path or base64 contents)}"
-APPLE_TEAM_ID="${APPLE_TEAM_ID:-Q89XY3A42H}"
+: "${APPLE_TEAM_ID:?set APPLE_TEAM_ID (or put it in apps/mobile/selfhost.env)}"
+: "${MOBILE_APP_ID:?set MOBILE_APP_ID (or put it in apps/mobile/selfhost.env)}"
 export MOBILE_BUILD_NUMBER="${MOBILE_BUILD_NUMBER:-$(date -u +%Y%m%d%H%M)}"
 
 # --- API key on disk -------------------------------------------------------

@@ -17,6 +17,11 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
 	reactStrictMode: true,
+	// Compiles @lingui/react/macro at build time. Version must stay in
+	// lockstep with Next's swc_core ABI — see plans/20260826-i18n-strategy.md.
+	experimental: {
+		swcPlugins: [["@lingui/swc-plugin", {}]],
+	},
 	images: {
 		remotePatterns: [
 			{
@@ -57,6 +62,12 @@ const config = {
 			{
 				source: "/terminal-presets",
 				destination: "/terminal-scripts",
+				permanent: true,
+			},
+			// Remote Workspaces was renamed to Remote Access.
+			{
+				source: "/remote-workspaces",
+				destination: "/remote-access",
 				permanent: true,
 			},
 		];

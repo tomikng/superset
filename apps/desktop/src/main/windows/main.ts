@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import * as Sentry from "@sentry/electron/main";
+import { i18n } from "@superset/i18n";
 import { workspaces, worktrees } from "@superset/local-db";
 import { eq } from "drizzle-orm";
 import type { BrowserWindow } from "electron";
@@ -17,7 +18,11 @@ import { env } from "shared/env.shared";
 import type { AgentLifecycleEvent } from "shared/notification-types";
 import { createIPCHandler } from "trpc-electron/main";
 import { productName } from "~/package.json";
-import { appState, pruneWindowScopedState } from "../lib/app-state";
+import {
+	appState,
+	isAppStateInitialized,
+	pruneWindowScopedState,
+} from "../lib/app-state";
 import { browserManager } from "../lib/browser/browser-manager";
 import { attachEditContextMenu } from "../lib/edit-context-menu";
 import { createApplicationMenu } from "../lib/menu";
@@ -63,8 +68,15 @@ let ipcHandler: ReturnType<typeof createIPCHandler> | null = null;
 // (tracked by the window registry) rather than a single stored reference.
 const getWindow = (): BrowserWindow | null => getFocusedOrLastWindow();
 
+function fallbackWorkspaceName(): string {
+	return i18n._({
+		id: "main.notification.fallbackWorkspace",
+		message: "Workspace",
+	});
+}
+
 function getWorkspaceNameFromDb(workspaceId: string | undefined): string {
-	if (!workspaceId) return "Workspace";
+	if (!workspaceId) return fallbackWorkspaceName();
 	try {
 		const workspace = localDb
 			.select()
@@ -81,7 +93,7 @@ function getWorkspaceNameFromDb(workspaceId: string | undefined): string {
 		return getWorkspaceName({ workspace, worktree });
 	} catch (error) {
 		console.error("[notifications] Failed to get workspace name:", error);
-		return "Workspace";
+		return fallbackWorkspaceName();
 	}
 }
 
@@ -298,6 +310,10 @@ function snapshotWindowState(window: BrowserWindow): WindowState {
 
 /** Persist every open window's bounds + org so they can be restored on relaunch. */
 export function persistOpenWindows(): void {
+	// Quit before initAppState() completed: windows are only created after init,
+	// so there is nothing to snapshot — appState access below would throw, and
+	// writing the empty set would clobber the previous session's restore state.
+	if (!isAppStateInitialized()) return;
 	const persisted: PersistedWindow[] = getAllWindows()
 		.filter((w) => !w.isDestroyed())
 		.map((w) => ({
@@ -395,6 +411,8 @@ export async function createPlatformWindow({
 		webPreferences: {
 			preload: join(__dirname, "../preload/index.js"),
 			webviewTag: true,
+			// Chromium's built-in PDF viewer, used by the file pane's PDF view
+			plugins: true,
 			// Isolate Electron session from system browser cookies
 			// This ensures desktop uses bearer token auth, not web cookies
 			partition: "persist:superset",
