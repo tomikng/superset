@@ -99,12 +99,17 @@ export function useChangesTab({
 			void utils.git.getStatus.invalidate({ workspaceId });
 			void utils.git.listCommits.invalidate({ workspaceId });
 			void utils.git.getDiff.invalidate({ workspaceId });
-			void utils.git.getDiffBulk.invalidate({ workspaceId });
 		},
 		// The picker re-renders from getBaseBranch, so a rejected change
 		// silently snaps back without this.
 		onError: (error) =>
-			toast.error(error.message || "Failed to change base branch"),
+			toast.error(
+				error.message ||
+					t({
+						id: "workspace.changesTab.changeBaseBranchFailed",
+						message: "Failed to change base branch",
+					}),
+			),
 	});
 
 	const setBaseBranch = useCallback(
@@ -137,13 +142,26 @@ export function useChangesTab({
 					newName,
 				}),
 				{
-					loading: `Renaming branch to ${newName}...`,
-					success: `Branch renamed to ${newName}`,
-					error: (err) => errorMessage(err, "Failed to rename branch"),
+					loading: t({
+						id: "workspace.changesTab.renameBranchLoading",
+						message: `Renaming branch to ${newName}...`,
+					}),
+					success: t({
+						id: "workspace.changesTab.renameBranchSuccess",
+						message: `Branch renamed to ${newName}`,
+					}),
+					error: (err) =>
+						errorMessage(
+							err,
+							t({
+								id: "workspace.changesTab.renameBranchFailed",
+								message: "Failed to rename branch",
+							}),
+						),
 				},
 			);
 		},
-		[workspaceId, status.data?.currentBranch.name, renameBranchMutation],
+		[workspaceId, status.data?.currentBranch.name, renameBranchMutation, t],
 	);
 
 	const canRenameBranch = !status.data?.currentBranch.upstream;
@@ -157,16 +175,23 @@ export function useChangesTab({
 			await Promise.all([
 				utils.git.getStatus.invalidate({ workspaceId }),
 				utils.git.getDiff.invalidate({ workspaceId }),
-				utils.git.getDiffBulk.invalidate({ workspaceId }),
 				utils.git.listCommits.invalidate({ workspaceId }),
 				utils.git.listBranches.invalidate({ workspaceId }),
 				utils.git.getBaseBranch.invalidate({ workspaceId }),
 			]);
 		} catch (error) {
 			console.warn("Failed to refresh changes tab", error);
-			toast.error(errorMessage(error, "Failed to refresh changes"));
+			toast.error(
+				errorMessage(
+					error,
+					t({
+						id: "workspace.changesTab.refreshFailed",
+						message: "Failed to refresh changes",
+					}),
+				),
+			);
 		}
-	}, [utils, workspaceId]);
+	}, [utils, workspaceId, t]);
 
 	const content = (
 		<ChangesTabContent

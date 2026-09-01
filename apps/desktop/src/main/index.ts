@@ -6,7 +6,7 @@ import {
 	writeSharedDisabledAgentIds,
 	writeSharedDisabledSkillIds,
 } from "@superset/agent-setup";
-import { initI18n, resolveLocale } from "@superset/i18n";
+import { i18n, initI18nAsync } from "@superset/i18n";
 import { settings } from "@superset/local-db";
 import { app, dialog, Notification, net, protocol, session } from "electron";
 import { makeAppSetup } from "lib/electron-app/factories/app/setup";
@@ -33,15 +33,16 @@ import { resolveDevWorkspaceName } from "./lib/dev-workspace-name";
 import { setWorkspaceDockIcon } from "./lib/dock-icon";
 import { loadWebviewBrowserExtension } from "./lib/extensions";
 import { getHostServiceCoordinator } from "./lib/host-service-coordinator";
+import { resolveAppLocale } from "./lib/language";
 import { localDb } from "./lib/local-db";
 import { requestLocalNetworkAccess } from "./lib/local-network-permission";
 import { menuEmitter } from "./lib/menu-events";
-import { PAGE_SCHEME, pageProtocolHandler } from "./lib/pageContent";
 import {
 	initTanstackDbPersistence,
 	shutdownTanstackDbPersistence,
 } from "./lib/persistence/persistence";
 import { syncInstalledPluginMcpServers } from "./lib/plugin-installs";
+import { portForwardManager } from "./lib/port-forward";
 import { ensureProjectIconsDir, getProjectIconPath } from "./lib/project-icons";
 import { runQuitCleanup } from "./lib/quit-sequence";
 import { initSentry } from "./lib/sentry";
@@ -95,12 +96,14 @@ async function processDeepLink(url: string): Promise<void> {
 	if (authLink.type !== "not-auth") {
 		// Never log the auth URL: it contains the desktop session token.
 		console.log("[main] Processing auth deep link");
+		// `error` stays English: it is the log line. What the user reads is
+		// resolved separately below so it can be translated.
 		const result =
 			authLink.type === "valid"
 				? await handleAuthCallback(authLink.params)
 				: {
 						success: false as const,
-						error: "The sign-in link was incomplete. Please try again.",
+						error: "sign-in link was missing required parameters",
 					};
 		if (result.success) {
 			focusMainWindow();
@@ -108,9 +111,18 @@ async function processDeepLink(url: string): Promise<void> {
 			console.error("[main] Auth deep link failed:", result.error);
 			focusMainWindow();
 			dialog.showErrorBox(
-				"Sign-in failed",
-				result.error ??
-					"Superset could not complete sign-in. Please try again.",
+				i18n._({ id: "main.auth.failed.title", message: "Sign-in failed" }),
+				authLink.type === "valid"
+					? (result.error ??
+							i18n._({
+								id: "main.auth.failed.detail",
+								message:
+									"Superset could not complete sign-in. Please try again.",
+							}))
+					: i18n._({
+							id: "main.auth.failed.incompleteLink",
+							message: "The sign-in link was incomplete. Please try again.",
+						}),
 			);
 		}
 		return;
@@ -239,11 +251,17 @@ app.on("before-quit", async (event) => {
 		try {
 			const { response } = await dialog.showMessageBox({
 				type: "question",
-				buttons: ["Quit", "Cancel"],
+				buttons: [
+					i18n._({ id: "main.quit.confirm", message: "Quit" }),
+					i18n._({ id: "main.dialog.cancel", message: "Cancel" }),
+				],
 				defaultId: 0,
 				cancelId: 1,
-				title: "Quit Superset",
-				message: "Are you sure you want to quit?",
+				title: i18n._({ id: "main.quit.title", message: "Quit Superset" }),
+				message: i18n._({
+					id: "main.quit.message",
+					message: "Are you sure you want to quit?",
+				}),
 			});
 
 			if (response === 1) {
@@ -255,6 +273,9 @@ app.on("before-quit", async (event) => {
 	}
 
 	isQuitting = true;
+	// Local port-forward listeners hold no state worth draining; drop them so
+	// nothing keeps 127.0.0.1:<port> bound after the app is gone.
+	portForwardManager.stopAll();
 	// Snapshot all open windows (bounds + org) before they close, so relaunch
 	// restores them. markAppQuitting() stops per-window close handlers from
 	// shrinking the set as windows close one-by-one.
@@ -334,6 +355,12 @@ if (process.env.NODE_ENV === "development") {
 	parentCheckInterval.unref();
 }
 
+// Chromium refuses to cache any single entry larger than about an eighth
+// of the disk cache, and the default cache is a few hundred MB — too
+// small for a video inside a page. 1 GiB lifts the per-entry cap to
+// roughly 128 MB.
+app.commandLine.appendSwitch("disk-cache-size", String(1024 * 1024 * 1024));
+
 protocol.registerSchemesAsPrivileged([
 	{
 		scheme: "superset-icon",
@@ -351,13 +378,6 @@ protocol.registerSchemesAsPrivileged([
 			secure: true,
 			bypassCSP: true,
 			supportFetchAPI: true,
-		},
-	},
-	{
-		scheme: PAGE_SCHEME,
-		privileges: {
-			standard: true,
-			secure: true,
 		},
 	},
 ]);
@@ -400,13 +420,9 @@ if (!gotTheLock) {
 	(async () => {
 		await app.whenReady();
 		// Persisted language setting wins; otherwise infer from OS preferences
-		// (plans/20260826-i18n-strategy.md).
-		initI18n(
-			resolveLocale([
-				...(getLanguageSetting() ? [getLanguageSetting() as string] : []),
-				...app.getPreferredSystemLanguages(),
-			]),
-		);
+		// (plans/20260826-i18n-strategy.md). Menus are built later in
+		// initAppServices/initTray, so a plain activate is enough here.
+		await initI18nAsync(resolveAppLocale(getLanguageSetting()));
 		registerWithMacOSNotificationCenter();
 		requestAppleEventsAccess();
 		requestLocalNetworkAccess();
@@ -425,11 +441,6 @@ if (!gotTheLock) {
 		session
 			.fromPartition("persist:superset")
 			.protocol.handle("superset-icon", iconProtocolHandler);
-
-		protocol.handle(PAGE_SCHEME, pageProtocolHandler);
-		session
-			.fromPartition("persist:superset")
-			.protocol.handle(PAGE_SCHEME, pageProtocolHandler);
 
 		// Serve system fonts (e.g. SF Mono on macOS) via custom protocol
 		// so the renderer can use @font-face with font-src 'self' CSP

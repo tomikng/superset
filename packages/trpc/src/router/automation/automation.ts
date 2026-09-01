@@ -19,6 +19,7 @@ import { and, asc, desc, eq, ilike } from "drizzle-orm";
 import { z } from "zod";
 import { resolveUserRelayUrl } from "../../lib/relay-url";
 import { protectedProcedure, userError } from "../../trpc";
+import { joinSlackTriggerChannels } from "../integration/slack/joinChannels";
 import { requireActiveOrgMembership } from "../utils/active-org";
 import { dispatchAutomation } from "./dispatch";
 import {
@@ -372,6 +373,9 @@ export const automationRouter = {
 						targetHostId,
 						v2ProjectId,
 						v2WorkspaceId: input.v2WorkspaceId ?? null,
+						// Every automation groups its runs out of the box; explicit
+						// tags (including []) override the default.
+						tags: input.tags ?? ["automation"],
 					})
 					.returning();
 
@@ -416,6 +420,11 @@ export const automationRouter = {
 
 			// Reported from what was actually written, not from the input: a
 			// trigger set may describe a different schedule, or none at all.
+			// After the commit: joining can only make a saved trigger start working.
+			if (input.triggers) {
+				await joinSlackTriggerChannels(organizationId, input.triggers);
+			}
+
 			return withSchedule(created, input.triggers ?? null, legacySchedule);
 		}),
 
@@ -546,6 +555,7 @@ export const automationRouter = {
 						targetHostId: nextTargetHostId,
 						v2ProjectId: nextProjectId,
 						v2WorkspaceId: nextWorkspaceId,
+						tags: input.tags ?? existing.tags,
 					})
 					.where(eq(automations.id, input.id))
 					.returning();
@@ -577,6 +587,10 @@ export const automationRouter = {
 
 				return row;
 			});
+
+			if (input.triggers) {
+				await joinSlackTriggerChannels(organizationId, input.triggers);
+			}
 
 			// Same as create: a trigger set may have replaced or removed the
 			// schedule, so the response reflects what was saved.
