@@ -22,8 +22,9 @@ jobs:
   translate:
     name: Fill missing translations
     # Fork PRs have no secrets; their catalog gap surfaces in the Lint job's
-    # catalog audit instead, for a maintainer to fill.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # catalog audit instead, for a maintainer to fill. Mirrors lack the GitHub
+    # App secrets the push step needs, so the job is gated on the repository name.
+    if: github.repository == 'superset-sh/superset' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
 
     steps:
