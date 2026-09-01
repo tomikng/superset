@@ -9,6 +9,9 @@ interface DeadKey {
  * the writer.
  */
 export const DEAD_KEYS: DeadKey[] = [
+	// Self-host: the sign-in page is credential-only, so there is no last-used
+	// social provider to remember (upstream's sign-in/page.tsx wrote this).
+	{ key: "superset-last-auth-method", match: "exact" },
 	// Pending-create records; superseded by canonical workspaces.create (#3893)
 	{ key: "pending-workspaces-", match: "prefix" },
 	// v1→v2 preset migration marker; superseded by pull-based importer (#4122)

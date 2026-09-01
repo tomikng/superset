@@ -216,5 +216,4 @@ export const PERSISTED_KEY_REGISTRY: ReadonlyArray<
 		"src/renderer/routes/_authenticated/hooks/useDevSeedV2Sidebar/useDevSeedV2Sidebar.ts",
 		["superset:dev:v2-sidebar-seeded"],
 	],
-	["src/renderer/routes/sign-in/page.tsx", ["superset-last-auth-method"]],
 ];
