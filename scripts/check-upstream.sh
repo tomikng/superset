@@ -58,6 +58,18 @@ PATCHED_FILES=(
   "patches/README.md"
 )
 
+# Directories this fork owns outright — on a sync, KEEP OURS for everything
+# under these paths and port upstream changes by hand instead of taking their
+# files. Upstream deprecated the v1 relay and moved to apps/relay2 (Cloudflare
+# Workers + Durable Objects). The self-host does not run Cloudflare: apps/relay
+# is the fork's Bun port of the relay2 tunnel v2 protocol (single instance,
+# in-memory host map, no Redis) and must keep serving /health {proto: 2},
+# /v2/control, /v2/dial and /presence on ms1. A host-service build that finds
+# no v2 relay has no tunnel at all and every host shows offline (1.25.3).
+PATCHED_DIRS=(
+  "apps/relay/"
+)
+
 # Files the self-host depends on but does not patch. Upstream changes here
 # merge cleanly and can break the deployment without any visible conflict.
 # Each entry is "path:why it matters".
@@ -76,6 +88,16 @@ WATCHED_FILES=(
   "packages/db/src/schema/auth.ts:organizations/members shape used by db:seed-teams"
   "packages/db/src/schema/schema.ts:subscriptions shape used by db:seed-teams"
   "packages/auth/src/seed-dev.ts:the script db:seed-teams was derived from"
+  "packages/host-service/src/tunnel/tunnel-client-v2.ts:host side of tunnel v2; any wire change must be mirrored in apps/relay (our relay2 port)"
+  "packages/host-service/src/tunnel/connect.ts:how the host picks a relay/protocol; must still work against our /health {proto: 2}"
+  "packages/trpc/src/lib/relay-presence.ts:how the API reads /presence from the relay; our relay must keep answering it"
+  "packages/trpc/src/lib/relay-url.ts:which relay the API hands to hosts; the self-host relies on env.RELAY_URL"
+  "packages/shared/src/host-routing.ts:hostId routing key shape shared by host, API and relay"
+)
+
+# Upstream directories whose changes must be ported into ours by hand.
+WATCHED_DIRS=(
+  "apps/relay2/:upstream's canonical relay — diff its protocol changes into apps/relay (our Bun port); never replace apps/relay with it"
 )
 
 bold=$(tput bold 2>/dev/null || printf '')
@@ -135,6 +157,14 @@ for file in "${PATCHED_FILES[@]}"; do
     conflict_count=$((conflict_count + 1))
   fi
 done
+for dir in "${PATCHED_DIRS[@]}"; do
+  hits=$(grep -c "^${dir}" <<<"$CHANGED" || true)
+  if [ "${hits:-0}" -gt 0 ]; then
+    printf '  %s*  %s(%s upstream files — KEEP OURS, port by hand)%s\n' "$dir" "$dim" "$hits" "$reset"
+    CONFLICT_LIST="${CONFLICT_LIST}- \`${dir}*\` (${hits} files — keep ours, port by hand)"$'\n'
+    conflict_count=$((conflict_count + 1))
+  fi
+done
 [ "$conflict_count" -eq 0 ] && printf '  %snone — every patched file is untouched upstream%s\n' "$dim" "$reset"
 
 # --- silent regressions ----------------------------------------------------
@@ -147,6 +177,16 @@ for entry in "${WATCHED_FILES[@]}"; do
   if grep -Fxq "$file" <<<"$CHANGED"; then
     printf '  %s\n    %s%s%s\n' "$file" "$dim" "$why" "$reset"
     WATCH_LIST="${WATCH_LIST}- \`${file}\` — ${why}"$'\n'
+    watch_count=$((watch_count + 1))
+  fi
+done
+for entry in "${WATCHED_DIRS[@]}"; do
+  dir="${entry%%:*}"
+  why="${entry#*:}"
+  hits=$(grep -c "^${dir}" <<<"$CHANGED" || true)
+  if [ "${hits:-0}" -gt 0 ]; then
+    printf '  %s*  %s(%s files)%s\n    %s%s%s\n' "$dir" "$dim" "$hits" "$reset" "$dim" "$why" "$reset"
+    WATCH_LIST="${WATCH_LIST}- \`${dir}*\` (${hits} files) — ${why}"$'\n'
     watch_count=$((watch_count + 1))
   fi
 done
@@ -181,6 +221,8 @@ echo "  1. the API still boots (no new required env vars)"
 echo "  2. billing.activePlan still reads Postgres and returns 'enterprise'"
 echo "  3. the desktop build still bakes your hostnames into the CSP"
 echo "  4. sign-in still offers a password form and no social buttons"
+echo "  5. the relay is still ours: curl \$RELAY_URL/health returns proto: 2 and"
+echo "     hosts show online after the desktop app reconnects (apps/relay = our relay2 port)"
 
 # --- Discord ---------------------------------------------------------------
 
