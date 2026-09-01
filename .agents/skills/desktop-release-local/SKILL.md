@@ -27,6 +27,12 @@ self-host releases are built here and published by copying the artifacts to
 5. **Backend URLs are compiled in** (renderer + CSP). They come from
    `deploy/env.production.template`; a build only talks to the instance it was
    built for.
+6. **The ms1 relay is the v1 relay** (`apps/relay`, no `/v2/control`). Upstream
+   deleted the v1 tunnel client from the host service (4988b7f50, 2026-08-31);
+   the fork reverts that. Before cutting a release confirm
+   `packages/host-service/src/tunnel/tunnel-client.ts` exists and `connect.ts`
+   still probes `/health` for `proto` — a build without it has no tunnel at
+   all and every host shows offline (that was 1.25.3).
 
 ## Identity / notary
 
@@ -58,7 +64,10 @@ set -a; . "$HOME/.superset-selfhost.env"; set +a
 export NEXT_PUBLIC_POSTHOG_KEY=phc_unused_selfhosted NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 bun run install:deps && bun run clean:dev && bun run generate:icons && bun run compile:app \
   && bun run copy:native-modules && bun run validate:native-runtime
-export APPLE_KEYCHAIN_PROFILE=hive-notary
+# Notarize with the App Store Connect API key (ASC_* in ~/.superset-selfhost.env),
+# not the `hive-notary` keychain profile — see gotchas.
+export APPLE_API_KEY="$ASC_KEY_P8" APPLE_API_KEY_ID="$ASC_KEY_ID" APPLE_API_ISSUER="$ASC_ISSUER_ID"
+unset APPLE_KEYCHAIN_PROFILE
 bun run package -- --publish never --config electron-builder.ts --arm64
 ```
 
@@ -70,7 +79,7 @@ Output in `apps/desktop/release/`: `Superset-<ver>-arm64.dmg`,
 ```bash
 cd apps/desktop/release
 codesign --force -s "$APPLE_TEAM_ID" Superset-<ver>-arm64.dmg
-xcrun notarytool submit Superset-<ver>-arm64.dmg --keychain-profile hive-notary --wait
+xcrun notarytool submit Superset-<ver>-arm64.dmg --key "$ASC_KEY_P8" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID" --wait
 xcrun stapler staple Superset-<ver>-arm64.dmg
 spctl -a -t open --context context:primary-signature -v Superset-<ver>-arm64.dmg   # "accepted source=Notarized Developer ID"
 spctl -a -t exec -vv mac-arm64/Superset.app                                      # "accepted source=Notarized Developer ID"
@@ -144,6 +153,12 @@ non-negotiable 2 that means bumping desktop, host-service and cli together.
   *immediately* after packaging, and if it fails, re-store the profile
   (`xcrun notarytool store-credentials hive-notary --apple-id <apple-id>
   --team-id "$APPLE_TEAM_ID"`, fresh app-specific password) and retry.
+  **Seen again on 1.25.4 (2026-09-01):** the item was gone before the `.app`
+  notarization and could not be re-stored from an agent shell —
+  `store-credentials` validates, then fails with "An error occurred while
+  accessing the keychain. User interaction is not allowed" and nothing lands.
+  The API-key route above (`APPLE_API_KEY*` for electron-builder, `--key
+  --key-id --issuer` for the DMG) needs no keychain and is now the default.
 - **Do not call the auth API with `fetch` from the main process.** Electron's
   main-process fetch is undici and sends `Sec-Fetch-Mode: cors`; Better Auth
   then force-validates the (absent) Origin → "Missing or null Origin". Use a
