@@ -4,16 +4,12 @@ import { z } from "zod";
 export const env = createEnv({
 	server: {
 		RELAY_PORT: z.coerce.number().int().positive().default(8080),
+		// Must match the API's JWT issuer/audience exactly — a mismatch 401s
+		// every connection.
 		NEXT_PUBLIC_API_URL: z.url(),
-		KV_REST_API_URL: z.url(),
-		KV_REST_API_TOKEN: z.string().min(1),
+		// Reported by /health and /_whoowns. The name is a Fly leftover kept so
+		// existing deploy configs (launchd plist, fly.toml) need no change.
 		FLY_REGION: z.string().default("local"),
-		FLY_MACHINE_ID: z.string().default("local"),
-		// Fly sets this automatically; used to build `<machine>.vm.<app>.internal`
-		// addresses for relay-to-relay WebSocket proxying across instances.
-		FLY_APP_NAME: z.string().default("local"),
-		RELAY_SYNTHETIC_JWT: z.string().min(1).optional(),
-		RELAY_PUBLIC_URL: z.url().default("https://relay.superset.sh"),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

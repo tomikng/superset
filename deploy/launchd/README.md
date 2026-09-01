@@ -445,8 +445,9 @@ things cover the ordering:
 
 1. Each app wrapper polls with `/usr/bin/nc -z` for up to ~3 minutes (60 × 3s)
    before exec'ing — `api` waits on the neon-proxy port
-   (`${LOCAL_NEON_PROXY_PORT:-4444}`), `relay` waits on serverless-redis-http
-   (`${LOCAL_SRH_PORT:-8079}`), and `web` waits on the api on 3101. The window is
+   (`${LOCAL_NEON_PROXY_PORT:-4444}`) and `web` waits on the api on 3101; the
+   `relay` no longer waits on anything (it stopped using Redis when it moved to
+   tunnel v2, see `apps/relay/README.md`). The window is
    3 minutes, not 30s, because on a cold boot the `stack` job first has to wait
    for the Docker VM (`until docker info`) before any container port exists.
    This is the same dependency order `smoke-test.sh` asserts: containers, then
@@ -465,23 +466,16 @@ things cover the ordering:
   `apps/relay/fly.toml` sets an http soft connection limit of 2000, so it gets
   16384/32768; the Next servers get 8192/16384.
 - `ExitTimeOut=30` on the relay — `apps/relay/src/index.ts` handles SIGINT and
-  SIGTERM by closing the listener, draining every tunnel with the
-  `WS_CLOSE_DRAIN` close code, and clearing this machine's entries from the
-  Redis host directory. `fly.toml` allows 10s (`kill_timeout`); launchd's
-  default `ExitTimeOut` is 20s, raised to 30 so a SIGKILL never truncates the
-  drain and strands stale directory entries.
+  SIGTERM by closing the listener and every host control socket (1001) so
+  host-services reconnect within seconds instead of waiting on their 75s
+  watchdog after a TCP RST. launchd's default `ExitTimeOut` is 20s, raised to
+  30 so a SIGKILL never truncates the drain.
 - `ExitTimeOut=60` on the stack — four containers, including a Postgres that
   deserves a clean shutdown.
-- `FLY_REGION` / `FLY_MACHINE_ID` / `FLY_APP_NAME` on the relay — these are Fly
-  variables that `apps/relay/src/env.ts` defaults to `"local"`. They are set to
-  `ms1` so `/health` and the Redis host-directory keys identify this box.
-  **Do not change them once the instance is live.** The Redis host directory
-  stores the owner as `<region>:<machineId>` (`apps/relay/src/directory.ts`).
-  If the relay restarts with different values while entries written under the old
-  pair are still within TTL, `apps/relay/src/index.ts` treats those hosts as
-  owned by another machine and either emits a `fly-replay` header or tries to
-  bridge to `ws://<machineId>.vm.<app>.internal` — neither of which exists off
-  Fly. Symptom: hosts that were online go 503 until the entries expire.
+- `FLY_REGION` on the relay — a Fly-era label that `apps/relay/src/env.ts`
+  defaults to `"local"`; set to `ms1` so `/health` and `/_whoowns` identify this
+  box. Since the tunnel v2 port there is no host directory keyed on it, so it is
+  purely cosmetic (`FLY_MACHINE_ID` / `FLY_APP_NAME` are no longer read).
 
 ---
 
