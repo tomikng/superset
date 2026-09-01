@@ -14,42 +14,54 @@ import {
 } from "recharts";
 import type { UsageHistory } from "../../../../hooks/useHostUsageHistory";
 import type { HistoryMetric } from "../../constants";
-import { PROVIDER_CHART_CONFIG, PROVIDER_ORDER } from "../../constants";
+import { AGENT_CHART_CONFIG, AGENT_ORDER } from "../../constants";
 import {
 	formatDayLabel,
 	formatTokens,
 	formatUsd,
 } from "../../utils/formatUsage";
 
-type Provider = (typeof PROVIDER_ORDER)[number];
+type Agent = (typeof AGENT_ORDER)[number];
 
 /**
- * Layered (NOT stacked) per-provider areas, each measured from zero — a
- * stacked chart permanently draws one provider above the other, which reads
+ * Layered (NOT stacked) per-agent areas, each measured from zero — a
+ * stacked chart permanently draws one agent above the other, which reads
  * as "that one is bigger" even on days where it is not. Clicking a day
- * selects it for inspection; providers toggle from the share rows.
+ * selects it for inspection; agents toggle from the share rows.
  */
 export function UsageAreaChart({
 	history,
 	metric,
-	hiddenProviders,
+	hiddenAgents,
 	selectedDay,
 	onSelectDay,
 }: {
 	history: UsageHistory;
 	metric: HistoryMetric;
-	hiddenProviders: ReadonlySet<Provider>;
+	hiddenAgents: ReadonlySet<Agent>;
 	selectedDay: string | null;
 	onSelectDay: (day: string | null) => void;
 }) {
 	const data = useMemo(
 		() =>
-			history.buckets.map((bucket) => ({
-				day: bucket.day,
-				claude: bucket.providers.claude?.[metric] ?? 0,
-				codex: bucket.providers.codex?.[metric] ?? 0,
-			})),
+			history.buckets.map((bucket) => {
+				const values: Partial<Record<Agent, number>> = {};
+				for (const agent of AGENT_ORDER) {
+					values[agent] = bucket.agents[agent]?.[metric] ?? 0;
+				}
+				return { day: bucket.day, ...values };
+			}),
 		[history, metric],
+	);
+
+	// Agents with no usage in range draw nothing — nine flat baselines
+	// would read as noise.
+	const presentAgents = useMemo(
+		() =>
+			AGENT_ORDER.filter((agent) =>
+				history.buckets.some((bucket) => bucket.agents[agent]),
+			),
+		[history],
 	);
 
 	const formatValue = metric === "usd" ? formatUsd : formatTokens;
@@ -66,7 +78,7 @@ export function UsageAreaChart({
 
 	return (
 		<ChartContainer
-			config={PROVIDER_CHART_CONFIG}
+			config={AGENT_CHART_CONFIG}
 			className="aspect-auto h-full min-h-36 w-full cursor-pointer"
 		>
 			<AreaChart
@@ -109,8 +121,8 @@ export function UsageAreaChart({
 									/>
 									<span className="text-muted-foreground">
 										{
-											PROVIDER_CHART_CONFIG[
-												name as keyof typeof PROVIDER_CHART_CONFIG
+											AGENT_CHART_CONFIG[
+												name as keyof typeof AGENT_CHART_CONFIG
 											]?.label
 										}
 									</span>
@@ -130,21 +142,21 @@ export function UsageAreaChart({
 						strokeDasharray="4 3"
 					/>
 				)}
-				{PROVIDER_ORDER.filter(
-					(provider) => !hiddenProviders.has(provider),
-				).map((provider) => (
-					<Area
-						key={provider}
-						dataKey={provider}
-						type="monotone"
-						stroke={`var(--color-${provider})`}
-						fill={`var(--color-${provider})`}
-						strokeWidth={2}
-						fillOpacity={0.12}
-						dot={false}
-						isAnimationActive={false}
-					/>
-				))}
+				{presentAgents
+					.filter((agent) => !hiddenAgents.has(agent))
+					.map((agent) => (
+						<Area
+							key={agent}
+							dataKey={agent}
+							type="monotone"
+							stroke={`var(--color-${agent})`}
+							fill={`var(--color-${agent})`}
+							strokeWidth={2}
+							fillOpacity={0.12}
+							dot={false}
+							isAnimationActive={false}
+						/>
+					))}
 			</AreaChart>
 		</ChartContainer>
 	);

@@ -1,3 +1,4 @@
+# Jobs are gated on the repository name: forks/mirrors lack the hosted-infra secrets and environments these deploys need.
 name: Deploy Preview
 
 on:
@@ -23,6 +24,7 @@ jobs:
   deploy-database:
     name: Deploy Database (Neon)
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
 
     steps:
@@ -80,6 +82,7 @@ jobs:
   deploy-api:
     name: Deploy API
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
     needs: deploy-database
 
@@ -125,6 +128,14 @@ jobs:
           DATABASE_URL: ${{ env.DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ env.DATABASE_URL_UNPOOLED }}
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_PRIVATE_BUCKET: superset-private-dev
+          USERCONTENT_URL: ${{ vars.USERCONTENT_URL_DEV }}
+          MEDIA_URL: ${{ vars.MEDIA_URL_DEV }}
+          USERCONTENT_TOKEN_SECRET: ${{ secrets.USERCONTENT_TOKEN_SECRET_DEV }}
+          CLOUDFLARE_BROWSER_RENDERING_TOKEN: ${{ secrets.CLOUDFLARE_BROWSER_RENDERING_TOKEN }}
           NEXT_PUBLIC_API_URL: https://${{ env.API_ALIAS }}
           NEXT_PUBLIC_WEB_URL: https://${{ env.WEB_ALIAS }}
           NEXT_PUBLIC_MARKETING_URL: https://${{ env.MARKETING_ALIAS }}
@@ -182,6 +193,14 @@ jobs:
             --env DATABASE_URL=$DATABASE_URL \
             --env DATABASE_URL_UNPOOLED=$DATABASE_URL_UNPOOLED \
             --env BLOB_READ_WRITE_TOKEN=$BLOB_READ_WRITE_TOKEN \
+            --env CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID \
+            --env R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID \
+            --env R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY \
+            --env R2_PRIVATE_BUCKET=$R2_PRIVATE_BUCKET \
+            --env USERCONTENT_URL=$USERCONTENT_URL \
+            --env MEDIA_URL=$MEDIA_URL \
+            --env USERCONTENT_TOKEN_SECRET=$USERCONTENT_TOKEN_SECRET \
+            --env CLOUDFLARE_BROWSER_RENDERING_TOKEN=$CLOUDFLARE_BROWSER_RENDERING_TOKEN \
             --env NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
             --env NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL \
             --env NEXT_PUBLIC_MARKETING_URL=$NEXT_PUBLIC_MARKETING_URL \
@@ -251,6 +270,7 @@ jobs:
   deploy-web:
     name: Deploy Web
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment:
       name: preview
       url: https://${{ env.WEB_ALIAS }}
@@ -303,6 +323,8 @@ jobs:
           NEXT_PUBLIC_ADMIN_URL: https://${{ env.ADMIN_ALIAS }}
           NEXT_PUBLIC_DOCS_URL: https://${{ env.DOCS_ALIAS }}
           NEXT_PUBLIC_RELAY_URL: ${{ secrets.RELAY_URL }}
+          USERCONTENT_URL: ${{ vars.USERCONTENT_URL_DEV }}
+          MEDIA_URL: ${{ vars.MEDIA_URL_DEV }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           NEXT_PUBLIC_COOKIE_DOMAIN: ${{ secrets.NEXT_PUBLIC_COOKIE_DOMAIN }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
@@ -336,6 +358,8 @@ jobs:
             --env NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL \
             --env NEXT_PUBLIC_DOCS_URL=$NEXT_PUBLIC_DOCS_URL \
             --env NEXT_PUBLIC_RELAY_URL=$NEXT_PUBLIC_RELAY_URL \
+            --env USERCONTENT_URL=$USERCONTENT_URL \
+            --env MEDIA_URL=$MEDIA_URL \
             --env NEXT_PUBLIC_COOKIE_DOMAIN=$NEXT_PUBLIC_COOKIE_DOMAIN \
             --env NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY \
             --env NEXT_PUBLIC_POSTHOG_HOST=$NEXT_PUBLIC_POSTHOG_HOST \
@@ -356,6 +380,10 @@ jobs:
           vercel alias $VERCEL_URL ${{ env.WEB_ALIAS }} --scope=$VERCEL_ORG_ID --token=$VERCEL_TOKEN
           echo "vercel_url=$VERCEL_URL" >> $GITHUB_OUTPUT
 
+      - name: Smoke test web routes
+        run: |
+          bun scripts/smoke-routes.ts "https://${{ env.WEB_ALIAS }}" /
+
       - name: Save web success status
         run: |
           cat > web-status.env << EOF
@@ -372,6 +400,7 @@ jobs:
   deploy-marketing:
     name: Deploy Marketing
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
     needs: deploy-database
 
@@ -470,6 +499,17 @@ jobs:
           vercel alias $VERCEL_URL ${{ env.MARKETING_ALIAS }} --scope=$VERCEL_ORG_ID --token=$VERCEL_TOKEN
           echo "vercel_url=$VERCEL_URL" >> $GITHUB_OUTPUT
 
+      # Until now the pipeline deployed and never requested a page, so a build
+      # that returned 500 on every route still went green. MARKETING-67/68/69
+      # reached production that way.
+      - name: Smoke test marketing routes
+        run: |
+          bun scripts/smoke-routes.ts "https://${{ env.MARKETING_ALIAS }}" --localized \
+            / /pricing /enterprise /download /join-us /community /contact \
+            /blog /changelog /compare /roadmap /leaderboard /marketplace \
+            /agent-orchestration /parallel-coding-agents /factory-2026 \
+            /mcp-install /stats /team /starchart /the-production-run
+
       - name: Save marketing success status
         run: |
           cat > marketing-status.env << EOF
@@ -486,6 +526,7 @@ jobs:
   deploy-admin:
     name: Deploy Admin
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
     needs: deploy-database
 
@@ -588,6 +629,10 @@ jobs:
           vercel alias $VERCEL_URL ${{ env.ADMIN_ALIAS }} --scope=$VERCEL_ORG_ID --token=$VERCEL_TOKEN
           echo "vercel_url=$VERCEL_URL" >> $GITHUB_OUTPUT
 
+      - name: Smoke test admin routes
+        run: |
+          bun scripts/smoke-routes.ts "https://${{ env.ADMIN_ALIAS }}" /
+
       - name: Save admin success status
         run: |
           cat > admin-status.env << EOF
@@ -604,6 +649,7 @@ jobs:
   deploy-docs:
     name: Deploy Docs
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: preview
     needs: deploy-database
 
@@ -671,6 +717,10 @@ jobs:
           vercel alias $VERCEL_URL ${{ env.DOCS_ALIAS }} --scope=$VERCEL_ORG_ID --token=$VERCEL_TOKEN
           echo "vercel_url=$VERCEL_URL" >> $GITHUB_OUTPUT
 
+      - name: Smoke test docs routes
+        run: |
+          bun scripts/smoke-routes.ts "https://${{ env.DOCS_ALIAS }}" /
+
       - name: Save docs success status
         run: |
           cat > docs-status.env << EOF
@@ -687,7 +737,7 @@ jobs:
   post-final-comment:
     name: Post Deployment Comment
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && github.repository == 'superset-sh/superset'
     needs: [deploy-database, deploy-api, deploy-web, deploy-marketing, deploy-admin, deploy-docs]
     permissions:
       contents: read

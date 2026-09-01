@@ -1,3 +1,4 @@
+# Jobs are gated on the repository name: forks/mirrors lack the hosted-infra secrets and environments these deploys need.
 name: Bump Homebrew Formula
 
 # Renders the superset.rb formula for a published CLI release and pushes it to
@@ -30,6 +31,7 @@ concurrency:
 jobs:
   bump:
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     steps:
       - name: Extract version from tag
         id: version

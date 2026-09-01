@@ -1,3 +1,4 @@
+# Jobs are gated on the repository name: forks/mirrors lack the hosted-infra secrets and environments these deploys need.
 name: Deploy Relay
 
 # The relay ships to Fly (not Vercel), so it's not part of deploy-production.yml.
@@ -23,6 +24,7 @@ jobs:
   deploy-relay:
     name: Deploy Relay to Fly
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: production
 
     steps:
