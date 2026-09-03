@@ -49,13 +49,16 @@ echo "api:     $NEXT_PUBLIC_API_URL"
 echo "feed:    $DESKTOP_UPDATE_FEED_URL"
 [ -z "$(git -C "$ROOT" status --porcelain --untracked-files=no)" ] || echo "WARNING: working tree has uncommitted changes"
 
-# Keep the previous release's artifacts next to the new ones instead of deleting them.
+# Archive the previous release's artifacts outside the repo: Biome scans every
+# untracked directory, and the .app bundle carries JSON it would flag.
+ARCHIVE="$HOME/superset-desktop-releases"
 if [ -d "$DESKTOP/release" ]; then
   prev=$(ls "$DESKTOP/release" 2>/dev/null | sed -n 's/^Superset-\([0-9.]*\)-arm64\.dmg$/\1/p' | head -1)
   if [ -n "$prev" ] && [ "$prev" != "$VER" ]; then
-    rm -rf "$DESKTOP/release-$prev"
-    mv "$DESKTOP/release" "$DESKTOP/release-$prev"
-    echo "moved previous artifacts to apps/desktop/release-$prev"
+    mkdir -p "$ARCHIVE"
+    rm -rf "$ARCHIVE/$prev"
+    mv "$DESKTOP/release" "$ARCHIVE/$prev"
+    echo "archived previous artifacts to $ARCHIVE/$prev"
   fi
 fi
 mkdir -p "$DESKTOP/release"
