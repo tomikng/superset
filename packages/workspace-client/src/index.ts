@@ -14,11 +14,17 @@ export {
 	type ProjectChangedPayload,
 	type ProjectSnapshotPayload,
 	reconnectEventBusIfDown,
+	type TagFoldersChangedPayload,
 	type TerminalLifecyclePayload,
 	type WorkspaceChangedPayload,
 	type WorkspaceCreateSettledPayload,
 	type WorkspaceSnapshotPayload,
 } from "./lib/eventBus";
+export {
+	createHostServiceLinks,
+	type HostServiceLinkOptions,
+	isMethodOverrideRejection,
+} from "./lib/hostServiceLinks";
 export {
 	primeRelayAffinity,
 	type RelayAffinityProbe,

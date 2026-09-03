@@ -45,7 +45,9 @@ import { useAgentModelPreference } from "renderer/hooks/useAgentModelPreference"
 import { useAgentModePreference } from "renderer/hooks/useAgentModePreference";
 import { useRelayUrl } from "renderer/hooks/useRelayUrl";
 import { useV2AgentChoices } from "renderer/hooks/useV2AgentChoices";
+import { CLOUD_AGENT_CHOICES } from "renderer/hooks/useV2AgentChoices/cloud-agent-choices";
 import { track } from "renderer/lib/analytics";
+import { cloudTrpc } from "renderer/lib/cloud-trpc";
 import { electronTrpc } from "renderer/lib/electron-trpc";
 import { showHostServiceUnavailableToast } from "renderer/lib/host-service-unavailable";
 import { SupersetIcon } from "renderer/routes/_authenticated/onboarding/providers/components/SupersetIcon";
@@ -69,6 +71,7 @@ import { DevicePicker } from "../DashboardNewWorkspaceForm/components/DevicePick
 import { CLOUD_HOST_ID } from "../DashboardNewWorkspaceForm/components/DevicePicker/DevicePicker";
 import { useWorkspaceHostOptions } from "../DashboardNewWorkspaceForm/components/DevicePicker/hooks/useWorkspaceHostOptions";
 import { CompareBaseBranchPicker } from "../DashboardNewWorkspaceForm/PromptGroup/components/CompareBaseBranchPicker";
+import { EnvironmentPickerPill } from "../DashboardNewWorkspaceForm/PromptGroup/components/EnvironmentPickerPill";
 import { GitHubIssueLinkCommand } from "../DashboardNewWorkspaceForm/PromptGroup/components/GitHubIssueLinkCommand";
 import { LinkedGitHubIssuePill } from "../DashboardNewWorkspaceForm/PromptGroup/components/LinkedGitHubIssuePill";
 import { LinkedPRPill } from "../DashboardNewWorkspaceForm/PromptGroup/components/LinkedPRPill";
@@ -146,6 +149,15 @@ export function NewWorkspaceScreen({
 	const { activeHostUrl, machineId } = hostService;
 	const relayUrl = useRelayUrl();
 	const activeOrganizationId = useActiveOrganizationId();
+
+	const environmentsQuery = cloudTrpc.environment.list.useQuery(
+		{ organizationId: activeOrganizationId ?? "" },
+		{ enabled: draft.hostId === CLOUD_HOST_ID && !!activeOrganizationId },
+	);
+	const environmentOptions = environmentsQuery.data ?? [];
+	const selectedEnvironment =
+		environmentOptions.find((row) => row.id === draft.environmentId) ??
+		environmentOptions[0];
 	const setLastProjectId = useV2WorkspaceCreateDefaultsStore(
 		(state) => state.setLastProjectId,
 	);
@@ -442,8 +454,12 @@ export function NewWorkspaceScreen({
 		setSamplePromptsDismissed(true);
 	}, [promptLayout, setSamplePromptsDismissed]);
 
-	const { agents: v2Agents, isFetched: v2AgentsFetched } =
+	const { agents: hostAgents, isFetched: hostAgentsFetched } =
 		useV2AgentChoices(launchHostUrl);
+	// Under Cloud the built-in presets stand in for a host's agent list.
+	const v2Agents =
+		draft.hostId === CLOUD_HOST_ID ? CLOUD_AGENT_CHOICES : hostAgents;
+	const v2AgentsFetched = draft.hostId === CLOUD_HOST_ID || hostAgentsFetched;
 	const selectableAgentIds = useMemo(
 		() => v2Agents.map((agent) => agent.id),
 		[v2Agents],
@@ -1035,19 +1051,30 @@ export function NewWorkspaceScreen({
 									updateDraft({ hostId: next });
 								}}
 							/>
-							<ProjectPickerPill
-								selectedProject={selectedProject}
-								projects={projects}
-								isSessionSelected={draft.isSession}
-								onSelectProject={(selectedProjectId) => {
-									if (selectedProjectId === null) {
-										selectSession();
-										return;
+							{draft.hostId !== CLOUD_HOST_ID && (
+								<ProjectPickerPill
+									selectedProject={selectedProject}
+									projects={projects}
+									isSessionSelected={draft.isSession}
+									onSelectProject={(selectedProjectId) => {
+										if (selectedProjectId === null) {
+											selectSession();
+											return;
+										}
+										setLastProjectId(selectedProjectId);
+										selectProject(selectedProjectId);
+									}}
+								/>
+							)}
+							{draft.hostId === CLOUD_HOST_ID && (
+								<EnvironmentPickerPill
+									selectedEnvironment={selectedEnvironment}
+									environments={environmentOptions}
+									onSelectEnvironment={(next) =>
+										updateDraft({ environmentId: next })
 									}
-									setLastProjectId(selectedProjectId);
-									selectProject(selectedProjectId);
-								}}
-							/>
+								/>
+							)}
 							{draft.linkedPR ? (
 								<span className="flex items-center gap-1 text-xs text-muted-foreground">
 									<LuGitPullRequest className="size-3 shrink-0" />

@@ -24,6 +24,7 @@ import { useDashboardSidebarState } from "renderer/routes/_authenticated/hooks/u
 import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
 import { useSidebarSectionsCollapseStore } from "renderer/stores/sidebar-sections-collapse";
 import { DashboardSidebarBulkActions } from "./components/DashboardSidebarBulkActions";
+import { DashboardSidebarBulkDeleteMount } from "./components/DashboardSidebarBulkDeleteMount";
 import { DashboardSidebarCloudSection } from "./components/DashboardSidebarCloudSection";
 import { DashboardSidebarHeader } from "./components/DashboardSidebarHeader";
 import { DashboardSidebarHoverCardOverlay } from "./components/DashboardSidebarHoverCardOverlay";
@@ -32,7 +33,6 @@ import { DashboardSidebarProjectSection } from "./components/DashboardSidebarPro
 import { DashboardSidebarSectionRenameProvider } from "./components/DashboardSidebarSectionRenameContext";
 import { DashboardSidebarSessionsSection } from "./components/DashboardSidebarSessionsSection";
 import { DashboardSidebarWorkspacesHeader } from "./components/DashboardSidebarWorkspacesHeader";
-import { SectionDragSpacer } from "./components/SectionDragSpacer";
 import { useV2SetupScriptCard } from "./components/V2SetupScriptCard";
 import { useDashboardSidebarData } from "./hooks/useDashboardSidebarData";
 import { useDashboardSidebarShortcuts } from "./hooks/useDashboardSidebarShortcuts";
@@ -131,12 +131,16 @@ export function DashboardSidebar({
 		groups,
 		pinnedWorkspaces,
 		sessionWorkspaces,
-		sessionTagGroups,
-		ungroupedSessionWorkspaces,
+		sessionChildren,
 		refreshWorkspacePullRequest,
 		toggleProjectCollapsed,
 	} = useDashboardSidebarData();
-	const { reorderProjects } = useDashboardSidebarState();
+	const {
+		deleteSection,
+		reorderProjects,
+		renameSection,
+		toggleSectionCollapsed,
+	} = useDashboardSidebarState();
 	// Converts legacy uuid-keyed folders to tag-backed folders in the
 	// background; retries whenever the workspace cache changes.
 	useMigrateLegacySidebarFolders();
@@ -169,6 +173,7 @@ export function DashboardSidebar({
 	const workspaceShortcutLabels = useDashboardSidebarShortcuts(
 		orderedGroups,
 		sessionWorkspaces,
+		sessionChildren,
 	);
 	const selectableWorkspaceIds = useMemo(() => {
 		const ids = new Set<string>();
@@ -269,6 +274,7 @@ export function DashboardSidebar({
 			availableWorkspaceIds={selectableWorkspaceIds}
 			activeWorkspaceId={activeV2WorkspaceId}
 		>
+			<DashboardSidebarBulkDeleteMount />
 			<DashboardSidebarSectionRenameProvider>
 				<DashboardSidebarHoverProvider>
 					<DashboardSidebarWorkspaceStatusProvider
@@ -281,7 +287,7 @@ export function DashboardSidebar({
 							<DashboardSidebarDndProvider
 								projects={orderedGroups}
 								pinnedWorkspaces={pinnedWorkspaces}
-								sessionWorkspaces={sessionWorkspaces}
+								sessionChildren={sessionChildren}
 								isSidebarCollapsed={isCollapsed}
 								workspaceShortcutLabels={workspaceShortcutLabels}
 								onReorderProjects={handleReorderProjects}
@@ -306,11 +312,12 @@ export function DashboardSidebar({
 										/>
 										<DashboardSidebarSessionsSection
 											sessionWorkspaces={sessionWorkspaces}
-											tagGroups={sessionTagGroups}
-											ungroupedWorkspaces={ungroupedSessionWorkspaces}
 											isCollapsed={isCollapsed}
 											workspaceShortcutLabels={workspaceShortcutLabels}
 											onWorkspaceHover={refreshWorkspacePullRequest}
+											onDeleteSection={deleteSection}
+											onRenameSection={renameSection}
+											onToggleSectionCollapse={toggleSectionCollapsed}
 										/>
 										{!isCollapsed && (
 											<div className="mt-3 first:mt-0">
@@ -336,7 +343,6 @@ export function DashboardSidebar({
 												))}
 											</SortableContext>
 										)}
-										<SectionDragSpacer />
 									</OverflowFadeContainer>
 									<SidebarCardSlot
 										isCollapsed={isCollapsed}

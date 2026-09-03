@@ -20,6 +20,7 @@ import {
 } from "@/hooks/useHostWorkspaces";
 import { useSelectedHost } from "@/screens/(authenticated)/(home)/hooks/useSelectedHost";
 import { useWorkspaceScope } from "@/screens/(authenticated)/(home)/hooks/useWorkspaceScope";
+import { HeaderNotice } from "@/screens/(authenticated)/components/HeaderNotice";
 import { useOrganizations } from "@/screens/(authenticated)/hooks/useOrganizations";
 import {
 	type OrgPullRequest,
@@ -35,7 +36,7 @@ import { OrganizationHeaderButton } from "./components/OrganizationHeaderButton"
 import { ProjectSectionHeader } from "./components/ProjectSectionHeader";
 import { ScopeBar } from "./components/ScopeBar";
 import { WorkspaceRow } from "./components/WorkspaceRow";
-import { useCloudRepoPrefixes } from "./hooks/useCloudRepoPrefixes";
+import { useCloudRepoPrefix } from "./hooks/useCloudRepoPrefixes";
 import {
 	type TerminalsHost,
 	useHostsTerminals,
@@ -96,6 +97,8 @@ function homeListItemKey(item: HomeListItem): string {
 	}
 }
 
+const NOTICE_MS = 1500;
+
 export function HomeScreen() {
 	const { t } = useLingui();
 	const router = useRouter();
@@ -103,6 +106,20 @@ export function HomeScreen() {
 	const hasHydrated = useWorkspacesFilterStore((store) => store.hasHydrated);
 	const [visibleIds, setVisibleIds] = useState<string[]>([]);
 	const [refreshing, setRefreshing] = useState(false);
+	// seq gives each notice its own identity: a repeat copy while "Copied" is
+	// still up remounts HeaderNotice, restarting its timer.
+	const [notice, setNotice] = useState<{ text: string; seq: number } | null>(
+		null,
+	);
+	const hideNotice = useCallback(() => setNotice(null), []);
+	const handleCopied = useCallback(
+		() =>
+			setNotice((prev) => ({
+				text: t({ id: "mobile.workspaceRow.copied", message: "Copied" }),
+				seq: (prev?.seq ?? 0) + 1,
+			})),
+		[t],
+	);
 	const { height: windowHeight } = useWindowDimensions();
 	const insets = useSafeAreaInsets();
 	const queryClient = useQueryClient();
@@ -411,11 +428,10 @@ export function HomeScreen() {
 	// Projects are fully local: PR rows are matched by repo coordinates
 	// parsed from the PR URL (cloud repo UUIDs aren't known host-side).
 	// Cloud rows' projects come from the API instead.
-	const cloudRepoPrefixes = useCloudRepoPrefixes(cloudItems);
+	const cloudRepoPrefix = useCloudRepoPrefix();
 	const repoPrefixesByProject = useMemo(
 		() =>
 			new Map<string, string | null>([
-				...cloudRepoPrefixes,
 				...projects.map((project): [string, string | null] => [
 					project.id,
 					project.repoOwner && project.repoName
@@ -423,7 +439,7 @@ export function HomeScreen() {
 						: null,
 				]),
 			]),
-		[projects, cloudRepoPrefixes],
+		[projects],
 	);
 
 	const renderItem = useCallback(
@@ -463,9 +479,11 @@ export function HomeScreen() {
 				);
 			}
 			const { workspace, cloudStatus } = item;
-			const repoPrefix = workspace.projectId
-				? repoPrefixesByProject.get(workspace.projectId)
-				: undefined;
+			const repoPrefix = cloudStatus
+				? cloudRepoPrefix
+				: workspace.projectId
+					? repoPrefixesByProject.get(workspace.projectId)
+					: undefined;
 			return (
 				<WorkspaceRow
 					workspace={workspace}
@@ -481,11 +499,13 @@ export function HomeScreen() {
 					attention={attentionByWorkspace.get(workspace.id) ?? null}
 					sessions={terminalsByWorkspace.get(workspace.id) ?? []}
 					cloudStatus={cloudStatus}
+					onCopied={handleCopied}
 				/>
 			);
 		},
 		[
 			pullRequestsByRepoBranch,
+			cloudRepoPrefix,
 			repoPrefixesByProject,
 			diffStats,
 			cache,
@@ -496,6 +516,7 @@ export function HomeScreen() {
 			selectedHost,
 			setTargetKey,
 			requestComposerFocus,
+			handleCopied,
 		],
 	);
 
@@ -535,6 +556,20 @@ export function HomeScreen() {
 			    over the content that swallows every touch (#6659); on the sheet's
 			    own header the same bar works. Hidden while the host is
 			    offline — its list isn't shown, so there is nothing to search. */}
+			<Stack.Screen
+				options={{
+					headerTitle: notice
+						? () => (
+								<HeaderNotice
+									key={notice.seq}
+									onHidden={hideNotice}
+									text={notice.text}
+									visibleFor={NOTICE_MS}
+								/>
+							)
+						: undefined,
+				}}
+			/>
 			{!cloudScope && selectedHost && !selectedHost.isOnline ? null : (
 				<Stack.Toolbar placement="right">
 					<Stack.Toolbar.Button

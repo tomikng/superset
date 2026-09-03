@@ -14,12 +14,14 @@ import {
 	LuArrowRightLeft,
 	LuArrowUp,
 	LuBellOff,
+	LuBox,
 	LuCopy,
 	LuEye,
 	LuEyeOff,
 	LuFolderOpen,
 	LuFolderPlus,
 	LuGitBranch,
+	LuHash,
 	LuPencil,
 	LuPin,
 	LuPinOff,
@@ -57,8 +59,11 @@ interface DashboardSidebarWorkspaceContextMenuProps {
 	onOpenInFinder: () => void;
 	onCopyPath: () => void;
 	onCopyBranchName: () => void;
+	onCopyWorkspaceId: () => void;
 	onRemoveFromSidebar: () => void;
 	onRename?: () => void;
+	/** Cloud workspaces only: turn this sandbox into a reusable environment. */
+	onPromoteToEnvironment?: () => void;
 	onDelete?: () => void;
 	onToggleUnread: () => void;
 	onClearStatus: () => void;
@@ -84,8 +89,10 @@ export function DashboardSidebarWorkspaceContextMenu({
 	onOpenInFinder,
 	onCopyPath,
 	onCopyBranchName,
+	onCopyWorkspaceId,
 	onRemoveFromSidebar,
 	onRename,
+	onPromoteToEnvironment,
 	onDelete,
 	onToggleUnread,
 	onClearStatus,
@@ -151,10 +158,27 @@ export function DashboardSidebarWorkspaceContextMenu({
 					</>
 				)}
 				{!isLocalWorkspace && onRename && <ContextMenuSeparator />}
+				{onPromoteToEnvironment && (
+					<>
+						<ContextMenuItem onSelect={onPromoteToEnvironment}>
+							<LuBox className="h-4 w-4" />
+							<Trans id="dashboard.sidebar.workspaceContextMenu.promoteToEnvironment">
+								Save as environment
+							</Trans>
+						</ContextMenuItem>
+						<ContextMenuSeparator />
+					</>
+				)}
 				<ContextMenuItem onSelect={onCopyBranchName}>
 					<LuGitBranch className="size-4 mr-2" />
 					<Trans id="dashboard.sidebar.workspaceMenu.copyBranchName">
 						Copy Branch Name
+					</Trans>
+				</ContextMenuItem>
+				<ContextMenuItem onSelect={onCopyWorkspaceId}>
+					<LuHash className="size-4 mr-2" />
+					<Trans id="dashboard.sidebar.workspaceMenu.copyWorkspaceId">
+						Copy Workspace ID
 					</Trans>
 				</ContextMenuItem>
 				<ContextMenuSeparator />

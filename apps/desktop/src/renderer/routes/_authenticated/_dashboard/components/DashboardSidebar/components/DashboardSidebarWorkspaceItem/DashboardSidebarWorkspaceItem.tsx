@@ -1,4 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
+import { errorMessage } from "@superset/i18n/errors";
+import { toast } from "@superset/ui/sonner";
 import {
 	type KeyboardEvent,
 	type MouseEvent,
@@ -8,6 +10,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { cloudTrpc } from "renderer/lib/cloud-trpc";
 import { useOptimisticActions } from "renderer/routes/_authenticated/hooks/useOptimisticActions";
 import { RenameBranchDialog } from "renderer/screens/main/components/WorkspaceSidebar/WorkspaceListItem/components";
 import {
@@ -58,6 +61,31 @@ export function DashboardSidebarWorkspaceItem({
 	pinnedContext,
 }: DashboardSidebarWorkspaceItemProps) {
 	const { t } = useLingui();
+	// TODO(SUPER-2116): belongs in the create-environment flow; this offers
+	// itself on workspaces that are not "ready" and cannot be promoted.
+	const promoteToEnvironment = cloudTrpc.environment.promote.useMutation();
+
+	const handlePromoteToEnvironment = useCallback(() => {
+		toast.promise(
+			promoteToEnvironment.mutateAsync({
+				cloudWorkspaceId: workspace.id,
+				name: workspace.name,
+			}),
+			{
+				loading: t({
+					id: "dashboard.sidebar.promotingToEnvironment",
+					message: "Saving as an environment...",
+				}),
+				success: (created) =>
+					t({
+						id: "dashboard.sidebar.promotedToEnvironment",
+						message: `Saved "${created?.name}" as an environment`,
+					}),
+				error: (error) => errorMessage(error),
+			},
+		);
+	}, [promoteToEnvironment, workspace.id, workspace.name, t]);
+
 	const {
 		id,
 		projectId,
@@ -79,6 +107,7 @@ export function DashboardSidebarWorkspaceItem({
 		handleClick,
 		handleCopyPath,
 		handleCopyBranchName,
+		handleCopyWorkspaceId,
 		handleCreateSection,
 		handleMoveToSection,
 		handleOpenInFinder,
@@ -268,6 +297,9 @@ export function DashboardSidebarWorkspaceItem({
 							isLocalMainWorkspace={
 								isMainWorkspace && hostType === "local-device"
 							}
+							onPromoteToEnvironment={
+								hostType === "cloud" ? handlePromoteToEnvironment : undefined
+							}
 							isPinned={workspace.isPinned}
 							onTogglePin={handleTogglePin}
 							onCreateSection={handleCreateSection}
@@ -276,6 +308,7 @@ export function DashboardSidebarWorkspaceItem({
 							onOpenInFinder={handleOpenInFinder}
 							onCopyPath={handleCopyPath}
 							onCopyBranchName={handleCopyBranchName}
+							onCopyWorkspaceId={handleCopyWorkspaceId}
 							onRemoveFromSidebar={handleRemoveFromSidebar}
 							onRemovePullRequest={handleRemovePullRequest}
 							onRename={isMainWorkspace ? undefined : startRename}
@@ -368,6 +401,7 @@ export function DashboardSidebarWorkspaceItem({
 						showDeleteHotkey={isActive}
 						onCopyPath={handleCopyPath}
 						onCopyBranchName={handleCopyBranchName}
+						onCopyWorkspaceId={handleCopyWorkspaceId}
 						onRemoveFromSidebar={handleRemoveFromSidebar}
 						onRemovePullRequest={handleRemovePullRequest}
 						onRename={isMainWorkspace ? undefined : startRename}

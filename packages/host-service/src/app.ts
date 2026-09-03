@@ -17,6 +17,7 @@ import type { ApiAuthProvider } from "./providers/auth";
 import type { HostAuthProvider } from "./providers/host-auth";
 import { runArchivedWorkspaceReconcile } from "./runtime/archived-workspace-reconcile";
 import { registerBrowserCdpRoute } from "./runtime/browser-bridge/browser-cdp-route";
+import { registerDesktopRoute } from "./runtime/desktop";
 import { WorkspaceFilesystemManager } from "./runtime/filesystem";
 import type { GitCredentialProvider } from "./runtime/git";
 import { createGitEnvResolver, createGitFactory } from "./runtime/git";
@@ -24,6 +25,7 @@ import { runMainWorkspaceSweep } from "./runtime/main-workspace-sweep";
 import { runProjectBackfill } from "./runtime/project-backfill";
 import { PullRequestRuntimeManager } from "./runtime/pull-requests";
 import {
+	launchSandboxAgentOnce,
 	readSandboxIdentity,
 	runSandboxSelfSeed,
 } from "./runtime/sandbox-self-seed";
@@ -42,7 +44,11 @@ import {
 	execGh as defaultExecGh,
 	type ExecGh,
 } from "./trpc/router/workspace-creation/utils/exec-gh";
-import type { ApiClient, BrowserBridgeConfig } from "./types";
+import type {
+	ApiClient,
+	BrowserBridgeConfig,
+	HostServiceContext,
+} from "./types";
 import { getHostWorkerPool } from "./workers/host-worker-pool";
 import { gitWorkspaceRefsTask } from "./workers/tasks/git";
 
@@ -81,6 +87,12 @@ export interface CreateAppResult {
 	api: ApiClient;
 	db: HostDb;
 	eventBus: EventBus;
+	/**
+	 * In a sandbox, runs the agent the workspace was created with. Call once
+	 * the server is listening; a no-op everywhere else and on every boot after
+	 * the first.
+	 */
+	launchSandboxAgent: () => Promise<void>;
 	dispose: () => Promise<void>;
 }
 
@@ -302,6 +314,7 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 	app.use("/events", wsAuth);
 	app.use("/chat-v3/*", wsAuth);
 	app.use("/browser/*", wsAuth);
+	app.use("/desktop/*", wsAuth);
 	app.use("/fwd", wsAuth);
 
 	registerEventBusRoute({ app, eventBus, upgradeWebSocket });
@@ -310,6 +323,7 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 		upgradeWebSocket,
 		getBridge: () => config.browserBridge,
 	});
+	registerDesktopRoute({ app, upgradeWebSocket });
 	registerForwardMuxRoute({
 		app,
 		upgradeWebSocket,
@@ -329,7 +343,7 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 		trpcServer({
 			router: appRouter,
 			// Renderer clients send every request (including queries) as POST —
-			// see WorkspaceClientProvider/host-service-client's methodOverride —
+			// see createHostServiceLinks in @superset/workspace-client —
 			// so a query with a large input (e.g. git.getDiffBulk's file-path
 			// list, or a same-tick batch across many workspaces) doesn't produce
 			// a GET URL long enough to blow past the header-size limit. Without
@@ -397,5 +411,34 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 		}
 	};
 
-	return { app, injectWebSocket, api, db, eventBus, dispose };
+	const launchSandboxAgent = async () => {
+		if (!sandboxIdentity?.launch) return;
+		await launchSandboxAgentOnce(
+			{
+				git,
+				credentials: providers.credentials,
+				github,
+				execGh,
+				api,
+				db,
+				runtime,
+				eventBus,
+				terminalAgentStore,
+				organizationId: config.organizationId,
+				isAuthenticated: true,
+				browserBridge: config.browserBridge,
+			} as HostServiceContext,
+			sandboxIdentity,
+		);
+	};
+
+	return {
+		app,
+		injectWebSocket,
+		api,
+		db,
+		eventBus,
+		launchSandboxAgent,
+		dispose,
+	};
 }
