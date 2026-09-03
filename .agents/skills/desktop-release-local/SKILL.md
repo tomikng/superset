@@ -27,12 +27,18 @@ self-host releases are built here and published by copying the artifacts to
 5. **Backend URLs are compiled in** (renderer + CSP). They come from
    `deploy/env.production.template`; a build only talks to the instance it was
    built for.
-6. **The ms1 relay is the v1 relay** (`apps/relay`, no `/v2/control`). Upstream
-   deleted the v1 tunnel client from the host service (4988b7f50, 2026-08-31);
-   the fork reverts that. Before cutting a release confirm
-   `packages/host-service/src/tunnel/tunnel-client.ts` exists and `connect.ts`
-   still probes `/health` for `proto` — a build without it has no tunnel at
-   all and every host shows offline (that was 1.25.3).
+6. **The ms1 relay speaks tunnel v2** (`apps/relay` is the fork's port of
+   relay2, PR #13; `curl https://superset-relay.tom-nguyen.dev/health` shows
+   `proto: 2`). The host service is tunnel v2 only, matching upstream — do
+   **not** restore the deleted v1 client (`packages/host-service/src/tunnel/
+   tunnel-client.ts`); that was the 1.25.4 hotfix for the old relay and was
+   reverted in 1.25.5. If a build shows every host offline, check the relay's
+   `/health` first. The sync guard (`chore(sync): keep our relay on upstream
+   syncs`) keeps `apps/relay` ours on merges.
+7. **Scripted:** `deploy/release-desktop-local.sh` runs everything below
+   (preflight → compile → package/notarize → DMG → verify) detached, logging to
+   `apps/desktop/release-build-<ver>.log` and leaving `release/BUILD_OK`.
+   Publishing stays manual (section "Publish").
 
 ## Identity / notary
 
