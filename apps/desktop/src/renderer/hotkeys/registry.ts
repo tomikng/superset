@@ -343,7 +343,7 @@ export const HOTKEYS_REGISTRY = {
 		},
 		label: msg({
 			id: "hotkeys.toggleSidebar.label",
-			message: "Toggle Changes Tab",
+			message: "Toggle Sidebar",
 		}),
 		category: "Layout",
 	},
@@ -355,13 +355,12 @@ export const HOTKEYS_REGISTRY = {
 		},
 		label: msg({
 			id: "hotkeys.openDiffViewer.label",
-			message: "Open Diff Viewer",
+			message: "Open Changes",
 		}),
 		category: "Layout",
 		description: msg({
 			id: "hotkeys.openDiffViewer.description",
-			message:
-				"Open the diff viewer in a new tab, or focus the existing diff viewer",
+			message: "Open the Changes pane in a new tab, or focus the existing one",
 		}),
 	},
 	TOGGLE_WORKSPACE_SIDEBAR: {
@@ -429,6 +428,22 @@ export const HOTKEYS_REGISTRY = {
 		description: msg({
 			id: "hotkeys.splitWithBrowser.description",
 			message: "Split the current pane and open a new browser pane",
+		}),
+	},
+	SPLIT_WITH_DESKTOP: {
+		key: {
+			mac: L("meta+shift+y"),
+			windows: L("ctrl+shift+alt+y"),
+			linux: L("ctrl+shift+alt+y"),
+		},
+		label: msg({
+			id: "hotkeys.splitWithDesktop.label",
+			message: "Split with Desktop",
+		}),
+		category: "Layout",
+		description: msg({
+			id: "hotkeys.splitWithDesktop.description",
+			message: "Split the current pane and open the sandbox desktop",
 		}),
 	},
 	EQUALIZE_PANE_SPLITS: {

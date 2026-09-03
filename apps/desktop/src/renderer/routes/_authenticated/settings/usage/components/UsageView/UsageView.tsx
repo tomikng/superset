@@ -36,7 +36,7 @@ import { useHostUsageQuota } from "../../hooks/useHostUsageQuota";
 import { useRemoveUsageAccount } from "../../hooks/useRemoveUsageAccount";
 import { useRestartAgentSessions } from "../../hooks/useRestartAgentSessions";
 import { useSetDefaultUsageAccount } from "../../hooks/useSetDefaultUsageAccount";
-import { LeaderboardPrompt } from "../LeaderboardPrompt";
+import { LeaderboardCard } from "../LeaderboardCard";
 import { UsageHistorySection } from "../UsageHistorySection";
 import type { SwitchSignInTarget } from "./components/AddAccountDialog";
 import { AddAccountDialog } from "./components/AddAccountDialog";
@@ -45,23 +45,15 @@ import type { RestartSessionsPrompt } from "./components/RestartSessionsDialog";
 import { RestartSessionsDialog } from "./components/RestartSessionsDialog";
 import { formatResetIn, formatResetLabel } from "./utils/formatResetIn";
 import { switchSignInCommand } from "./utils/switchSignInCommand";
+import type { ManagedAgent, QuotaAgent } from "./utils/visibleQuotaAgents";
+import { isManagedAgent, visibleQuotaAgents } from "./utils/visibleQuotaAgents";
 
-type Agent = UsageAccount["agent"];
-
-const AGENTS: Agent[] = ["claude", "codex", "grok", "agy"];
-
-const AGENT_LABELS: Record<Agent, string> = {
+const AGENT_LABELS: Record<QuotaAgent, string> = {
 	claude: "Claude Code",
 	codex: "Codex",
 	grok: "Grok",
 	agy: "Antigravity",
 };
-
-type ManagedAgent = "claude" | "codex";
-
-function isManagedAgent(agent: Agent): agent is ManagedAgent {
-	return agent === "claude" || agent === "codex";
-}
 
 function meterColor(usedPercent: number): string {
 	if (usedPercent >= 90) return "bg-red-500";
@@ -492,7 +484,7 @@ export function UsageView({ hostUrl }: { hostUrl: string | null }) {
 
 	return (
 		<div className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-3 px-6 py-4">
-			<LeaderboardPrompt hostUrl={hostUrl} />
+			<LeaderboardCard hostUrl={hostUrl} />
 			<div className="flex items-center gap-2">
 				<span className="ml-auto text-[10px] text-muted-foreground">
 					<Trans id="settings.usage.quota.refreshNote">
@@ -542,9 +534,7 @@ export function UsageView({ hostUrl }: { hostUrl: string | null }) {
 					</Trans>
 				</div>
 			) : (
-				AGENTS.filter((agent) =>
-					accounts.some((account) => account.agent === agent),
-				).map((agent) => {
+				visibleQuotaAgents(accounts).map((agent) => {
 					const agentAccounts = accounts.filter(
 						(account) => account.agent === agent,
 					);

@@ -20,6 +20,7 @@ type EventType =
 	| "workspace:changed"
 	| "workspace:create-settled"
 	| "project:changed"
+	| "tag-folders:changed"
 	| "page-watch:changed";
 
 interface FsEventsPayload {
@@ -109,6 +110,17 @@ export interface PageWatchChangedPayload {
 	occurredAt: number;
 }
 
+type TagFoldersChangedMessage = Extract<
+	ServerMessage,
+	{ type: "tag-folders:changed" }
+>;
+
+export interface TagFoldersChangedPayload {
+	/** The scope's full set after the change — empty when all were removed. */
+	settings: TagFoldersChangedMessage["settings"];
+	occurredAt: TagFoldersChangedMessage["occurredAt"];
+}
+
 type EventListener<T extends EventType> = T extends "fs:events"
 	? (workspaceId: string, payload: FsEventsPayload) => void
 	: T extends "git:changed"
@@ -130,12 +142,14 @@ type EventListener<T extends EventType> = T extends "fs:events"
 									) => void
 								: T extends "project:changed"
 									? (projectId: string, payload: ProjectChangedPayload) => void
-									: T extends "page-watch:changed"
-										? (
-												workspaceId: string,
-												payload: PageWatchChangedPayload,
-											) => void
-										: never;
+									: T extends "tag-folders:changed"
+										? (scope: string, payload: TagFoldersChangedPayload) => void
+										: T extends "page-watch:changed"
+											? (
+													workspaceId: string,
+													payload: PageWatchChangedPayload,
+												) => void
+											: never;
 
 interface ListenerEntry {
 	type: EventType;
@@ -186,6 +200,15 @@ function fileWatchKey(workspaceId: string, absolutePath: string): string {
 	return `${workspaceId}\0${absolutePath}`;
 }
 
+function probesEqual(
+	left: RelayAffinityProbe | null,
+	right: RelayAffinityProbe | null,
+): boolean {
+	if (left === right) return true;
+	if (left === null || right === null) return false;
+	return left.status === right.status && left.region === right.region;
+}
+
 function setConnectionStatus(
 	state: ConnectionState,
 	next: { state?: HostConnectionState; probe?: RelayAffinityProbe | null },
@@ -193,12 +216,20 @@ function setConnectionStatus(
 	const current = state.status;
 	const nextState = next.state ?? current.state;
 	const nextProbe = "probe" in next ? (next.probe ?? null) : current.probe;
-	if (nextState === current.state && nextProbe === current.probe) return;
+	// Value-compare probes: the preflight allocates a fresh result object per
+	// dial, so identity comparison republished an unchanged 503 on every
+	// backoff attempt — fanning a no-op "transition" out to every status
+	// subscriber (and their React commits) for as long as a host stayed down.
+	if (nextState === current.state && probesEqual(nextProbe, current.probe)) {
+		return;
+	}
 
 	state.status = {
 		state: nextState,
 		since: nextState === current.state ? current.since : Date.now(),
-		probe: nextProbe,
+		// Keep the old probe object when only the state moved, so subscribers
+		// keying on probe identity don't re-derive from an equal value.
+		probe: probesEqual(nextProbe, current.probe) ? current.probe : nextProbe,
 	};
 	for (const listener of state.statusListeners) listener(state.status);
 }
@@ -244,7 +275,9 @@ function handleMessage(state: ConnectionState, data: unknown): void {
 				? message.workspaceId
 				: message.type === "project:changed"
 					? message.projectId
-					: null;
+					: message.type === "tag-folders:changed"
+						? message.scope
+						: null;
 
 		if (
 			workspaceId &&
@@ -319,6 +352,11 @@ function handleMessage(state: ConnectionState, data: unknown): void {
 			(entry.callback as EventListener<"project:changed">)(message.projectId, {
 				eventType: message.eventType,
 				project: message.project,
+				occurredAt: message.occurredAt,
+			});
+		} else if (message.type === "tag-folders:changed") {
+			(entry.callback as EventListener<"tag-folders:changed">)(message.scope, {
+				settings: message.settings,
 				occurredAt: message.occurredAt,
 			});
 		}

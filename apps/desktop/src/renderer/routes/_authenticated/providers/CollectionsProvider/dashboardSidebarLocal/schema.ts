@@ -1,5 +1,6 @@
 import type { AppRouter } from "@superset/host-service";
 import type { LayoutNode, Tab, WorkspaceState } from "@superset/panes";
+import { tagFolderScopeInputSchema } from "@superset/shared/workspace-tags";
 import type { inferRouterInputs } from "@trpc/server";
 import { z } from "zod";
 
@@ -119,7 +120,9 @@ export const workspaceRunTerminalStateSchema = z.object({
 	stopRequestedAt: z.number().optional(),
 });
 
-export const WORKSPACE_SIDEBAR_TABS = ["changes", "files", "review"] as const;
+// "changes" and "pages" are retired tabs: the Changes surface moved into the
+// workspace's Changes pane, so persisted rows heal to "files" below.
+export const WORKSPACE_SIDEBAR_TABS = ["files", "review"] as const;
 
 const WORKSPACE_SIDEBAR_TAB_SCHEMA = z.enum(WORKSPACE_SIDEBAR_TABS);
 
@@ -141,7 +144,7 @@ export const workspaceLocalStateSchema = z.object({
 		sectionId: z.string().min(1).nullable().default(null),
 		changesFilter: changesFilterSchema.default({ kind: "all" }),
 		changesViewMode: z.enum(["folders", "tree"]).default("folders"),
-		activeTab: WORKSPACE_SIDEBAR_TAB_SCHEMA.default("changes"),
+		activeTab: WORKSPACE_SIDEBAR_TAB_SCHEMA.default("files"),
 		isHidden: z.boolean().default(false),
 		// Epoch ms when the user pinned this workspace to the sidebar's Pinned
 		// section; null = not pinned. Ordering is pinnedAt ascending.
@@ -185,7 +188,7 @@ const SIDEBAR_STATE_DEFAULTS = {
 	sectionId: null,
 	changesFilter: { kind: "all" },
 	changesViewMode: "folders",
-	activeTab: "changes",
+	activeTab: "files",
 	isHidden: false,
 	pinnedAt: null,
 } as const;
@@ -219,7 +222,9 @@ export const dashboardSidebarSectionSchema = z.object({
 	// withReadHeal DELETES rows that fail parse, so this schema must keep
 	// accepting every previously persisted shape.
 	sectionId: z.string().min(1),
-	projectId: z.string().uuid(),
+	// A project id, or the Sessions tag scope: the Sessions lane stores its
+	// folder rows (order, collapse) under that scope since it has no project.
+	projectId: tagFolderScopeInputSchema,
 	name: z.string().trim().min(1),
 	createdAt: persistedDateSchema,
 	tabOrder: z.number().int().default(0),
@@ -477,7 +482,7 @@ export function healWorkspaceLocalState(raw: unknown): WorkspaceLocalStateRow {
 		sidebarState: {
 			...SIDEBAR_STATE_DEFAULTS,
 			...sidebar,
-			activeTab: WORKSPACE_SIDEBAR_TAB_SCHEMA.catch("changes").parse(
+			activeTab: WORKSPACE_SIDEBAR_TAB_SCHEMA.catch("files").parse(
 				sidebar.activeTab,
 			),
 		} as WorkspaceLocalStateRow["sidebarState"],
