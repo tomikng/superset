@@ -16,6 +16,7 @@ import { electronTrpc } from "renderer/lib/electron-trpc";
 import { DashboardSidebar } from "renderer/routes/_authenticated/_dashboard/components/DashboardSidebar";
 import { DashboardSidebarPortsProvider } from "renderer/routes/_authenticated/_dashboard/components/DashboardSidebar/providers/DashboardSidebarPortsProvider";
 import { PortForwardsProvider } from "renderer/routes/_authenticated/_dashboard/components/DashboardSidebar/providers/PortForwardsProvider";
+import { useOrganizationShortcuts } from "renderer/routes/_authenticated/_dashboard/hooks/useOrganizationShortcuts";
 import { useDevSeedV2Sidebar } from "renderer/routes/_authenticated/hooks/useDevSeedV2Sidebar";
 import { useHostWorkspaces } from "renderer/routes/_authenticated/providers/HostWorkspacesProvider";
 import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
@@ -143,6 +144,7 @@ function DashboardLayout() {
 	} = useWorkspaceSidebarStore();
 
 	// Global hotkeys for dashboard
+	useOrganizationShortcuts();
 	useHotkey("OPEN_SETTINGS", () => navigate({ to: "/settings/account" }));
 	useHotkey("SHOW_HOTKEYS", () => navigate({ to: "/settings/keyboard" }));
 	useHotkey("TOGGLE_WORKSPACE_SIDEBAR", () => {

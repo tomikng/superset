@@ -75,6 +75,38 @@ export const HOTKEYS_REGISTRY = {
 			message: "Go forward to the next page in history",
 		}),
 	},
+	PREV_ORGANIZATION: {
+		key: {
+			mac: L("meta+shift+bracketleft"),
+			windows: L("ctrl+alt+bracketleft"),
+			linux: L("ctrl+alt+bracketleft"),
+		},
+		label: msg({
+			id: "hotkeys.prevOrganization.label",
+			message: "Previous Organization",
+		}),
+		category: "Navigation",
+		description: msg({
+			id: "hotkeys.prevOrganization.description",
+			message: "Switch to the previous organization",
+		}),
+	},
+	NEXT_ORGANIZATION: {
+		key: {
+			mac: L("meta+shift+bracketright"),
+			windows: L("ctrl+alt+bracketright"),
+			linux: L("ctrl+alt+bracketright"),
+		},
+		label: msg({
+			id: "hotkeys.nextOrganization.label",
+			message: "Next Organization",
+		}),
+		category: "Navigation",
+		description: msg({
+			id: "hotkeys.nextOrganization.description",
+			message: "Switch to the next organization",
+		}),
+	},
 	QUICK_OPEN: {
 		key: {
 			mac: L("meta+p"),
