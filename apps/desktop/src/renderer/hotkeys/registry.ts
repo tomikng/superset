@@ -75,6 +75,38 @@ export const HOTKEYS_REGISTRY = {
 			message: "Go forward to the next page in history",
 		}),
 	},
+	PREV_ORGANIZATION: {
+		key: {
+			mac: L("meta+shift+bracketleft"),
+			windows: L("ctrl+alt+bracketleft"),
+			linux: L("ctrl+alt+bracketleft"),
+		},
+		label: msg({
+			id: "hotkeys.prevOrganization.label",
+			message: "Previous Organization",
+		}),
+		category: "Navigation",
+		description: msg({
+			id: "hotkeys.prevOrganization.description",
+			message: "Switch to the previous organization",
+		}),
+	},
+	NEXT_ORGANIZATION: {
+		key: {
+			mac: L("meta+shift+bracketright"),
+			windows: L("ctrl+alt+bracketright"),
+			linux: L("ctrl+alt+bracketright"),
+		},
+		label: msg({
+			id: "hotkeys.nextOrganization.label",
+			message: "Next Organization",
+		}),
+		category: "Navigation",
+		description: msg({
+			id: "hotkeys.nextOrganization.description",
+			message: "Switch to the next organization",
+		}),
+	},
 	QUICK_OPEN: {
 		key: {
 			mac: L("meta+p"),
@@ -343,7 +375,7 @@ export const HOTKEYS_REGISTRY = {
 		},
 		label: msg({
 			id: "hotkeys.toggleSidebar.label",
-			message: "Toggle Changes Tab",
+			message: "Toggle Sidebar",
 		}),
 		category: "Layout",
 	},
@@ -355,13 +387,12 @@ export const HOTKEYS_REGISTRY = {
 		},
 		label: msg({
 			id: "hotkeys.openDiffViewer.label",
-			message: "Open Diff Viewer",
+			message: "Open Changes",
 		}),
 		category: "Layout",
 		description: msg({
 			id: "hotkeys.openDiffViewer.description",
-			message:
-				"Open the diff viewer in a new tab, or focus the existing diff viewer",
+			message: "Open the Changes pane in a new tab, or focus the existing one",
 		}),
 	},
 	TOGGLE_WORKSPACE_SIDEBAR: {
@@ -429,6 +460,22 @@ export const HOTKEYS_REGISTRY = {
 		description: msg({
 			id: "hotkeys.splitWithBrowser.description",
 			message: "Split the current pane and open a new browser pane",
+		}),
+	},
+	SPLIT_WITH_DESKTOP: {
+		key: {
+			mac: L("meta+shift+y"),
+			windows: L("ctrl+shift+alt+y"),
+			linux: L("ctrl+shift+alt+y"),
+		},
+		label: msg({
+			id: "hotkeys.splitWithDesktop.label",
+			message: "Split with Desktop",
+		}),
+		category: "Layout",
+		description: msg({
+			id: "hotkeys.splitWithDesktop.description",
+			message: "Split the current pane and open the sandbox desktop",
 		}),
 	},
 	EQUALIZE_PANE_SPLITS: {

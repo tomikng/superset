@@ -17,6 +17,7 @@ import {
 	GitCompareArrows,
 	Globe,
 	MessageSquare,
+	Monitor,
 } from "lucide-react";
 import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useCallback, useMemo } from "react";
@@ -27,6 +28,7 @@ import {
 	LuEraser,
 	LuPower,
 } from "react-icons/lu";
+import { useWorkspaceHostTarget } from "renderer/hooks/host-service/useWorkspaceHostUrl";
 import { useHotkeyDisplay } from "renderer/hotkeys";
 import { FileIcon } from "renderer/lib/fileIcons";
 import { getBaseName } from "renderer/lib/pathBasename";
@@ -62,6 +64,7 @@ import { ChatV3Pane } from "./components/ChatV3Pane";
 import { CommentPane } from "./components/CommentPane";
 import { CommentPaneHeaderExtras } from "./components/CommentPane/components/CommentPaneHeaderExtras";
 import { CommentPaneTitle } from "./components/CommentPane/components/CommentPaneTitle";
+import { DesktopPane } from "./components/DesktopPane";
 import { DiffPane } from "./components/DiffPane";
 import { DiffPaneHeaderExtras } from "./components/DiffPane/components/DiffPaneHeaderExtras";
 import { FilePane } from "./components/FilePane";
@@ -120,6 +123,8 @@ const MOD_KEY = navigator.platform.toLowerCase().includes("mac")
 
 interface UsePaneRegistryOptions {
 	onOpenFile: (path: string, openInNewTab?: boolean) => void;
+	/** ⇧-tier clicks in the Changes pane's panel open a separate diff tab. */
+	onOpenDiffInNewTab?: (path: string, changeKey?: string) => void;
 	onRevealPath: (path: string) => void;
 	launcher: TerminalLauncher;
 	store: StoreApi<WorkspaceStore<PaneViewerData>>;
@@ -127,6 +132,7 @@ interface UsePaneRegistryOptions {
 
 export function usePaneRegistry({
 	onOpenFile,
+	onOpenDiffInNewTab,
 	onRevealPath,
 	launcher,
 	store,
@@ -135,6 +141,9 @@ export function usePaneRegistry({
 	const { workspace } = useWorkspace();
 	const workspaceId = workspace.id;
 	const isChatV3Enabled = useFeatureFlagEnabled(FEATURE_FLAGS.CHAT_V3) ?? false;
+	const host = useWorkspaceHostTarget(workspaceId);
+	const sandboxUrl =
+		host.status === "ready" && host.kind === "sandbox" ? host.url : null;
 	const isPagesEnabled = useFeatureFlagEnabled(FEATURE_FLAGS.PAGES) ?? false;
 	const runAgent = workspaceTrpc.agents.run.useMutation();
 	const collections = useCollections();
@@ -370,10 +379,13 @@ export function usePaneRegistry({
 						context={ctx}
 						workspaceId={workspaceId}
 						onOpenFile={onOpenFile}
+						onOpenDiffInNewTab={onOpenDiffInNewTab}
 						onCreateNewAgentSession={createNewAgentSession}
 					/>
 				),
-				renderHeaderExtras: () => <DiffPaneHeaderExtras />,
+				renderHeaderExtras: () => (
+					<DiffPaneHeaderExtras workspaceId={workspaceId} />
+				),
 				contextMenuActions: (_ctx, defaults) =>
 					defaults.map((d) =>
 						d.key === "close-pane"
@@ -638,6 +650,19 @@ export function usePaneRegistry({
 							: d,
 					),
 			},
+			...(sandboxUrl
+				? {
+						desktop: {
+							getIcon: () => <Monitor className="size-3.5" />,
+							getTitle: () =>
+								t({
+									id: "workspace.paneRegistry.desktopTitle",
+									message: "Desktop",
+								}),
+							renderPane: () => <DesktopPane hostUrl={sandboxUrl} />,
+						},
+					}
+				: {}),
 			...(isChatV3Enabled
 				? {
 						"chat-v3": {
@@ -795,6 +820,8 @@ export function usePaneRegistry({
 			focusAgentTerminal,
 			workspaceTrpcUtils,
 			t,
+			onOpenDiffInNewTab,
+			sandboxUrl,
 		],
 	);
 }
