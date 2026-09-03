@@ -11573,6 +11573,16 @@ msgstr "Nuevo espacio de trabajo"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.nextOrganization.description"
+msgstr "Cambiar a la organización siguiente"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.nextOrganization.label"
+msgstr "Organización siguiente"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
 msgid "hotkeys.nextTab.description"
 msgstr "Enfocar la pestaña siguiente del espacio de trabajo activo"
 
@@ -11695,6 +11705,16 @@ msgstr "Abrir proyecto"
 #: ../../apps/desktop/src/renderer/hotkeys/registry.ts
 msgid "hotkeys.openSettings.label"
 msgstr "Abrir la configuración"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.prevOrganization.description"
+msgstr "Cambiar a la organización anterior"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.prevOrganization.label"
+msgstr "Organización anterior"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/hotkeys/registry.ts

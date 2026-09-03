@@ -11573,6 +11573,16 @@ msgstr "Nowy obszar roboczy"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.nextOrganization.description"
+msgstr "Przełącz na następną organizację"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.nextOrganization.label"
+msgstr "Następna organizacja"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
 msgid "hotkeys.nextTab.description"
 msgstr "Aktywuj następną kartę w aktywnym obszarze roboczym"
 
@@ -11695,6 +11705,16 @@ msgstr "Otwórz projekt"
 #: ../../apps/desktop/src/renderer/hotkeys/registry.ts
 msgid "hotkeys.openSettings.label"
 msgstr "Otwórz ustawienia"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.prevOrganization.description"
+msgstr "Przełącz na poprzednią organizację"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.prevOrganization.label"
+msgstr "Poprzednia organizacja"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/hotkeys/registry.ts

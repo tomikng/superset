@@ -11573,6 +11573,16 @@ msgstr "Yeni çalışma alanı"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.nextOrganization.description"
+msgstr "Sonraki kuruluşa geç"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.nextOrganization.label"
+msgstr "Sonraki kuruluş"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
 msgid "hotkeys.nextTab.description"
 msgstr "Etkin çalışma alanındaki sonraki sekmeye odaklan"
 
@@ -11695,6 +11705,16 @@ msgstr "Proje aç"
 #: ../../apps/desktop/src/renderer/hotkeys/registry.ts
 msgid "hotkeys.openSettings.label"
 msgstr "Ayarları aç"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.prevOrganization.description"
+msgstr "Önceki kuruluşa geç"
+
+#. js-lingui-explicit-id
+#: ../../apps/desktop/src/renderer/hotkeys/registry.ts
+msgid "hotkeys.prevOrganization.label"
+msgstr "Önceki kuruluş"
 
 #. js-lingui-explicit-id
 #: ../../apps/desktop/src/renderer/hotkeys/registry.ts
