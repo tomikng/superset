@@ -52,10 +52,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+bracketleft"),
 			linux: L("ctrl+shift+bracketleft"),
 		},
-		label: msg({ id: "hotkeys.navigateBack.label", message: "Navigate Back" }),
+		label: msg({ message: "Navigate Back" }),
 		category: "Navigation",
 		description: msg({
-			id: "hotkeys.navigateBack.description",
 			message: "Go back to the previous page in history",
 		}),
 	},
@@ -66,12 +65,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+bracketright"),
 		},
 		label: msg({
-			id: "hotkeys.navigateForward.label",
 			message: "Navigate Forward",
 		}),
 		category: "Navigation",
 		description: msg({
-			id: "hotkeys.navigateForward.description",
 			message: "Go forward to the next page in history",
 		}),
 	},
@@ -82,12 +79,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+alt+bracketleft"),
 		},
 		label: msg({
-			id: "hotkeys.prevOrganization.label",
 			message: "Previous Organization",
 		}),
 		category: "Navigation",
 		description: msg({
-			id: "hotkeys.prevOrganization.description",
 			message: "Switch to the previous organization",
 		}),
 	},
@@ -98,12 +93,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+alt+bracketright"),
 		},
 		label: msg({
-			id: "hotkeys.nextOrganization.label",
 			message: "Next Organization",
 		}),
 		category: "Navigation",
 		description: msg({
-			id: "hotkeys.nextOrganization.description",
 			message: "Switch to the next organization",
 		}),
 	},
@@ -113,10 +106,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+p"),
 			linux: L("ctrl+shift+p"),
 		},
-		label: msg({ id: "hotkeys.quickOpen.label", message: "Quick Open File" }),
+		label: msg({ message: "Quick Open File" }),
 		category: "Navigation",
 		description: msg({
-			id: "hotkeys.quickOpen.description",
 			message: "Search and open files in the current workspace",
 		}),
 	},
@@ -129,7 +121,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+1"),
 		},
 		label: msg({
-			id: "hotkeys.jumpToWorkspace1.label",
 			message: "Switch to Workspace 1",
 		}),
 		category: "Workspace",
@@ -141,7 +132,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+2"),
 		},
 		label: msg({
-			id: "hotkeys.jumpToWorkspace2.label",
 			message: "Switch to Workspace 2",
 		}),
 		category: "Workspace",
@@ -153,7 +143,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+3"),
 		},
 		label: msg({
-			id: "hotkeys.jumpToWorkspace3.label",
 			message: "Switch to Workspace 3",
 		}),
 		category: "Workspace",
@@ -165,7 +154,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+4"),
 		},
 		label: msg({
-			id: "hotkeys.jumpToWorkspace4.label",
 			message: "Switch to Workspace 4",
 		}),
 		category: "Workspace",
@@ -177,7 +165,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+5"),
 		},
 		label: msg({
-			id: "hotkeys.jumpToWorkspace5.label",
 			message: "Switch to Workspace 5",
 		}),
 		category: "Workspace",
@@ -189,7 +176,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+6"),
 		},
 		label: msg({
-			id: "hotkeys.jumpToWorkspace6.label",
 			message: "Switch to Workspace 6",
 		}),
 		category: "Workspace",
@@ -201,7 +187,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+7"),
 		},
 		label: msg({
-			id: "hotkeys.jumpToWorkspace7.label",
 			message: "Switch to Workspace 7",
 		}),
 		category: "Workspace",
@@ -213,7 +198,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+8"),
 		},
 		label: msg({
-			id: "hotkeys.jumpToWorkspace8.label",
 			message: "Switch to Workspace 8",
 		}),
 		category: "Workspace",
@@ -225,7 +209,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+9"),
 		},
 		label: msg({
-			id: "hotkeys.jumpToWorkspace9.label",
 			message: "Switch to Workspace 9",
 		}),
 		category: "Workspace",
@@ -237,12 +220,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: "ctrl+shift+alt+up",
 		},
 		label: msg({
-			id: "hotkeys.prevWorkspace.label",
 			message: "Previous Workspace",
 		}),
 		category: "Workspace",
 		description: msg({
-			id: "hotkeys.prevWorkspace.description",
 			message: "Navigate to the previous workspace in the sidebar",
 		}),
 	},
@@ -253,12 +234,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: "ctrl+shift+alt+down",
 		},
 		label: msg({
-			id: "hotkeys.nextWorkspace.label",
 			message: "Next Workspace",
 		}),
 		category: "Workspace",
 		description: msg({
-			id: "hotkeys.nextWorkspace.description",
 			message: "Navigate to the next workspace in the sidebar",
 		}),
 	},
@@ -269,12 +248,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: "ctrl+shift+backspace",
 		},
 		label: msg({
-			id: "hotkeys.closeWorkspace.label",
 			message: "Close Workspace",
 		}),
 		category: "Workspace",
 		description: msg({
-			id: "hotkeys.closeWorkspace.description",
 			message: "Close or delete the current workspace",
 		}),
 	},
@@ -284,10 +261,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+n"),
 			linux: L("ctrl+shift+n"),
 		},
-		label: msg({ id: "hotkeys.newWorkspace.label", message: "New Workspace" }),
+		label: msg({ message: "New Workspace" }),
 		category: "Workspace",
 		description: msg({
-			id: "hotkeys.newWorkspace.description",
 			message: "Open the new workspace modal",
 		}),
 	},
@@ -298,12 +274,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+alt+n"),
 		},
 		label: msg({
-			id: "hotkeys.quickCreateWorkspace.label",
 			message: "Quick Create Workspace",
 		}),
 		category: "Workspace",
 		description: msg({
-			id: "hotkeys.quickCreateWorkspace.description",
 			message: "Quickly create a workspace in the current project",
 		}),
 	},
@@ -314,12 +288,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+g"),
 		},
 		label: msg({
-			id: "hotkeys.runWorkspaceCommand.label",
 			message: "Run Workspace Command",
 		}),
 		category: "Workspace",
 		description: msg({
-			id: "hotkeys.runWorkspaceCommand.description",
 			message: "Start or stop the workspace run command",
 		}),
 	},
@@ -330,12 +302,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+f"),
 		},
 		label: msg({
-			id: "hotkeys.focusTaskSearch.label",
 			message: "Focus Task Search",
 		}),
 		category: "Workspace",
 		description: msg({
-			id: "hotkeys.focusTaskSearch.description",
 			message: "Focus the search input in the tasks view",
 		}),
 	},
@@ -345,10 +315,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+o"),
 			linux: L("ctrl+shift+alt+o"),
 		},
-		label: msg({ id: "hotkeys.openProject.label", message: "Open Project" }),
+		label: msg({ message: "Open Project" }),
 		category: "Workspace",
 		description: msg({
-			id: "hotkeys.openProject.description",
 			message: "Open an existing project folder",
 		}),
 	},
@@ -358,10 +327,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+p"),
 			linux: L("ctrl+shift+alt+p"),
 		},
-		label: msg({ id: "hotkeys.openPr.label", message: "Open Pull Request" }),
+		label: msg({ message: "Open Pull Request" }),
 		category: "Workspace",
 		description: msg({
-			id: "hotkeys.openPr.description",
 			message: "Open existing PR or create a new one on GitHub",
 		}),
 	},
@@ -374,7 +342,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+l"),
 		},
 		label: msg({
-			id: "hotkeys.toggleSidebar.label",
 			message: "Toggle Sidebar",
 		}),
 		category: "Layout",
@@ -386,12 +353,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+alt+l"),
 		},
 		label: msg({
-			id: "hotkeys.openDiffViewer.label",
 			message: "Open Changes",
 		}),
 		category: "Layout",
 		description: msg({
-			id: "hotkeys.openDiffViewer.description",
 			message: "Open the Changes pane in a new tab, or focus the existing one",
 		}),
 	},
@@ -402,7 +367,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+b"),
 		},
 		label: msg({
-			id: "hotkeys.toggleWorkspaceSidebar.label",
 			message: "Toggle Workspaces Sidebar",
 		}),
 		category: "Layout",
@@ -413,10 +377,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+d"),
 			linux: L("ctrl+shift+d"),
 		},
-		label: msg({ id: "hotkeys.splitRight.label", message: "Split Right" }),
+		label: msg({ message: "Split Right" }),
 		category: "Layout",
 		description: msg({
-			id: "hotkeys.splitRight.description",
 			message: "Split the current pane to the right",
 		}),
 	},
@@ -426,10 +389,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+d"),
 			linux: L("ctrl+shift+alt+d"),
 		},
-		label: msg({ id: "hotkeys.splitDown.label", message: "Split Down" }),
+		label: msg({ message: "Split Down" }),
 		category: "Layout",
 		description: msg({
-			id: "hotkeys.splitDown.description",
 			message: "Split the current pane downward",
 		}),
 	},
@@ -439,10 +401,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+e"),
 			linux: L("ctrl+shift+e"),
 		},
-		label: msg({ id: "hotkeys.splitAuto.label", message: "Split Pane Auto" }),
+		label: msg({ message: "Split Pane Auto" }),
 		category: "Layout",
 		description: msg({
-			id: "hotkeys.splitAuto.description",
 			message: "Split the current pane along its longer side",
 		}),
 	},
@@ -453,12 +414,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+alt+s"),
 		},
 		label: msg({
-			id: "hotkeys.splitWithBrowser.label",
 			message: "Split with New Browser",
 		}),
 		category: "Layout",
 		description: msg({
-			id: "hotkeys.splitWithBrowser.description",
 			message: "Split the current pane and open a new browser pane",
 		}),
 	},
@@ -469,12 +428,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+alt+y"),
 		},
 		label: msg({
-			id: "hotkeys.splitWithDesktop.label",
 			message: "Split with Desktop",
 		}),
 		category: "Layout",
 		description: msg({
-			id: "hotkeys.splitWithDesktop.description",
 			message: "Split the current pane and open the sandbox desktop",
 		}),
 	},
@@ -485,12 +442,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+0"),
 		},
 		label: msg({
-			id: "hotkeys.equalizePaneSplits.label",
 			message: "Equalize Pane Splits",
 		}),
 		category: "Layout",
 		description: msg({
-			id: "hotkeys.equalizePaneSplits.description",
 			message: "Make all panes equal size",
 		}),
 	},
@@ -500,10 +455,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+w"),
 			linux: L("ctrl+shift+w"),
 		},
-		label: msg({ id: "hotkeys.closePane.label", message: "Close Pane" }),
+		label: msg({ message: "Close Pane" }),
 		category: "Layout",
 		description: msg({
-			id: "hotkeys.closePane.description",
 			message: "Close the current pane",
 		}),
 	},
@@ -516,12 +470,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+f"),
 		},
 		label: msg({
-			id: "hotkeys.findInTerminal.label",
 			message: "Find in Terminal",
 		}),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.findInTerminal.description",
 			message: "Search text in the active terminal",
 		}),
 	},
@@ -533,12 +485,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+m"),
 		},
 		label: msg({
-			id: "hotkeys.toggleTerminalRichInput.label",
 			message: "Toggle Terminal Rich Input",
 		}),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.toggleTerminalRichInput.description",
 			message: "Open a multiline prompt composer for the active terminal",
 		}),
 	},
@@ -549,12 +499,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+f"),
 		},
 		label: msg({
-			id: "hotkeys.findInFileViewer.label",
 			message: "Find in File Viewer",
 		}),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.findInFileViewer.description",
 			message: "Search text in the rendered file viewer",
 		}),
 	},
@@ -564,10 +512,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+f"),
 			linux: L("ctrl+shift+f"),
 		},
-		label: msg({ id: "hotkeys.findInChat.label", message: "Find in Chat" }),
+		label: msg({ message: "Find in Chat" }),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.findInChat.description",
 			message: "Search text in the active chat",
 		}),
 	},
@@ -578,12 +525,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+f"),
 		},
 		label: msg({
-			id: "hotkeys.findInChanges.label",
 			message: "Find in Changes",
 		}),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.findInChanges.description",
 			message: "Search text in the changes diff",
 		}),
 	},
@@ -593,7 +538,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+t"),
 			linux: L("ctrl+shift+t"),
 		},
-		label: msg({ id: "hotkeys.newGroup.label", message: "New Terminal" }),
+		label: msg({ message: "New Terminal" }),
 		category: "Terminal",
 	},
 	REOPEN_TAB: {
@@ -602,7 +547,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+r"),
 			linux: L("ctrl+shift+alt+r"),
 		},
-		label: msg({ id: "hotkeys.reopenTab.label", message: "Reopen Closed Tab" }),
+		label: msg({ message: "Reopen Closed Tab" }),
 		category: "Terminal",
 	},
 	NEW_BROWSER: {
@@ -611,7 +556,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+b"),
 			linux: L("ctrl+shift+alt+b"),
 		},
-		label: msg({ id: "hotkeys.newBrowser.label", message: "New Browser" }),
+		label: msg({ message: "New Browser" }),
 		category: "Terminal",
 	},
 	CLOSE_TERMINAL: {
@@ -621,7 +566,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+w"),
 		},
 		label: msg({
-			id: "hotkeys.closeTerminal.label",
 			message: "Close Terminal",
 		}),
 		category: "Terminal",
@@ -632,10 +576,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+w"),
 			linux: L("ctrl+shift+alt+w"),
 		},
-		label: msg({ id: "hotkeys.closeTab.label", message: "Close Tab" }),
+		label: msg({ message: "Close Tab" }),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.closeTab.description",
 			message: "Close the current tab",
 		}),
 	},
@@ -646,7 +589,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+k"),
 		},
 		label: msg({
-			id: "hotkeys.clearTerminal.label",
 			message: "Clear Terminal",
 		}),
 		category: "Terminal",
@@ -658,12 +600,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: "ctrl+end",
 		},
 		label: msg({
-			id: "hotkeys.scrollToBottom.label",
 			message: "Scroll to Bottom",
 		}),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.scrollToBottom.description",
 			message: "Scroll the active terminal to the bottom",
 		}),
 	},
@@ -674,14 +614,13 @@ export const HOTKEYS_REGISTRY = {
 			linux: "ctrl+shift+tab",
 		},
 		label: msg({
-			id: "hotkeys.prevTabAlt.label",
 			message: "Previous Tab (Alt)",
 		}),
 		category: "Terminal",
 	},
 	NEXT_TAB_ALT: {
 		key: { mac: "ctrl+tab", windows: "ctrl+tab", linux: "ctrl+tab" },
-		label: msg({ id: "hotkeys.nextTabAlt.label", message: "Next Tab (Alt)" }),
+		label: msg({ message: "Next Tab (Alt)" }),
 		category: "Terminal",
 	},
 	PREV_TAB: {
@@ -690,10 +629,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: "ctrl+shift+alt+left",
 			linux: "ctrl+shift+alt+left",
 		},
-		label: msg({ id: "hotkeys.prevTab.label", message: "Previous Tab" }),
+		label: msg({ message: "Previous Tab" }),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.prevTab.description",
 			message: "Focus the previous tab in the active workspace",
 		}),
 	},
@@ -703,55 +641,47 @@ export const HOTKEYS_REGISTRY = {
 			windows: "ctrl+shift+alt+right",
 			linux: "ctrl+shift+alt+right",
 		},
-		label: msg({ id: "hotkeys.nextTab.label", message: "Next Tab" }),
+		label: msg({ message: "Next Tab" }),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.nextTab.description",
 			message: "Focus the next tab in the active workspace",
 		}),
 	},
 	FOCUS_PANE_LEFT: {
 		key: { mac: null, windows: null, linux: null },
 		label: msg({
-			id: "hotkeys.focusPaneLeft.label",
 			message: "Focus Pane Left",
 		}),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.focusPaneLeft.description",
 			message: "Focus the pane to the left of the active pane",
 		}),
 	},
 	FOCUS_PANE_RIGHT: {
 		key: { mac: null, windows: null, linux: null },
 		label: msg({
-			id: "hotkeys.focusPaneRight.label",
 			message: "Focus Pane Right",
 		}),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.focusPaneRight.description",
 			message: "Focus the pane to the right of the active pane",
 		}),
 	},
 	FOCUS_PANE_UP: {
 		key: { mac: null, windows: null, linux: null },
-		label: msg({ id: "hotkeys.focusPaneUp.label", message: "Focus Pane Up" }),
+		label: msg({ message: "Focus Pane Up" }),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.focusPaneUp.description",
 			message: "Focus the pane above the active pane",
 		}),
 	},
 	FOCUS_PANE_DOWN: {
 		key: { mac: null, windows: null, linux: null },
 		label: msg({
-			id: "hotkeys.focusPaneDown.label",
 			message: "Focus Pane Down",
 		}),
 		category: "Terminal",
 		description: msg({
-			id: "hotkeys.focusPaneDown.description",
 			message: "Focus the pane below the active pane",
 		}),
 	},
@@ -761,7 +691,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+1"),
 			linux: L("ctrl+shift+alt+1"),
 		},
-		label: msg({ id: "hotkeys.jumpToTab1.label", message: "Switch to Tab 1" }),
+		label: msg({ message: "Switch to Tab 1" }),
 		category: "Terminal",
 	},
 	JUMP_TO_TAB_2: {
@@ -770,7 +700,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+2"),
 			linux: L("ctrl+shift+alt+2"),
 		},
-		label: msg({ id: "hotkeys.jumpToTab2.label", message: "Switch to Tab 2" }),
+		label: msg({ message: "Switch to Tab 2" }),
 		category: "Terminal",
 	},
 	JUMP_TO_TAB_3: {
@@ -779,7 +709,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+3"),
 			linux: L("ctrl+shift+alt+3"),
 		},
-		label: msg({ id: "hotkeys.jumpToTab3.label", message: "Switch to Tab 3" }),
+		label: msg({ message: "Switch to Tab 3" }),
 		category: "Terminal",
 	},
 	JUMP_TO_TAB_4: {
@@ -788,7 +718,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+4"),
 			linux: L("ctrl+shift+alt+4"),
 		},
-		label: msg({ id: "hotkeys.jumpToTab4.label", message: "Switch to Tab 4" }),
+		label: msg({ message: "Switch to Tab 4" }),
 		category: "Terminal",
 	},
 	JUMP_TO_TAB_5: {
@@ -797,7 +727,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+5"),
 			linux: L("ctrl+shift+alt+5"),
 		},
-		label: msg({ id: "hotkeys.jumpToTab5.label", message: "Switch to Tab 5" }),
+		label: msg({ message: "Switch to Tab 5" }),
 		category: "Terminal",
 	},
 	JUMP_TO_TAB_6: {
@@ -806,7 +736,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+6"),
 			linux: L("ctrl+shift+alt+6"),
 		},
-		label: msg({ id: "hotkeys.jumpToTab6.label", message: "Switch to Tab 6" }),
+		label: msg({ message: "Switch to Tab 6" }),
 		category: "Terminal",
 	},
 	JUMP_TO_TAB_7: {
@@ -815,7 +745,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+7"),
 			linux: L("ctrl+shift+alt+7"),
 		},
-		label: msg({ id: "hotkeys.jumpToTab7.label", message: "Switch to Tab 7" }),
+		label: msg({ message: "Switch to Tab 7" }),
 		category: "Terminal",
 	},
 	JUMP_TO_TAB_8: {
@@ -824,7 +754,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+8"),
 			linux: L("ctrl+shift+alt+8"),
 		},
-		label: msg({ id: "hotkeys.jumpToTab8.label", message: "Switch to Tab 8" }),
+		label: msg({ message: "Switch to Tab 8" }),
 		category: "Terminal",
 	},
 	JUMP_TO_TAB_9: {
@@ -833,13 +763,12 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+9"),
 			linux: L("ctrl+shift+alt+9"),
 		},
-		label: msg({ id: "hotkeys.jumpToTab9.label", message: "Switch to Tab 9" }),
+		label: msg({ message: "Switch to Tab 9" }),
 		category: "Terminal",
 	},
 	OPEN_PRESET_1: {
 		key: { mac: L("ctrl+1"), windows: L("ctrl+1"), linux: L("ctrl+1") },
 		label: msg({
-			id: "hotkeys.openPreset1.label",
 			message: "Open Terminal Script 1",
 		}),
 		category: "Terminal",
@@ -847,7 +776,6 @@ export const HOTKEYS_REGISTRY = {
 	OPEN_PRESET_2: {
 		key: { mac: L("ctrl+2"), windows: L("ctrl+2"), linux: L("ctrl+2") },
 		label: msg({
-			id: "hotkeys.openPreset2.label",
 			message: "Open Terminal Script 2",
 		}),
 		category: "Terminal",
@@ -855,7 +783,6 @@ export const HOTKEYS_REGISTRY = {
 	OPEN_PRESET_3: {
 		key: { mac: L("ctrl+3"), windows: L("ctrl+3"), linux: L("ctrl+3") },
 		label: msg({
-			id: "hotkeys.openPreset3.label",
 			message: "Open Terminal Script 3",
 		}),
 		category: "Terminal",
@@ -863,7 +790,6 @@ export const HOTKEYS_REGISTRY = {
 	OPEN_PRESET_4: {
 		key: { mac: L("ctrl+4"), windows: L("ctrl+4"), linux: L("ctrl+4") },
 		label: msg({
-			id: "hotkeys.openPreset4.label",
 			message: "Open Terminal Script 4",
 		}),
 		category: "Terminal",
@@ -871,7 +797,6 @@ export const HOTKEYS_REGISTRY = {
 	OPEN_PRESET_5: {
 		key: { mac: L("ctrl+5"), windows: L("ctrl+5"), linux: L("ctrl+5") },
 		label: msg({
-			id: "hotkeys.openPreset5.label",
 			message: "Open Terminal Script 5",
 		}),
 		category: "Terminal",
@@ -879,7 +804,6 @@ export const HOTKEYS_REGISTRY = {
 	OPEN_PRESET_6: {
 		key: { mac: L("ctrl+6"), windows: L("ctrl+6"), linux: L("ctrl+6") },
 		label: msg({
-			id: "hotkeys.openPreset6.label",
 			message: "Open Terminal Script 6",
 		}),
 		category: "Terminal",
@@ -887,7 +811,6 @@ export const HOTKEYS_REGISTRY = {
 	OPEN_PRESET_7: {
 		key: { mac: L("ctrl+7"), windows: L("ctrl+7"), linux: L("ctrl+7") },
 		label: msg({
-			id: "hotkeys.openPreset7.label",
 			message: "Open Terminal Script 7",
 		}),
 		category: "Terminal",
@@ -895,7 +818,6 @@ export const HOTKEYS_REGISTRY = {
 	OPEN_PRESET_8: {
 		key: { mac: L("ctrl+8"), windows: L("ctrl+8"), linux: L("ctrl+8") },
 		label: msg({
-			id: "hotkeys.openPreset8.label",
 			message: "Open Terminal Script 8",
 		}),
 		category: "Terminal",
@@ -903,7 +825,6 @@ export const HOTKEYS_REGISTRY = {
 	OPEN_PRESET_9: {
 		key: { mac: L("ctrl+9"), windows: L("ctrl+9"), linux: L("ctrl+9") },
 		label: msg({
-			id: "hotkeys.openPreset9.label",
 			message: "Open Terminal Script 9",
 		}),
 		category: "Terminal",
@@ -917,7 +838,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+j"),
 		},
 		label: msg({
-			id: "hotkeys.focusChatInput.label",
 			message: "Focus Chat Input",
 		}),
 		category: "Terminal",
@@ -929,7 +849,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+u"),
 		},
 		label: msg({
-			id: "hotkeys.chatAddAttachment.label",
 			message: "Add Attachment",
 		}),
 		category: "Terminal",
@@ -942,10 +861,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+o"),
 			linux: L("ctrl+shift+o"),
 		},
-		label: msg({ id: "hotkeys.openInApp.label", message: "Open in App" }),
+		label: msg({ message: "Open in App" }),
 		category: "Window",
 		description: msg({
-			id: "hotkeys.openInApp.description",
 			message: "Open workspace in external app (Cursor, VS Code, etc.)",
 		}),
 	},
@@ -955,10 +873,9 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+shift+alt+c"),
 			linux: L("ctrl+shift+alt+c"),
 		},
-		label: msg({ id: "hotkeys.copyPath.label", message: "Copy Path" }),
+		label: msg({ message: "Copy Path" }),
 		category: "Window",
 		description: msg({
-			id: "hotkeys.copyPath.description",
 			message: "Copy the workspace path to the clipboard",
 		}),
 	},
@@ -970,7 +887,7 @@ export const HOTKEYS_REGISTRY = {
 			windows: L("ctrl+comma"),
 			linux: L("ctrl+comma"),
 		},
-		label: msg({ id: "hotkeys.openSettings.label", message: "Open Settings" }),
+		label: msg({ message: "Open Settings" }),
 		category: "Help",
 	},
 	SHOW_HOTKEYS: {
@@ -980,7 +897,6 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+slash"),
 		},
 		label: msg({
-			id: "hotkeys.showHotkeys.label",
 			message: "Show Keyboard Shortcuts",
 		}),
 		category: "Help",
@@ -992,12 +908,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+k"),
 		},
 		label: msg({
-			id: "hotkeys.openCommandPalette.label",
 			message: "Open Command Palette",
 		}),
 		category: "Help",
 		description: msg({
-			id: "hotkeys.openCommandPalette.description",
 			message: "Open the global command palette",
 		}),
 	},
@@ -1008,12 +922,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+shift+alt+u"),
 		},
 		label: msg({
-			id: "hotkeys.checkResources.label",
 			message: "Check Resources",
 		}),
 		category: "Help",
 		description: msg({
-			id: "hotkeys.checkResources.description",
 			message: "Open the resource usage view in the command palette",
 		}),
 	},

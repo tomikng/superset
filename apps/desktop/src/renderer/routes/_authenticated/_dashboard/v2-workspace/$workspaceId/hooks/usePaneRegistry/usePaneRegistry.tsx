@@ -123,8 +123,6 @@ const MOD_KEY = navigator.platform.toLowerCase().includes("mac")
 
 interface UsePaneRegistryOptions {
 	onOpenFile: (path: string, openInNewTab?: boolean) => void;
-	/** ⇧-tier clicks in the Changes pane's panel open a separate diff tab. */
-	onOpenDiffInNewTab?: (path: string, changeKey?: string) => void;
 	onRevealPath: (path: string) => void;
 	launcher: TerminalLauncher;
 	store: StoreApi<WorkspaceStore<PaneViewerData>>;
@@ -132,7 +130,6 @@ interface UsePaneRegistryOptions {
 
 export function usePaneRegistry({
 	onOpenFile,
-	onOpenDiffInNewTab,
 	onRevealPath,
 	launcher,
 	store,
@@ -155,7 +152,6 @@ export function usePaneRegistry({
 			onSuccess: () => {
 				toast.success(
 					t({
-						id: "workspace.paneRegistry.sessionKilledToast",
 						message: "Terminal session killed",
 					}),
 				);
@@ -166,7 +162,6 @@ export function usePaneRegistry({
 			onError: (error) => {
 				toast.error(
 					t({
-						id: "workspace.paneRegistry.killSessionFailedToast",
 						message: "Failed to kill terminal session",
 					}),
 					{
@@ -224,7 +219,6 @@ export function usePaneRegistry({
 				if (result.kind !== "terminal") {
 					toast.error(
 						t({
-							id: "workspace.paneRegistry.notTerminalAgentToast",
 							message: "Selected agent isn't a terminal agent",
 						}),
 					);
@@ -247,13 +241,11 @@ export function usePaneRegistry({
 				const description = errorMessage(
 					error,
 					t({
-						id: "workspace.paneRegistry.unknownError",
 						message: "Unknown error",
 					}),
 				);
 				toast.error(
 					t({
-						id: "workspace.paneRegistry.startAgentSessionFailedToast",
 						message: "Couldn't start agent session",
 					}),
 					{ description },
@@ -307,17 +299,14 @@ export function usePaneRegistry({
 					return new Promise<boolean>((resolve) => {
 						alert({
 							title: t({
-								id: "workspace.paneRegistry.saveChangesTitle",
 								message: `Do you want to save the changes you made to ${name}?`,
 							}),
 							description: t({
-								id: "workspace.paneRegistry.saveChangesBody",
 								message: "Your changes will be lost if you don't save them.",
 							}),
 							actions: [
 								{
 									label: t({
-										id: "workspace.paneRegistry.save",
 										message: "Save",
 									}),
 									onClick: async () => {
@@ -335,7 +324,6 @@ export function usePaneRegistry({
 								},
 								{
 									label: t({
-										id: "workspace.paneRegistry.dontSave",
 										message: "Don't Save",
 									}),
 									variant: "secondary",
@@ -347,7 +335,6 @@ export function usePaneRegistry({
 								},
 								{
 									label: t({
-										id: "workspace.paneRegistry.cancel",
 										message: "Cancel",
 									}),
 									variant: "ghost",
@@ -363,7 +350,6 @@ export function usePaneRegistry({
 							? {
 									...d,
 									label: t({
-										id: "workspace.paneRegistry.closeFile",
 										message: "Close File",
 									}),
 								}
@@ -372,14 +358,12 @@ export function usePaneRegistry({
 			},
 			diff: {
 				getIcon: () => <GitCompareArrows className="size-3.5" />,
-				getTitle: () =>
-					t({ id: "workspace.paneRegistry.changesTitle", message: "Changes" }),
+				getTitle: () => t({ message: "Changes" }),
 				renderPane: (ctx: RendererContext<PaneViewerData>) => (
 					<DiffPane
 						context={ctx}
 						workspaceId={workspaceId}
 						onOpenFile={onOpenFile}
-						onOpenDiffInNewTab={onOpenDiffInNewTab}
 						onCreateNewAgentSession={createNewAgentSession}
 					/>
 				),
@@ -392,7 +376,6 @@ export function usePaneRegistry({
 							? {
 									...d,
 									label: t({
-										id: "workspace.paneRegistry.closeDiff",
 										message: "Close Diff",
 									}),
 								}
@@ -411,7 +394,6 @@ export function usePaneRegistry({
 				},
 				getTitle: () =>
 					t({
-						id: "workspace.paneRegistry.terminalTitle",
 						message: "Terminal",
 					}),
 				titleSource: (pane) => {
@@ -437,15 +419,12 @@ export function usePaneRegistry({
 						(id) => probeTerminalRunning(workspaceTrpcUtils, workspaceId, id),
 						{
 							title: t({
-								id: "workspace.paneRegistry.terminalRunningTitle",
 								message: "A process is still running in this terminal",
 							}),
 							description: t({
-								id: "workspace.paneRegistry.terminalRunningBody",
 								message: "Closing this terminal will end the running process.",
 							}),
 							confirmLabel: t({
-								id: "workspace.paneRegistry.closeTerminalConfirm",
 								message: "Close terminal",
 							}),
 						},
@@ -496,7 +475,7 @@ export function usePaneRegistry({
 					const terminalActions: ContextMenuActionConfig<PaneViewerData>[] = [
 						{
 							key: "copy",
-							label: t({ id: "workspace.paneRegistry.copy", message: "Copy" }),
+							label: t({ message: "Copy" }),
 							icon: <LuClipboardCopy />,
 							shortcut: `${MOD_KEY}C`,
 							disabled: (ctx) => {
@@ -518,7 +497,6 @@ export function usePaneRegistry({
 						{
 							key: "paste",
 							label: t({
-								id: "workspace.paneRegistry.paste",
 								message: "Paste",
 							}),
 							icon: <LuClipboard />,
@@ -543,7 +521,6 @@ export function usePaneRegistry({
 						{
 							key: "clear-terminal",
 							label: t({
-								id: "workspace.paneRegistry.clearTerminal",
 								message: "Clear Terminal",
 							}),
 							icon: <LuEraser />,
@@ -557,7 +534,6 @@ export function usePaneRegistry({
 						{
 							key: "scroll-to-bottom",
 							label: t({
-								id: "workspace.paneRegistry.scrollToBottom",
 								message: "Scroll to Bottom",
 							}),
 							icon: <LuArrowDownToLine />,
@@ -578,7 +554,6 @@ export function usePaneRegistry({
 							? {
 									...d,
 									label: t({
-										id: "workspace.paneRegistry.closeTerminal",
 										message: "Close Terminal",
 									}),
 								}
@@ -588,7 +563,6 @@ export function usePaneRegistry({
 					const killAction: ContextMenuActionConfig<PaneViewerData> = {
 						key: "kill-terminal-session",
 						label: t({
-							id: "workspace.paneRegistry.killTerminalSession",
 							message: "Kill Terminal Session",
 						}),
 						icon: <LuPower />,
@@ -622,7 +596,6 @@ export function usePaneRegistry({
 						} catch {}
 					}
 					return t({
-						id: "workspace.paneRegistry.browserTitle",
 						message: "Browser",
 					});
 				},
@@ -643,7 +616,6 @@ export function usePaneRegistry({
 							? {
 									...d,
 									label: t({
-										id: "workspace.paneRegistry.closeBrowser",
 										message: "Close Browser",
 									}),
 								}
@@ -656,7 +628,6 @@ export function usePaneRegistry({
 							getIcon: () => <Monitor className="size-3.5" />,
 							getTitle: () =>
 								t({
-									id: "workspace.paneRegistry.desktopTitle",
 									message: "Desktop",
 								}),
 							renderPane: () => <DesktopPane hostUrl={sandboxUrl} />,
@@ -669,7 +640,6 @@ export function usePaneRegistry({
 							getIcon: () => <MessageSquare className="size-3.5" />,
 							getTitle: () =>
 								t({
-									id: "workspace.paneRegistry.chatV3Title",
 									message: "Chat v3",
 								}),
 							renderPane: (ctx: RendererContext<PaneViewerData>) => {
@@ -693,7 +663,6 @@ export function usePaneRegistry({
 										? {
 												...d,
 												label: t({
-													id: "workspace.paneRegistry.closeChat",
 													message: "Close Chat",
 												}),
 											}
@@ -735,7 +704,6 @@ export function usePaneRegistry({
 							? {
 									...d,
 									label: t({
-										id: "workspace.paneRegistry.closeComment",
 										message: "Close Comment",
 									}),
 								}
@@ -776,7 +744,6 @@ export function usePaneRegistry({
 										? {
 												...d,
 												label: t({
-													id: "workspace.paneRegistry.closePage",
 													message: "Close Page",
 												}),
 											}
@@ -788,16 +755,13 @@ export function usePaneRegistry({
 			devtools: {
 				getTitle: () =>
 					t({
-						id: "workspace.paneRegistry.devtoolsTitle",
 						message: "DevTools",
 					}),
 				renderPane: (ctx: RendererContext<PaneViewerData>) => {
 					const data = ctx.pane.data as DevtoolsPaneData;
 					return (
 						<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-							<Trans id="workspace.paneRegistry.inspecting">
-								Inspecting {data.targetTitle}
-							</Trans>
+							<Trans>Inspecting {data.targetTitle}</Trans>
 						</div>
 					);
 				},
@@ -820,7 +784,6 @@ export function usePaneRegistry({
 			focusAgentTerminal,
 			workspaceTrpcUtils,
 			t,
-			onOpenDiffInNewTab,
 			sandboxUrl,
 		],
 	);

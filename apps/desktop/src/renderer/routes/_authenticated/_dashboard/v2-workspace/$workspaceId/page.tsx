@@ -24,6 +24,7 @@ import {
 	COLLAPSED_WORKSPACE_SIDEBAR_WIDTH,
 	useWorkspaceSidebarStore,
 } from "renderer/stores/workspace-sidebar-state";
+import { useStore } from "zustand";
 import { StateScreenShell } from "../components/StateScreenShell";
 import { useWorkspace } from "../providers/WorkspaceProvider";
 import { AddTabMenu } from "./components/AddTabMenu";
@@ -43,9 +44,11 @@ import { useConsumeOpenUrlRequest } from "./hooks/useConsumeOpenUrlRequest";
 import { useCreatePendingMigratedTerminals } from "./hooks/useCreatePendingMigratedTerminals";
 import { useDefaultContextMenuActions } from "./hooks/useDefaultContextMenuActions";
 import { useDefaultPaneActions } from "./hooks/useDefaultPaneActions";
+import { useDiffPaneTarget } from "./hooks/useDiffPaneTarget";
 import { usePagePaneIntentOpener } from "./hooks/usePagePaneIntentOpener";
 import { usePaneRegistry } from "./hooks/usePaneRegistry";
 import { renderBrowserTabIcon } from "./hooks/usePaneRegistry/components/BrowserPane";
+import { useRunWorkspaceCreationPresets } from "./hooks/useRunWorkspaceCreationPresets";
 import { useSlotElement } from "./hooks/useSlotElement";
 import { useTabCloseGuard } from "./hooks/useTabCloseGuard";
 import { useV2PresetExecution } from "./hooks/useV2PresetExecution";
@@ -58,6 +61,7 @@ import { useWorkspacePaneOpeners } from "./hooks/useWorkspacePaneOpeners";
 import { WorkspaceGitStatusProvider } from "./providers/WorkspaceGitStatusProvider";
 import { FileDocumentStoreProvider } from "./state/fileDocumentStore";
 import type { PaneViewerData } from "./types";
+import { findVisibleChangesPane } from "./utils/openChangesPaneInStore";
 import type { V2WorkspaceUrlOpenTarget } from "./utils/openUrlInV2Workspace";
 
 interface WorkspaceSearch {
@@ -165,6 +169,12 @@ function V2WorkspaceContent() {
 		focusRequestId,
 	});
 	useCreatePendingMigratedTerminals({ workspaceId, isLayoutReady });
+	useRunWorkspaceCreationPresets({
+		workspaceId,
+		isLayoutReady,
+		executePreset,
+		resolvePresetCommands,
+	});
 	useAutoAdoptBackgroundSessions({ store, workspaceId, isLayoutReady });
 	useConsumeOpenUrlRequest({
 		store,
@@ -191,6 +201,7 @@ function V2WorkspaceContent() {
 		addChatV3Tab,
 		addBrowserTab,
 		openChangesPane,
+		toggleChangesPane,
 		openCommentPane,
 		openPagePane,
 	} = useWorkspacePaneOpeners({
@@ -198,16 +209,10 @@ function V2WorkspaceContent() {
 		launcher,
 		newTabPresets,
 		executePreset,
+		setRightSidebarOpen,
 	});
-	const openDiffInNewTab = useCallback(
-		(path: string, changeKey?: string) => {
-			openDiffPane(path, true, undefined, undefined, changeKey);
-		},
-		[openDiffPane],
-	);
 	const paneRegistry = usePaneRegistry({
 		onOpenFile: openFilePaneFromTreeClick,
-		onOpenDiffInNewTab: openDiffInNewTab,
 		onRevealPath: revealPath,
 		launcher,
 		store,
@@ -216,6 +221,11 @@ function V2WorkspaceContent() {
 		paneRegistry,
 		launcher,
 	});
+	const diffPaneTarget = useDiffPaneTarget(store);
+	const isChangesPaneOpen = useStore(
+		store,
+		(state) => findVisibleChangesPane(state) != null,
+	);
 
 	usePagePaneIntentOpener({ workspaceId, isLayoutReady, openPagePane });
 	const hostTarget = useWorkspaceHostTarget(workspaceId);
@@ -279,6 +289,7 @@ function V2WorkspaceContent() {
 		matchedPresets,
 		executePreset,
 		addTerminalTab,
+		openChangesPane,
 		paneRegistry,
 		launcher,
 		onBeforeCloseTab,
@@ -398,7 +409,8 @@ function V2WorkspaceContent() {
 									{isLayoutReady && (
 										<ChangesControl
 											workspaceId={workspaceId}
-											onOpenChanges={openChangesPane}
+											isChangesOpen={isChangesPaneOpen}
+											onToggleChanges={toggleChangesPane}
 										/>
 									)}
 									{workspaceRunButton}
@@ -441,6 +453,7 @@ function V2WorkspaceContent() {
 								onOpenComment={openCommentPane}
 								onSearch={handleQuickOpen}
 								selectedFilePath={selectedFilePath}
+								selectedDiffTarget={diffPaneTarget}
 								pendingReveal={pendingReveal}
 							/>
 						</ResizablePanel>,

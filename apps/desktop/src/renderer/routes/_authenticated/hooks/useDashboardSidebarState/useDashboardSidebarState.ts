@@ -7,6 +7,7 @@ import {
 } from "@superset/shared/workspace-tags";
 import { useCallback } from "react";
 import { useHostProjects } from "renderer/hooks/host-projects/useHostProjects";
+import { authClient } from "renderer/lib/auth-client";
 import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
 import { isMissingProcedureError } from "renderer/lib/isMissingProcedureError";
 import { terminalRuntimeRegistry } from "renderer/lib/terminal/terminal-runtime-registry";
@@ -296,7 +297,9 @@ export function useDashboardSidebarState() {
 	const collections = useCollections();
 	const { workspaces: hostWorkspaces, cache: hostWorkspacesCache } =
 		useHostWorkspaces();
-	const { machineId, activeHostUrl } = useLocalHostService();
+	const { activeHostUrl, machineId } = useLocalHostService();
+	const { data: session } = authClient.useSession();
+	const currentUserId = session?.user.id ?? null;
 	const { v2Workspaces } = useOptimisticActions();
 	const tagFolderContext = useTagFolderContext();
 
@@ -964,6 +967,33 @@ export function useDashboardSidebarState() {
 		[collections, hostWorkspaces, tagFolderContext],
 	);
 
+	// A row without local state (an auto-included main) gets one, as pinning does.
+	const setWorkspaceSuppressedPullRequest = useCallback(
+		(
+			workspaceId: string,
+			projectId: string | null,
+			pullRequestUrl: string | null,
+		) => {
+			if (!collections.v2WorkspaceLocalState.get(workspaceId)) {
+				if (pullRequestUrl === null) return;
+				if (projectId !== null) {
+					ensureSidebarProjectRecord(collections, projectId);
+				}
+				ensureSidebarWorkspaceRecord(
+					collections,
+					hostWorkspaces,
+					tagFolderContext,
+					workspaceId,
+					projectId,
+				);
+			}
+			collections.v2WorkspaceLocalState.update(workspaceId, (draft) => {
+				draft.sidebarState.suppressedPullRequestUrl = pullRequestUrl;
+			});
+		},
+		[collections, hostWorkspaces, tagFolderContext],
+	);
+
 	const reorderPinnedWorkspaces = useCallback(
 		(
 			orderedPins: Array<{ workspaceId: string; projectId: string | null }>,
@@ -1041,11 +1071,11 @@ export function useDashboardSidebarState() {
 				collections,
 				hostWorkspaces,
 				projectId,
-				machineId,
+				{ machineId, currentUserId },
 				cleanupWorkspacePaneRuntimes,
 			);
 		},
-		[collections, hostWorkspaces, machineId],
+		[collections, hostWorkspaces, machineId, currentUserId],
 	);
 
 	return {
@@ -1065,6 +1095,7 @@ export function useDashboardSidebarState() {
 		renameSection,
 		setSectionColor,
 		setWorkspacePinned,
+		setWorkspaceSuppressedPullRequest,
 		toggleProjectCollapsed,
 		toggleSectionCollapsed,
 	};
