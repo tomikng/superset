@@ -2,6 +2,7 @@ import { createNodeWebSocket } from "@hono/node-ws";
 import { trpcServer } from "@hono/trpc-server";
 import { Octokit } from "@octokit/rest";
 import { ChatService } from "@superset/provider-auth/server";
+import { SUPERSET_USER_ID_HEADER } from "@superset/shared/host-routing";
 import { TRPCError } from "@trpc/server";
 import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
@@ -184,6 +185,7 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 				"Authorization",
 				"trpc-accept",
 				"x-superset-client-machine-id",
+				SUPERSET_USER_ID_HEADER,
 			],
 		}),
 	);
@@ -366,6 +368,7 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 					isAuthenticated,
 					clientMachineId:
 						c.req.header("x-superset-client-machine-id") ?? undefined,
+					userId: c.req.header(SUPERSET_USER_ID_HEADER)?.trim() || undefined,
 					browserBridge: config.browserBridge,
 				} as Record<string, unknown>;
 			},
@@ -391,6 +394,16 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 			await chatV3.dispose();
 		} catch (err) {
 			console.warn("[host-service] chatV3.dispose failed:", err);
+		}
+		// Retire the host-worker threads (and reap their in-flight git
+		// children) here rather than leaving them to process.exit(): exit joins
+		// every Worker, and a worker wedged in native code hangs that join
+		// forever. The desktop entry point bounds this dispose with a deadline
+		// and hard-exits past it.
+		try {
+			await getHostWorkerPool().dispose();
+		} catch (err) {
+			console.warn("[host-service] hostWorkerPool.dispose failed:", err);
 		}
 		try {
 			eventBus.close();

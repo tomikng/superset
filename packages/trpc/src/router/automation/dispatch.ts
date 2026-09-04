@@ -1,5 +1,5 @@
 import { mintUserJwt } from "@superset/auth/server";
-import { dbWs } from "@superset/db/client";
+import { db } from "@superset/db/client";
 import {
 	automationEvents,
 	automationRuns,
@@ -63,6 +63,17 @@ export type DispatchOptions = {
 	relayUrl: string;
 } & DispatchCause;
 
+type HostCandidate = Pick<
+	typeof v2Hosts.$inferSelect,
+	| "organizationId"
+	| "machineId"
+	| "name"
+	| "wakeCommand"
+	| "createdByUserId"
+	| "createdAt"
+	| "updatedAt"
+>;
+
 /**
  * Run one automation: resolve host, (maybe) create a workspace, start the
  * agent session. Writes an automation_runs row regardless of outcome. Does
@@ -117,7 +128,7 @@ export async function dispatchAutomation(
 		return { status: "skipped_offline", runId: inserted?.id ?? null, error };
 	}
 
-	const [run] = await dbWs
+	const [run] = await db
 		.insert(automationRuns)
 		.values({
 			automationId: automation.id,
@@ -134,7 +145,7 @@ export async function dispatchAutomation(
 
 	let workspaceId: string | null = null;
 	try {
-		const [owner] = await dbWs
+		const [owner] = await db
 			.select({ email: users.email })
 			.from(users)
 			.where(eq(users.id, automation.ownerUserId))
@@ -167,7 +178,7 @@ export async function dispatchAutomation(
 		};
 
 		const event = cause.eventId
-			? ((await dbWs.query.automationEvents.findFirst({
+			? ((await db.query.automationEvents.findFirst({
 					where: eq(automationEvents.id, cause.eventId),
 					columns: {
 						provider: true,
@@ -221,7 +232,7 @@ export async function dispatchAutomation(
 			if (!pinGone) throw err;
 			// Clear the pin (CAS so a concurrent repin is never erased) and use
 			// a fresh workspace from here on.
-			await dbWs
+			await db
 				.update(automations)
 				.set({ v2WorkspaceId: null })
 				.where(
@@ -236,7 +247,7 @@ export async function dispatchAutomation(
 			result = await runAgent(workspaceId);
 		}
 
-		await dbWs
+		await db
 			.update(automationRuns)
 			.set({
 				status: "dispatched",
@@ -249,7 +260,7 @@ export async function dispatchAutomation(
 			.where(eq(automationRuns.id, run.id));
 	} catch (err) {
 		const error = describeError(err, "dispatch");
-		await dbWs
+		await db
 			.update(automationRuns)
 			.set({
 				status: "dispatch_failed",
@@ -265,9 +276,9 @@ export async function dispatchAutomation(
 
 async function resolveCandidateHosts(
 	automation: DispatchableAutomation,
-): Promise<Array<typeof v2Hosts.$inferSelect>> {
+): Promise<HostCandidate[]> {
 	if (automation.targetHostId) {
-		const [host] = await dbWs
+		const [host] = await db
 			.select()
 			.from(v2Hosts)
 			.where(
@@ -281,12 +292,11 @@ async function resolveCandidateHosts(
 		return host ? [host] : [];
 	}
 
-	return dbWs
+	return db
 		.select({
 			organizationId: v2Hosts.organizationId,
 			machineId: v2Hosts.machineId,
 			name: v2Hosts.name,
-			isOnline: v2Hosts.isOnline,
 			wakeCommand: v2Hosts.wakeCommand,
 			createdByUserId: v2Hosts.createdByUserId,
 			createdAt: v2Hosts.createdAt,
@@ -310,15 +320,14 @@ async function resolveCandidateHosts(
 }
 
 /**
- * The relay's DOs are the presence authority; the DB flag only decides for
- * hosts still on the v1 relay (which keeps writing it). First online
+ * The relay's Durable Objects are the presence authority. First online
  * candidate wins, preserving the updatedAt ordering.
  */
 async function pickOnlineHost(
 	automation: DispatchableAutomation,
 	relayUrl: string,
-	candidates: Array<typeof v2Hosts.$inferSelect>,
-): Promise<typeof v2Hosts.$inferSelect | null> {
+	candidates: HostCandidate[],
+): Promise<HostCandidate | null> {
 	const jwt = await mintUserJwt({
 		userId: automation.ownerUserId,
 		organizationIds: [automation.organizationId],
@@ -336,7 +345,7 @@ async function pickOnlineHost(
 		candidates.find((host) => {
 			const info =
 				presence?.[buildHostRoutingKey(host.organizationId, host.machineId)];
-			return info ? info.online : host.isOnline;
+			return info?.online ?? false;
 		}) ?? null
 	);
 }
@@ -390,7 +399,7 @@ async function recordUndispatched(
 	status: "skipped_offline" | "dispatch_failed",
 	error: string,
 ): Promise<{ id: string } | undefined> {
-	const [row] = await dbWs
+	const [row] = await db
 		.insert(automationRuns)
 		.values({
 			automationId: automation.id,

@@ -120,9 +120,8 @@ export const workspaceRunTerminalStateSchema = z.object({
 	stopRequestedAt: z.number().optional(),
 });
 
-// "changes" and "pages" are retired tabs: the Changes surface moved into the
-// workspace's Changes pane, so persisted rows heal to "files" below.
-export const WORKSPACE_SIDEBAR_TABS = ["files", "review"] as const;
+// "pages" is a retired tab; persisted rows on it heal to "changes" below.
+export const WORKSPACE_SIDEBAR_TABS = ["changes", "files", "review"] as const;
 
 const WORKSPACE_SIDEBAR_TAB_SCHEMA = z.enum(WORKSPACE_SIDEBAR_TABS);
 
@@ -144,11 +143,14 @@ export const workspaceLocalStateSchema = z.object({
 		sectionId: z.string().min(1).nullable().default(null),
 		changesFilter: changesFilterSchema.default({ kind: "all" }),
 		changesViewMode: z.enum(["folders", "tree"]).default("folders"),
-		activeTab: WORKSPACE_SIDEBAR_TAB_SCHEMA.default("files"),
+		activeTab: WORKSPACE_SIDEBAR_TAB_SCHEMA.default("changes"),
 		isHidden: z.boolean().default(false),
 		// Epoch ms when the user pinned this workspace to the sidebar's Pinned
 		// section; null = not pinned. Ordering is pinnedAt ascending.
 		pinnedAt: z.number().int().nullable().default(null),
+		// "Remove PR link" for cloud-sourced chips: that PR stays hidden, a
+		// different PR still shows.
+		suppressedPullRequestUrl: z.string().nullable().default(null),
 	}),
 	paneLayout: paneWorkspaceStateSchema,
 	viewedFiles: z.array(z.string()).default([]),
@@ -178,6 +180,12 @@ export const workspaceLocalStateSchema = z.object({
 			}),
 		)
 		.default([]),
+	// Terminal presets tagged "auto-run on workspace creation" that matched
+	// this workspace's project when the create resolved. Presets live in
+	// renderer localStorage, so the host can't run them; the v2 workspace
+	// page drains this queue once on first open (see
+	// useRunWorkspaceCreationPresets) and clears it before running.
+	pendingCreationPresetIds: z.array(z.string()).default([]),
 });
 
 // Defaults for fields heal can synthesize. Identity fields (workspaceId,
@@ -188,9 +196,10 @@ const SIDEBAR_STATE_DEFAULTS = {
 	sectionId: null,
 	changesFilter: { kind: "all" },
 	changesViewMode: "folders",
-	activeTab: "files",
+	activeTab: "changes",
 	isHidden: false,
 	pinnedAt: null,
+	suppressedPullRequestUrl: null,
 } as const;
 
 const WORKSPACE_LOCAL_STATE_OPTIONAL_DEFAULTS = {
@@ -209,6 +218,7 @@ const WORKSPACE_LOCAL_STATE_OPTIONAL_DEFAULTS = {
 		cwd: string | null;
 		v1PaneId: string | null;
 	}>,
+	pendingCreationPresetIds: [] as string[],
 };
 
 /**
@@ -395,6 +405,19 @@ function isCompleteLinkTierMap(
 	);
 }
 
+const sidebarProjectSortModeSchema = z.enum(["manual", "active", "created"]);
+
+export type SidebarProjectSortMode = z.infer<
+	typeof sidebarProjectSortModeSchema
+>;
+
+// `.catch`, not `.default`: #5956 persisted a since-retired "updated" value
+// for some users, and an enum failure must degrade to manual rather than
+// drop the whole preferences row. Also applied at heal time (below) because
+// the localStorage collection only runs the schema on writes.
+const persistedSidebarProjectSortModeSchema =
+	sidebarProjectSortModeSchema.catch("manual");
+
 export const v2UserPreferencesSchema = z.object({
 	id: z.literal("preferences"),
 	fileLinks: linkTierMapSchema.default(DEFAULT_LINK_TIER_MAP),
@@ -408,6 +431,8 @@ export const v2UserPreferencesSchema = z.object({
 	rightSidebarWidth: z.number().default(340),
 	deleteLocalBranch: z.boolean().default(false),
 	showPresetsBar: z.boolean().default(true),
+	// Ordering of the dashboard sidebar's Projects list; manual = drag order.
+	sidebarProjectSortMode: persistedSidebarProjectSortModeSchema,
 	// Built-in (synthetic, app-shipped) presets the user hid from the preset
 	// bar. Synthetic presets have no v2TerminalPresets row, so visibility can't
 	// live on the row's pinnedToBar like user presets. Pruned against
@@ -444,6 +469,7 @@ export const DEFAULT_V2_USER_PREFERENCES: V2UserPreferencesRow = {
 	rightSidebarWidth: 340,
 	deleteLocalBranch: false,
 	showPresetsBar: true,
+	sidebarProjectSortMode: "manual",
 	hiddenBuiltinPresetIds: [],
 	favoritePageIds: [],
 	hiddenTagFolders: {},
@@ -479,10 +505,13 @@ export function healWorkspaceLocalState(raw: unknown): WorkspaceLocalStateRow {
 		pendingMigratedTerminals:
 			r.pendingMigratedTerminals ??
 			WORKSPACE_LOCAL_STATE_OPTIONAL_DEFAULTS.pendingMigratedTerminals,
+		pendingCreationPresetIds:
+			r.pendingCreationPresetIds ??
+			WORKSPACE_LOCAL_STATE_OPTIONAL_DEFAULTS.pendingCreationPresetIds,
 		sidebarState: {
 			...SIDEBAR_STATE_DEFAULTS,
 			...sidebar,
-			activeTab: WORKSPACE_SIDEBAR_TAB_SCHEMA.catch("files").parse(
+			activeTab: WORKSPACE_SIDEBAR_TAB_SCHEMA.catch("changes").parse(
 				sidebar.activeTab,
 			),
 		} as WorkspaceLocalStateRow["sidebarState"],
@@ -530,6 +559,9 @@ export function healV2UserPreferences(raw: unknown): V2UserPreferencesRow {
 			...DEFAULT_V2_USER_PREFERENCES.folderLinks,
 			...r.folderLinks,
 		},
+		sidebarProjectSortMode: persistedSidebarProjectSortModeSchema.parse(
+			r.sidebarProjectSortMode,
+		),
 		// Prune retired/stray built-in ids so the array stays bounded.
 		hiddenBuiltinPresetIds: (Array.isArray(r.hiddenBuiltinPresetIds)
 			? r.hiddenBuiltinPresetIds
