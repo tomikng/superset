@@ -146,8 +146,9 @@ export const pullRequests = sqliteTable(
 		reviewDecision: text("review_decision"),
 		checksStatus: text("checks_status").notNull().default("none"),
 		checksJson: text("checks_json").notNull().default("[]"),
-		// Set when the PR is first observed merged; never cleared. Anchors
-		// "merged in the last N days" windows on the workspaces board.
+		// GitHub's own merge time once a fetch has carried one, otherwise the
+		// time the merge was first observed; never cleared. Anchors "merged in
+		// the last N days" windows on the workspaces board.
 		mergedAt: integer("merged_at"),
 		lastFetchedAt: integer("last_fetched_at"),
 		error: text(),
@@ -246,6 +247,12 @@ export const workspaces = sqliteTable(
 			.$defaultFn(() => Date.now()),
 		// 0 means "predates local ownership"; write paths always set it.
 		updatedAt: integer("updated_at").notNull().default(0),
+		// Epoch ms of the newest agent lifecycle event in this workspace (see
+		// touchLocalWorkspaceActivity). Distinct from updatedAt, which only
+		// moves on metadata writes. Inserts stamp creation as the first
+		// activity; rows that predate the column stay null and consumers fall
+		// back to updatedAt.
+		lastActivityAt: integer("last_activity_at").$defaultFn(() => Date.now()),
 		// Null = local changes not yet pushed to the cloud mirror (dual-write
 		// era only; the column and reconciler go away in R3).
 		// Tombstone: null = live. Set at the destroy commit point; rows are
@@ -291,6 +298,11 @@ export const tagFolderSettings = sqliteTable(
 	{
 		scope: text().notNull(),
 		tag: text().notNull(),
+		// A folder is personal like the tags it derives from (see
+		// `workspaceTags`): keyed per user so renaming yours never renames a
+		// teammate's folder of the same tag. Same NOT NULL / empty-string
+		// convention: '' = customised before folders had an owner.
+		createdByUserId: text("created_by_user_id").notNull().default(""),
 		displayName: text("display_name"),
 		color: text(),
 		tabOrder: integer("tab_order"),
@@ -298,7 +310,11 @@ export const tagFolderSettings = sqliteTable(
 			.notNull()
 			.$defaultFn(() => Date.now()),
 	},
-	(table) => [primaryKey({ columns: [table.scope, table.tag] })],
+	(table) => [
+		primaryKey({
+			columns: [table.scope, table.tag, table.createdByUserId],
+		}),
+	],
 );
 
 /**
@@ -306,6 +322,14 @@ export const tagFolderSettings = sqliteTable(
  * stored already-normalized (trimmed + lowercased, see
  * `@superset/shared/workspace-tags`); sidebar folders derive from these
  * rows, so any actor that can tag a workspace can file it.
+ *
+ * A tag belongs to whoever applied it: on a shared host, every user files
+ * the same workspaces into their own folders, and one user's grouping must
+ * not appear in another's sidebar. `created_by_user_id` is part of the key
+ * so two users can each carry the same tag on one workspace. It is NOT NULL
+ * because SQLite treats NULLs inside a primary key as distinct, which would
+ * let duplicate rows through; the empty string is the "creator unknown"
+ * value for rows written by callers that carry no user (visible to all).
  */
 export const workspaceTags = sqliteTable(
 	"workspace_tags",
@@ -314,12 +338,15 @@ export const workspaceTags = sqliteTable(
 			.notNull()
 			.references(() => workspaces.id, { onDelete: "cascade" }),
 		tag: text().notNull(),
+		createdByUserId: text("created_by_user_id").notNull().default(""),
 		createdAt: integer("created_at")
 			.notNull()
 			.$defaultFn(() => Date.now()),
 	},
 	(table) => [
-		primaryKey({ columns: [table.workspaceId, table.tag] }),
+		primaryKey({
+			columns: [table.workspaceId, table.tag, table.createdByUserId],
+		}),
 		index("workspace_tags_tag_idx").on(table.tag),
 	],
 );

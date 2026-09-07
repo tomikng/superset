@@ -27,6 +27,16 @@ export interface PersistableBrowserState {
 
 interface RegistryEntry {
 	webview: Electron.WebviewTag;
+	/**
+	 * Host layer painted directly above this pane's webview, mirroring its
+	 * rect and visibility. The webview is hoisted to a body-level container,
+	 * so nothing inside the pane tree can paint over it: the pane tree is its
+	 * own stacking context (isolated so resize handles stay under dialogs),
+	 * and z-index never crosses one. Pane UI that must cover the page (the
+	 * design-mode composer, find bar, load-error and blank states) portals
+	 * in here instead of competing from inside the tree.
+	 */
+	overlay: HTMLDivElement;
 	state: BrowserRuntimeState;
 	onPersist: ((state: PersistableBrowserState) => void) | null;
 	/** Owning workspace — sent on register so the main process scopes pane ops. */
@@ -60,6 +70,11 @@ const EMPTY_STATE: BrowserRuntimeState = Object.freeze({
 
 const ROOT_CONTAINER_ID = "browser-runtime-root";
 
+/** Page-zoom bounds and step for a browser pane (1 = 100%). */
+export const BROWSER_ZOOM = Object.freeze({ min: 0.25, max: 5, step: 0.1 });
+
+export type BrowserZoomDirection = "in" | "out" | "reset";
+
 class BrowserRuntimeRegistryImpl {
 	private entries = new Map<string, RegistryEntry>();
 	private listenersByPaneId = new Map<string, Set<() => void>>();
@@ -73,6 +88,12 @@ class BrowserRuntimeRegistryImpl {
 	private globalListenersInstalled = false;
 	private windowDragPassthrough = false;
 	private shellInteractionPassthrough = false;
+	// Panes whose host popover (the toolbar's overflow menu) is open. The
+	// webview swallows pointer events, so a click on the page would never
+	// reach the document listener Radix dismisses on; passing the click
+	// through to the host lets it dismiss the popover instead, as in a real
+	// browser. Keyed by pane so one pane closing can't drop another's.
+	private hostPopoverOpenPaneIds = new Set<string>();
 	// Panes an agent is driving (live CDP session or in-flight capture, fed
 	// by the main process). Parked presentable instead of hidden — a
 	// visibility-hidden webview gets no compositor frames, so CDP
@@ -174,6 +195,7 @@ class BrowserRuntimeRegistryImpl {
 			style.visibility = "hidden";
 			style.opacity = "";
 		}
+		entry.overlay.style.visibility = "hidden";
 	}
 
 	private setWindowDragPassthrough(passthrough: boolean) {
@@ -188,8 +210,19 @@ class BrowserRuntimeRegistryImpl {
 		this.applyPointerPassthroughIfChanged(wasActive);
 	}
 
+	setHostPopoverOpen(paneId: string, open: boolean): void {
+		const wasActive = this.isPointerPassthroughActive();
+		if (open) this.hostPopoverOpenPaneIds.add(paneId);
+		else this.hostPopoverOpenPaneIds.delete(paneId);
+		this.applyPointerPassthroughIfChanged(wasActive);
+	}
+
 	private isPointerPassthroughActive() {
-		return this.windowDragPassthrough || this.shellInteractionPassthrough;
+		return (
+			this.windowDragPassthrough ||
+			this.shellInteractionPassthrough ||
+			this.hostPopoverOpenPaneIds.size > 0
+		);
 	}
 
 	private applyPointerPassthroughIfChanged(wasActive: boolean) {
@@ -208,11 +241,17 @@ class BrowserRuntimeRegistryImpl {
 	private updateLayout(entry: RegistryEntry) {
 		if (!entry.placeholder) return;
 		const rect = entry.placeholder.getBoundingClientRect();
-		const w = entry.webview;
-		w.style.top = `${rect.top}px`;
-		w.style.left = `${rect.left}px`;
-		w.style.width = `${rect.width}px`;
-		w.style.height = `${rect.height}px`;
+		for (const style of [entry.webview.style, entry.overlay.style]) {
+			style.top = `${rect.top}px`;
+			style.left = `${rect.left}px`;
+			style.width = `${rect.width}px`;
+			style.height = `${rect.height}px`;
+		}
+	}
+
+	/** Host layer above the pane's webview; null until the pane has attached. */
+	getOverlayContainer(paneId: string): HTMLElement | null {
+		return this.entries.get(paneId)?.overlay ?? null;
 	}
 
 	private notify(paneId: string) {
@@ -292,8 +331,22 @@ class BrowserRuntimeRegistryImpl {
 		webview.style.pointerEvents = "auto";
 		webview.src = sanitizeUrl(initialUrl);
 
+		// Click-through by default so the page stays interactive; whatever is
+		// portalled in opts back into pointer events itself. z-index 1 keeps it
+		// above every webview in the container, including ones appended later.
+		const overlay = document.createElement("div");
+		overlay.style.position = "fixed";
+		overlay.style.top = "0";
+		overlay.style.left = "0";
+		overlay.style.width = "0";
+		overlay.style.height = "0";
+		overlay.style.zIndex = "1";
+		overlay.style.pointerEvents = "none";
+		overlay.style.visibility = "hidden";
+
 		const entry: RegistryEntry = {
 			webview,
+			overlay,
 			state: { ...EMPTY_STATE, currentUrl: initialUrl },
 			onPersist: null,
 			workspaceId,
@@ -481,6 +534,7 @@ class BrowserRuntimeRegistryImpl {
 			entry = this.createEntry(paneId, initialUrl, workspaceId);
 			this.entries.set(paneId, entry);
 			root.appendChild(entry.webview);
+			root.appendChild(entry.overlay);
 		} else {
 			// A reused pane can move between workspaces (the attach effect keys on
 			// workspaceId). Keep the registration's workspace current so main-side
@@ -519,6 +573,7 @@ class BrowserRuntimeRegistryImpl {
 		this.updateLayout(entry);
 		entry.webview.style.visibility = "visible";
 		entry.webview.style.opacity = "";
+		entry.overlay.style.visibility = "visible";
 		this.applyPointerPassthrough();
 	}
 
@@ -571,6 +626,7 @@ class BrowserRuntimeRegistryImpl {
 		entry.resizeObserver?.disconnect();
 		entry.detachHandlers();
 		entry.webview.remove();
+		entry.overlay.remove();
 		this.entries.delete(paneId);
 		this.listenersByPaneId.delete(paneId);
 		this.foundInPageListenersByPaneId.delete(paneId);
@@ -666,9 +722,36 @@ class BrowserRuntimeRegistryImpl {
 	setZoomFactor(paneId: string, factor: number): void {
 		const entry = this.entries.get(paneId);
 		if (!entry) return;
-		const clamped = Math.min(5, Math.max(0.25, factor));
+		const clamped = Math.min(
+			BROWSER_ZOOM.max,
+			Math.max(BROWSER_ZOOM.min, factor),
+		);
 		entry.webview.setZoomFactor(clamped);
 		this.setState(paneId, { zoomFactor: clamped });
+	}
+
+	stepZoom(paneId: string, direction: BrowserZoomDirection): void {
+		const entry = this.entries.get(paneId);
+		if (!entry) return;
+		if (direction === "reset") {
+			this.setZoomFactor(paneId, 1);
+			return;
+		}
+		// Zoom is per-origin, so another pane on the same origin may have moved
+		// it since we last read it; step from what the page renders at now.
+		this.refreshZoomState(paneId);
+		const delta = direction === "in" ? BROWSER_ZOOM.step : -BROWSER_ZOOM.step;
+		// Round to the step grid so repeated steps don't drift (1.2000000000000002).
+		const next = Math.round((entry.state.zoomFactor + delta) * 100) / 100;
+		this.setZoomFactor(paneId, next);
+	}
+
+	/** The pane whose `<webview>` is `element`, e.g. `document.activeElement`. */
+	getPaneIdForWebview(element: Element): string | null {
+		for (const [paneId, entry] of this.entries) {
+			if (entry.webview === element) return paneId;
+		}
+		return null;
 	}
 }
 

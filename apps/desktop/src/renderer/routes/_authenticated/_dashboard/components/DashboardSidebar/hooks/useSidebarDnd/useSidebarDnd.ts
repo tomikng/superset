@@ -1,4 +1,5 @@
 import {
+	type Activators,
 	type CollisionDetection,
 	closestCenter,
 	type DragEndEvent,
@@ -10,6 +11,8 @@ import {
 	MouseSensor,
 	pointerWithin,
 	rectIntersection,
+	type Sensor,
+	type SensorOptions,
 	TouchSensor,
 	type UniqueIdentifier,
 	useSensor,
@@ -32,6 +35,10 @@ import {
 } from "react";
 import { useDashboardSidebarState } from "renderer/routes/_authenticated/hooks/useDashboardSidebarState";
 import { laneProjectIdForScope } from "renderer/routes/_authenticated/utils/workspaceTagFolders";
+import {
+	useWorkspaceTransactionsStore,
+	type WorkspaceTransactionSnapshot,
+} from "renderer/stores/workspace-creates";
 import type {
 	DashboardSidebarPinnedWorkspace,
 	DashboardSidebarProject,
@@ -64,6 +71,14 @@ export const parseId = (id: UniqueIdentifier) => {
 		return { type: "section" as const, realId: s.slice(SEC.length) };
 	return null;
 };
+
+const workspaceIdsOf = (ids: UniqueIdentifier[]): ReadonlySet<string> =>
+	new Set(
+		ids.flatMap((id) => {
+			const parsed = parseId(id);
+			return parsed?.type === "workspace" ? [parsed.realId] : [];
+		}),
+	);
 
 // ── Containers ───────────────────────────────────────────────────────
 //
@@ -195,6 +210,40 @@ function fingerprintChildren(children: DashboardSidebarProjectChild[]): string {
 }
 
 /**
+ * True while a host write started by the last drop (a tag strip/add) has not
+ * settled. Only `update` transactions for the rows that drop wrote count:
+ * a rename elsewhere, or a pending create/delete, must not hold the model.
+ */
+export function hasInFlightRowWrite(
+	transactions: Record<string, Pick<WorkspaceTransactionSnapshot, "type">>,
+	dropWriteIds: ReadonlySet<string>,
+): boolean {
+	for (const workspaceId of dropWriteIds) {
+		if (transactions[workspaceId]?.type === "update") return true;
+	}
+	return false;
+}
+
+/**
+ * What the external-data sync effect should do this run. After a hold ends
+ * the model is reconciled even when the fingerprint matches what was last
+ * synced: a rejected write can roll the props back to exactly the pre-drop
+ * shape, and nothing else would ever replace the optimistic order.
+ */
+export function planExternalSync(input: {
+	inFlight: boolean;
+	wasHeld: boolean;
+	fingerprint: string;
+	prevFingerprint: string;
+}): "hold" | "sync" | "skip" {
+	if (input.inFlight) return "hold";
+	if (input.wasHeld || input.fingerprint !== input.prevFingerprint) {
+		return "sync";
+	}
+	return "skip";
+}
+
+/**
  * Section the row at `id` belongs to after landing in `list`: the section of
  * the row directly above it (a header counts as its own section), or null when
  * it sits at the top / below an ungrouped row.
@@ -285,6 +334,8 @@ export interface DashboardSidebarDndValue {
 	projectsById: Map<string, DashboardSidebarProject>;
 	groupInfo: Map<string, { sectionId: string; color: string | null }>;
 	collapsedSectionIds: Set<string>;
+	/** Rows and folders are a sorted view: their sortables are inert. */
+	isChildDragDisabled: boolean;
 }
 
 const DashboardSidebarDndContext =
@@ -304,13 +355,59 @@ export function useDashboardSidebarDnd(): DashboardSidebarDndValue {
 
 // ── Hook ─────────────────────────────────────────────────────────────
 
+type GatedSensorOptions<Options extends SensorOptions> = Options & {
+	/** True = never activate a drag, whatever the pointer does. */
+	disabled?: boolean;
+};
+
+/**
+ * A sensor that declines to activate while `disabled` is set in its options.
+ * dnd-kit spreads the sensor list into a hook dependency array, so disabling
+ * by swapping in an empty list trips React's "changed size between renders"
+ * warning; keeping the list constant and gating at the activator keeps every
+ * sortable, listener, and hook exactly as it is in the enabled state.
+ */
+function gateSensor<Options extends SensorOptions>(
+	Base: Sensor<Options>,
+): Sensor<GatedSensorOptions<Options>> {
+	const activators: Activators<GatedSensorOptions<Options>> =
+		Base.activators.map(({ eventName, handler }) => ({
+			eventName,
+			handler: (event, options, context) =>
+				options.disabled ? false : handler(event, options, context),
+		}));
+	return class extends Base {
+		static activators = activators;
+	};
+}
+
+const GatedMouseSensor = gateSensor(MouseSensor);
+const GatedTouchSensor = gateSensor(TouchSensor);
+const GatedKeyboardSensor = gateSensor(KeyboardSensor);
+
 interface UseSidebarDndOptions {
-	/** Projects in their current display order. */
+	/** Projects in their current display order (already sorted/filtered). */
 	projects: DashboardSidebarProject[];
 	pinnedWorkspaces: DashboardSidebarPinnedWorkspace[];
 	/** The Sessions lane, shaped like a project's children (rows + folders). */
 	sessionChildren: DashboardSidebarProjectChild[];
 	onReorderProjects: (projectIds: string[]) => void;
+	/**
+	 * True while a filter hides projects: the rendered project list is a
+	 * subset of the manual order, so committing a drop would rewrite tabOrder
+	 * against the view. The sort modes never reorder projects, so they do not
+	 * set this — a project stays draggable while its workspaces are sorted.
+	 */
+	projectDragDisabled?: boolean;
+	/**
+	 * True while a non-manual sort or an active filter means every project's
+	 * child list is a transformed view of the manual order. Committing a drop
+	 * there would corrupt the real order of reordered/hidden siblings, so
+	 * every row drag (workspaces, folders, pinned, sessions) is inert —
+	 * including in the unsorted Pinned and Sessions lanes, whose drags can
+	 * land in a project.
+	 */
+	childDragDisabled?: boolean;
 }
 
 export function useSidebarDnd({
@@ -318,27 +415,49 @@ export function useSidebarDnd({
 	pinnedWorkspaces,
 	sessionChildren,
 	onReorderProjects,
+	projectDragDisabled = false,
+	childDragDisabled = false,
 }: UseSidebarDndOptions) {
 	const {
 		reorderPinnedWorkspaces,
 		reorderProjectChildren,
-		moveWorkspaceToSectionAtIndex,
+		setSectionWorkspaceOrder,
 		setWorkspacePinned,
 	} = useDashboardSidebarState();
 
+	const noDragsPossible = projectDragDisabled && childDragDisabled;
+	// useSensor memoizes on the options object's identity, and this hook
+	// re-renders on every hovered-row change mid-drag. Inline option literals
+	// therefore rebuilt the sensor list each time, which recomputed every
+	// sortable's `listeners` and busted the memo that keeps each project's
+	// section subtree (rows, menus, dialogs) out of the per-move render.
+	const sensorOptions = useMemo(
+		() => ({
+			// 5px absorbs the 1-3px of jitter a real click carries without
+			// turning it into a pickup; anything smaller starts reordering rows
+			// on sloppy clicks. The trailing click after an activated drag is
+			// already swallowed by dnd-kit (capture-phase document click
+			// listener installed at activation, detached one event loop after
+			// the drag ends).
+			mouse: {
+				activationConstraint: { distance: 5 },
+				disabled: noDragsPossible,
+			},
+			touch: {
+				activationConstraint: { delay: 200, tolerance: 5 },
+				disabled: noDragsPossible,
+			},
+			keyboard: {
+				coordinateGetter: sortableKeyboardCoordinates,
+				disabled: noDragsPossible,
+			},
+		}),
+		[noDragsPossible],
+	);
 	const sensors = useSensors(
-		// 5px absorbs the 1-3px of jitter a real click carries without turning
-		// it into a pickup; anything smaller starts reordering rows on sloppy
-		// clicks. The trailing click after an activated drag is already
-		// swallowed by dnd-kit (capture-phase document click listener installed
-		// at activation, detached one event loop after the drag ends).
-		useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-		useSensor(TouchSensor, {
-			activationConstraint: { delay: 200, tolerance: 5 },
-		}),
-		useSensor(KeyboardSensor, {
-			coordinateGetter: sortableKeyboardCoordinates,
-		}),
+		useSensor(GatedMouseSensor, sensorOptions.mouse),
+		useSensor(GatedTouchSensor, sensorOptions.touch),
+		useSensor(GatedKeyboardSensor, sensorOptions.keyboard),
 	);
 
 	const [items, setItems] = useState<SidebarDndItems>(() => ({
@@ -392,8 +511,23 @@ export function useSidebarDnd({
 
 	// Sync from external data when items or their order/membership changes
 	const prevFingerprintRef = useRef("");
+	// Workspace ids whose host rows the last drop may have written, set by the
+	// drop handler before it persists; cleared once their writes settle.
+	const dropWriteIdsRef = useRef<ReadonlySet<string>>(new Set());
+	const heldRef = useRef(false);
+	const workspaceTransactionsById = useWorkspaceTransactionsStore(
+		(state) => state.byWorkspaceId,
+	);
 	useEffect(() => {
 		if (activeId || activeIdRef.current) return; // Don't reset during active drag
+		// A drop across a folder boundary strips or adds a host tag. The host
+		// cache is patched before the request goes out, but its observers
+		// re-render on a later task, so on the drop commit the props still
+		// carry the old tag and would re-file the row into the folder it just
+		// left (visible as the row snapping back, then jumping once the write
+		// lands). Hold the drag model while that drop's host writes are in
+		// flight; the store clears on success or failure and this effect
+		// re-runs against converged data.
 		const fingerprint = [
 			pinnedWorkspaces.map((ws) => ws.id).join("|"),
 			fingerprintChildren(sessionChildren),
@@ -403,7 +537,22 @@ export function useSidebarDnd({
 				)
 				.join(";"),
 		].join("\n");
-		if (fingerprint !== prevFingerprintRef.current) {
+		const plan = planExternalSync({
+			inFlight: hasInFlightRowWrite(
+				workspaceTransactionsById,
+				dropWriteIdsRef.current,
+			),
+			wasHeld: heldRef.current,
+			fingerprint,
+			prevFingerprint: prevFingerprintRef.current,
+		});
+		if (plan === "hold") {
+			heldRef.current = true;
+			return;
+		}
+		dropWriteIdsRef.current = new Set();
+		heldRef.current = false;
+		if (plan === "sync") {
 			prevFingerprintRef.current = fingerprint;
 			commitDragItems({
 				pinned: pinnedWorkspaces.map((ws) => wsId(ws.id)),
@@ -417,7 +566,14 @@ export function useSidebarDnd({
 				membership: buildMembership(projects, sessionChildren),
 			});
 		}
-	}, [projects, pinnedWorkspaces, sessionChildren, activeId, commitDragItems]);
+	}, [
+		projects,
+		pinnedWorkspaces,
+		sessionChildren,
+		activeId,
+		commitDragItems,
+		workspaceTransactionsById,
+	]);
 
 	// ── Lookups ──────────────────────────────────────────────────────
 
@@ -704,12 +860,10 @@ export function useSidebarDnd({
 
 			// Each section's workspace order
 			for (const [sectionId, wsIds] of Object.entries(parsed.sections)) {
-				for (let i = 0; i < wsIds.length; i++) {
-					moveWorkspaceToSectionAtIndex(wsIds[i], projectId, sectionId, i);
-				}
+				setSectionWorkspaceOrder(projectId, sectionId, wsIds);
 			}
 		},
-		[reorderProjectChildren, moveWorkspaceToSectionAtIndex],
+		[reorderProjectChildren, setSectionWorkspaceOrder],
 	);
 
 	const persistWorkspaceDrop = useCallback(
@@ -885,6 +1039,7 @@ export function useSidebarDnd({
 						? rebuilt
 						: normalizeMainFirst(rebuilt);
 				commitDragItems(withContainerList(current, container, newList));
+				dropWriteIdsRef.current = workspaceIdsOf(newList);
 				commitContainerToDb(container, newList, current.membership);
 				return;
 			}
@@ -973,6 +1128,10 @@ export function useSidebarDnd({
 				});
 
 				if (!unchanged) {
+					dropWriteIdsRef.current = workspaceIdsOf([
+						...targetList,
+						...getContainerList(next, sourceContainer),
+					]);
 					persistWorkspaceDrop(
 						parsed.realId,
 						targetContainer,
@@ -1041,6 +1200,7 @@ export function useSidebarDnd({
 			projectsById,
 			groupInfo,
 			collapsedSectionIds,
+			isChildDragDisabled: childDragDisabled,
 		}),
 		[
 			items,
@@ -1055,6 +1215,7 @@ export function useSidebarDnd({
 			projectsById,
 			groupInfo,
 			collapsedSectionIds,
+			childDragDisabled,
 		],
 	);
 

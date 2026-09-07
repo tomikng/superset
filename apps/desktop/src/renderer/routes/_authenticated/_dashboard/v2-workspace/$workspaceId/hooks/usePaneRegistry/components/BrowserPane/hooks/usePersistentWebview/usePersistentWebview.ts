@@ -1,6 +1,6 @@
 import type { RendererContext } from "@superset/panes";
 import { useParams } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	getDispatchChord,
 	type HotkeyId,
@@ -19,10 +19,14 @@ import { browserRuntimeRegistry } from "../../browserRuntimeRegistry";
 import { DEFAULT_BROWSER_URL } from "../../constants";
 
 // Hotkeys the pane replays onto the host document when the guest forwards a
-// keystroke. Scoped to tab switching: no menu accelerator (so replaying can't
-// double-fire) and not page shortcuts. The main process is synced these chords
-// so it suppresses + forwards only them — see the forwardable-chord sync below.
+// keystroke. Scoped to tab switching and zoom: no registered menu accelerator
+// (so replaying can't double-fire) and not page shortcuts. The main process is
+// synced these chords so it suppresses + forwards only them — see the
+// forwardable-chord sync below.
 const FORWARDABLE_HOTKEYS = new Set<HotkeyId>([
+	"ZOOM_IN",
+	"ZOOM_OUT",
+	"ZOOM_RESET",
 	"PREV_TAB",
 	"NEXT_TAB",
 	"PREV_TAB_ALT",
@@ -48,6 +52,11 @@ export function usePersistentWebview({
 	ctx,
 }: UsePersistentWebviewOptions) {
 	const placeholderRef = useRef<HTMLDivElement | null>(null);
+	// The registry's host layer above this pane's webview; pane UI that must
+	// cover the page portals into it. Null until attached.
+	const [overlayContainer, setOverlayContainer] = useState<HTMLElement | null>(
+		null,
+	);
 	const ctxRef = useRef(ctx);
 	ctxRef.current = ctx;
 	// Workspace scoping for the browser bridge (CLI/agent control). Panes only
@@ -88,9 +97,11 @@ export function usePersistentWebview({
 				});
 			},
 		);
+		setOverlayContainer(browserRuntimeRegistry.getOverlayContainer(paneId));
 
 		return () => {
 			browserRuntimeRegistry.detach(paneId);
+			setOverlayContainer(null);
 		};
 	}, [paneId, workspaceId]);
 
@@ -221,6 +232,7 @@ export function usePersistentWebview({
 
 	return {
 		placeholderRef,
+		overlayContainer,
 		goBack,
 		goForward,
 		reload,

@@ -19,6 +19,11 @@ import {
 } from "@/screens/(authenticated)/(home)/home/hooks/useHostTerminals";
 import { PressableScale } from "@/screens/(authenticated)/components/PressableScale";
 import {
+	agentLaunchPresetId,
+	useAgentLaunchPreferences,
+} from "@/screens/(authenticated)/hooks/useAgentLaunchPreferences";
+import { useHostAgentConfigs } from "@/screens/(authenticated)/hooks/useHostAgentConfigs";
+import {
 	type DraftComment,
 	NO_COMMENTS,
 	useDraftCommentsStore,
@@ -63,6 +68,17 @@ export function FinishReviewSheet() {
 	);
 	const startWorkspaceTerminal = useStartWorkspaceTerminal(widgetWorkspaces);
 	const agentId = useNewSessionPreferencesStore((state) => state.agentId);
+	const agentConfigs = useHostAgentConfigs({
+		machineId: host?.machineId ?? null,
+		hostUrl: host ? hostServiceUrl(host.organizationId, host.machineId) : null,
+	});
+	const agentConfig = agentConfigs.data?.find(
+		(config) => config.presetId === agentId,
+	);
+	// The preset id stands in until the configs answer (see NewChatWidget).
+	const launch = useAgentLaunchPreferences(
+		agentConfig ? agentLaunchPresetId(agentConfig) : agentId,
+	);
 
 	const terminalRows = useMemo(
 		() => (workspaceId ? (terminalsByWorkspace.get(workspaceId) ?? []) : []),
@@ -92,6 +108,8 @@ export function FinishReviewSheet() {
 						},
 						message: { text: prompt, attachments: [] },
 						agentId,
+						model: launch.model?.id ?? null,
+						effort: launch.effort?.id ?? null,
 					},
 					{
 						onSuccess: () => {
@@ -119,7 +137,6 @@ export function FinishReviewSheet() {
 		} catch (cause) {
 			Alert.alert(
 				t({
-					id: "mobile.finishReview.sendFailed",
 					message: "Could not send review",
 				}),
 				cause instanceof Error ? cause.message : String(cause),
@@ -134,7 +151,6 @@ export function FinishReviewSheet() {
 			<Stack.Screen
 				options={{
 					title: t({
-						id: "mobile.nav.finishReview.title",
 						message: "Finish review",
 					}),
 				}}
@@ -143,7 +159,6 @@ export function FinishReviewSheet() {
 				<Stack.Toolbar.Button
 					icon="xmark"
 					accessibilityLabel={t({
-						id: "mobile.common.close",
 						message: "Close",
 					})}
 					onPress={() => router.back()}
@@ -156,9 +171,8 @@ export function FinishReviewSheet() {
 				contentContainerClassName="pb-10 pt-2"
 			>
 				<Text className="text-muted-foreground px-4 pb-2 text-[12px]">
-					<Trans id="mobile.finishReview.messageLabel">Review message</Trans> ·{" "}
+					<Trans>Review message</Trans> ·{" "}
 					<Plural
-						id="mobile.finishReview.commentsAttached"
 						value={comments.length}
 						one="# comment attached"
 						other="# comments attached"
@@ -169,22 +183,19 @@ export function FinishReviewSheet() {
 					multiline
 					onChangeText={setMessage}
 					placeholder={t({
-						id: "mobile.finishReview.summaryPlaceholder",
 						message: "Leave a summary…",
 					})}
 					placeholderTextColor="#6b7280"
 					value={message}
 				/>
 				<Text className="text-muted-foreground px-4 pb-2 pt-4 text-[12px]">
-					<Trans id="mobile.finishReview.sendTo">Send to</Trans>
+					<Trans>Send to</Trans>
 				</Text>
 				<TargetRow
 					name={t({
-						id: "mobile.finishReview.newSession",
 						message: "New agent session",
 					})}
 					subtitle={t({
-						id: "mobile.finishReview.newSessionSubtitle",
 						message: "Starts a fresh session in this workspace",
 					})}
 					selected={target === "new"}
@@ -196,8 +207,8 @@ export function FinishReviewSheet() {
 						name={row.title}
 						subtitle={
 							row.attention === "working"
-								? t({ id: "mobile.session.running", message: "Running" })
-								: t({ id: "mobile.session.idle", message: "Idle" })
+								? t({ message: "Running" })
+								: t({ message: "Idle" })
 						}
 						selected={target === row.terminalId}
 						onPress={() => setTarget(row.terminalId)}
@@ -214,8 +225,8 @@ export function FinishReviewSheet() {
 				>
 					<Text className="text-primary-foreground font-semibold text-[15px]">
 						{sending
-							? t({ id: "mobile.finishReview.sending", message: "Sending…" })
-							: t({ id: "mobile.finishReview.submit", message: "Send review" })}
+							? t({ message: "Sending…" })
+							: t({ message: "Send review" })}
 					</Text>
 				</PressableScale>
 			</ScrollView>
