@@ -517,6 +517,7 @@ jobs:
   relay-changes:
     name: Detect Relay Changes
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     permissions:
       contents: read
     outputs:
@@ -540,12 +541,11 @@ jobs:
   deploy-relay:
     name: Deploy Relay to Cloudflare
     runs-on: ubuntu-latest
-    if: github.repository == 'superset-sh/superset'
     environment: production
     needs: relay-changes
     # Fail open: a broken detector must not leave a stale relay in production.
     if: >-
-      !cancelled() && (
+      github.repository == 'superset-sh/superset' && !cancelled() && (
         github.event_name == 'workflow_dispatch'
         || needs.relay-changes.result != 'success'
         || needs.relay-changes.outputs.relay == 'true'
