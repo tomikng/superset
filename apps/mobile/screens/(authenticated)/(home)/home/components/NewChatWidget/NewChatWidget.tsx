@@ -15,6 +15,10 @@ import { getHostServiceClientByUrl } from "@/lib/host-service/client";
 import { posthog } from "@/lib/posthog";
 import { apiClient } from "@/lib/trpc/client";
 import { useWorkspaceScope } from "@/screens/(authenticated)/(home)/hooks/useWorkspaceScope";
+import {
+	agentLaunchPresetId,
+	useAgentLaunchPreferences,
+} from "@/screens/(authenticated)/hooks/useAgentLaunchPreferences";
 import { useAttachmentsSheet } from "@/screens/(authenticated)/hooks/useAttachmentsSheet";
 import { useComposerDraft } from "@/screens/(authenticated)/hooks/useComposerDraft";
 import { useCreateTerminalWorkspace } from "@/screens/(authenticated)/hooks/useCreateTerminalWorkspace";
@@ -37,6 +41,7 @@ function cloudAgentConfig(agentId: string | null) {
 				presetId: preset.presetId,
 				label: preset.label,
 				iconId: preset.presetId,
+				command: preset.command,
 			}
 		: undefined;
 }
@@ -129,6 +134,29 @@ export function NewChatWidget({
 		? (selectedAgent?.presetId ?? "claude")
 		: agentId;
 	const agentIconUri = useAgentIconUri(selectedAgent?.iconId ?? agentId);
+	// Remembered per launch preset; null means the agent's own default and
+	// nothing rides the launch. Until the host's configs answer the preset id
+	// stands in for the launch preset, so a send made before they arrive
+	// still carries the pick — the two only differ for a config whose
+	// executable is not its preset's.
+	const launchPresetId = selectedAgent
+		? agentLaunchPresetId(selectedAgent)
+		: agentId;
+	const launch = useAgentLaunchPreferences(launchPresetId);
+	const model = launch.model?.id ?? null;
+	const effort = launch.effort?.id ?? null;
+	// One dropdown after the agent, naming the model; the sheet it opens also
+	// holds the effort. An agent with only an effort flag names that instead,
+	// and one with neither shows nothing.
+	const launchOptionLabel =
+		launch.models !== undefined
+			? (launch.model?.label ?? t({ message: "Default model" }))
+			: launch.efforts.length > 0
+				? (launch.effort?.label ?? t({ message: "Default effort" }))
+				: null;
+	const launchOptions = launchOptionLabel
+		? [{ id: "launch", label: launchOptionLabel }]
+		: [];
 	// Null until the branch list resolves. The previous fallback was the literal
 	// string "default", which reads as a branch name and is not one.
 	const branchLabel = baseBranch ?? branchData?.defaultBranch ?? null;
@@ -163,12 +191,13 @@ export function NewChatWidget({
 			message_length: message.text.trim().length,
 			draft_restored: initialDraft.length > 0,
 			agent: effectiveAgentId,
+			model,
+			effort,
 			destination: isCloudTarget ? "new_cloud_workspace" : "new_workspace",
 		});
 		if (!selectedTarget) {
 			Alert.alert(
 				t({
-					id: "mobile.newChat.noProjectAvailable",
 					message: "No project available",
 				}),
 			);
@@ -180,6 +209,8 @@ export function NewChatWidget({
 					branch: baseBranch ?? branchData?.defaultBranch ?? null,
 					environmentId: selectedEnvironment?.id ?? null,
 					agent: effectiveAgentId,
+					model,
+					effort,
 					message,
 				})
 				.then(() => {
@@ -196,6 +227,8 @@ export function NewChatWidget({
 				branchLabel,
 				agentId,
 				agentLabel: selectedAgent?.label ?? "Claude",
+				model,
+				effort,
 				message,
 			})
 			.then(() => {
@@ -212,13 +245,11 @@ export function NewChatWidget({
 		cloudScope
 			? {
 					id: "project",
-					label: t({ id: "mobile.filter.cloud", message: "Cloud" }),
+					label: t({ message: "Cloud" }),
 				}
 			: {
 					id: "project",
-					label:
-						selectedTarget?.projectName ??
-						t({ id: "mobile.home.noProject", message: "No project" }),
+					label: selectedTarget?.projectName ?? t({ message: "No project" }),
 					avatar: true,
 					iconUri: selectedTarget?.projectIconUrl ?? undefined,
 				},
@@ -229,7 +260,6 @@ export function NewChatWidget({
 						label:
 							selectedEnvironment?.name ??
 							t({
-								id: "mobile.newChat.environmentChip",
 								message: "Environment",
 							}),
 					},
@@ -250,7 +280,6 @@ export function NewChatWidget({
 		<Composer
 			ref={composerRef}
 			placeholder={t({
-				id: "mobile.newChat.placeholder",
 				message: "Plan, ask, build...",
 			})}
 			initialDraft={initialDraft}
@@ -264,6 +293,18 @@ export function NewChatWidget({
 			}))}
 			headerChips={headerChips}
 			selectedModel={selectedModel}
+			launchOptions={launchOptions}
+			onLaunchOptionPress={() => {
+				if (!launchPresetId) return;
+				void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+				router.push({
+					pathname: "/(authenticated)/(home)/new-session/model",
+					params: {
+						presetId: launchPresetId,
+						agentLabel: selectedAgent?.label ?? "",
+					},
+				});
+			}}
 			onSubmit={(text) => submit({ text, attachments: draft.attachments })}
 			onDraftChange={draft.setText}
 			onRemoveAttachment={(id) => draft.remove(id)}
