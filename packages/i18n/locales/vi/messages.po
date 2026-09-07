@@ -8640,6 +8640,9 @@ msgstr "Bình luận tiếp theo"
 msgid "Next match"
 msgstr "Kết quả kế tiếp"
 
+msgid "Next Organization"
+msgstr "Tổ chức kế tiếp"
+
 #. placeholder {0}: formatDateTimeInTimezone( new Date(automation.nextRunAt), automation.timezone ?? "UTC", )
 msgid "Next run {0}"
 msgstr "Lần chạy tiếp theo {0}"
@@ -10553,6 +10556,9 @@ msgstr "Bình luận trước"
 
 msgid "Previous match"
 msgstr "Kết quả trước"
+
+msgid "Previous Organization"
+msgstr "Tổ chức trước"
 
 msgid "Previous prompts"
 msgstr "Prompt trước đó"
@@ -13518,6 +13524,12 @@ msgstr "Chuyển tới tab 8"
 
 msgid "Switch to Tab 9"
 msgstr "Chuyển tới tab 9"
+
+msgid "Switch to the next organization"
+msgstr "Chuyển sang tổ chức kế tiếp"
+
+msgid "Switch to the previous organization"
+msgstr "Chuyển sang tổ chức trước"
 
 msgid "Switch to Workspace 1"
 msgstr "Chuyển tới workspace 1"

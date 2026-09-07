@@ -8640,6 +8640,9 @@ msgstr "Następny komentarz"
 msgid "Next match"
 msgstr "Następne dopasowanie"
 
+msgid "Next Organization"
+msgstr "Następna organizacja"
+
 #. placeholder {0}: formatDateTimeInTimezone( new Date(automation.nextRunAt), automation.timezone ?? "UTC", )
 msgid "Next run {0}"
 msgstr "Następne uruchomienie {0}"
@@ -10553,6 +10556,9 @@ msgstr "Poprzedni komentarz"
 
 msgid "Previous match"
 msgstr "Poprzednie dopasowanie"
+
+msgid "Previous Organization"
+msgstr "Poprzednia organizacja"
 
 msgid "Previous prompts"
 msgstr "Poprzednie prompty"
@@ -13518,6 +13524,12 @@ msgstr "Przełącz na kartę 8"
 
 msgid "Switch to Tab 9"
 msgstr "Przełącz na kartę 9"
+
+msgid "Switch to the next organization"
+msgstr "Przełącz na następną organizację"
+
+msgid "Switch to the previous organization"
+msgstr "Przełącz na poprzednią organizację"
 
 msgid "Switch to Workspace 1"
 msgstr "Przełącz na obszar roboczy 1"

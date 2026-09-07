@@ -79,12 +79,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+alt+bracketleft"),
 		},
 		label: msg({
-			id: "hotkeys.prevOrganization.label",
 			message: "Previous Organization",
 		}),
 		category: "Navigation",
 		description: msg({
-			id: "hotkeys.prevOrganization.description",
 			message: "Switch to the previous organization",
 		}),
 	},
@@ -95,12 +93,10 @@ export const HOTKEYS_REGISTRY = {
 			linux: L("ctrl+alt+bracketright"),
 		},
 		label: msg({
-			id: "hotkeys.nextOrganization.label",
 			message: "Next Organization",
 		}),
 		category: "Navigation",
 		description: msg({
-			id: "hotkeys.nextOrganization.description",
 			message: "Switch to the next organization",
 		}),
 	},

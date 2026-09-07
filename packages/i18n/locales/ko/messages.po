@@ -8640,6 +8640,9 @@ msgstr "다음 코멘트"
 msgid "Next match"
 msgstr "다음 일치 항목"
 
+msgid "Next Organization"
+msgstr "다음 조직"
+
 #. placeholder {0}: formatDateTimeInTimezone( new Date(automation.nextRunAt), automation.timezone ?? "UTC", )
 msgid "Next run {0}"
 msgstr "다음 실행 {0}"
@@ -10553,6 +10556,9 @@ msgstr "이전 코멘트"
 
 msgid "Previous match"
 msgstr "이전 일치 항목"
+
+msgid "Previous Organization"
+msgstr "이전 조직"
 
 msgid "Previous prompts"
 msgstr "이전 프롬프트"
@@ -13518,6 +13524,12 @@ msgstr "탭 8로 전환"
 
 msgid "Switch to Tab 9"
 msgstr "탭 9로 전환"
+
+msgid "Switch to the next organization"
+msgstr "다음 조직으로 전환"
+
+msgid "Switch to the previous organization"
+msgstr "이전 조직으로 전환"
 
 msgid "Switch to Workspace 1"
 msgstr "워크스페이스 1로 전환"

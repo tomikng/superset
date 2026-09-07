@@ -8640,6 +8640,9 @@ msgstr "Sonraki yorum"
 msgid "Next match"
 msgstr "Sonraki eşleşme"
 
+msgid "Next Organization"
+msgstr "Sonraki kuruluş"
+
 #. placeholder {0}: formatDateTimeInTimezone( new Date(automation.nextRunAt), automation.timezone ?? "UTC", )
 msgid "Next run {0}"
 msgstr "Sonraki çalıştırma {0}"
@@ -10553,6 +10556,9 @@ msgstr "Önceki yorum"
 
 msgid "Previous match"
 msgstr "Önceki eşleşme"
+
+msgid "Previous Organization"
+msgstr "Önceki kuruluş"
 
 msgid "Previous prompts"
 msgstr "Önceki istemler"
@@ -13518,6 +13524,12 @@ msgstr "8. sekmeye geç"
 
 msgid "Switch to Tab 9"
 msgstr "9. sekmeye geç"
+
+msgid "Switch to the next organization"
+msgstr "Sonraki kuruluşa geç"
+
+msgid "Switch to the previous organization"
+msgstr "Önceki kuruluşa geç"
 
 msgid "Switch to Workspace 1"
 msgstr "1. çalışma alanına geç"

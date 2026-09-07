@@ -8640,6 +8640,9 @@ msgstr "次のコメント"
 msgid "Next match"
 msgstr "次の一致"
 
+msgid "Next Organization"
+msgstr "次の組織"
+
 #. placeholder {0}: formatDateTimeInTimezone( new Date(automation.nextRunAt), automation.timezone ?? "UTC", )
 msgid "Next run {0}"
 msgstr "次回の実行 {0}"
@@ -10553,6 +10556,9 @@ msgstr "前のコメント"
 
 msgid "Previous match"
 msgstr "前の一致"
+
+msgid "Previous Organization"
+msgstr "前の組織"
 
 msgid "Previous prompts"
 msgstr "以前のプロンプト"
@@ -13518,6 +13524,12 @@ msgstr "タブ8に切り替え"
 
 msgid "Switch to Tab 9"
 msgstr "タブ9に切り替え"
+
+msgid "Switch to the next organization"
+msgstr "次の組織に切り替える"
+
+msgid "Switch to the previous organization"
+msgstr "前の組織に切り替える"
 
 msgid "Switch to Workspace 1"
 msgstr "ワークスペース1に切り替え"

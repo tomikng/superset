@@ -8640,6 +8640,9 @@ msgstr "Commento successivo"
 msgid "Next match"
 msgstr "Corrispondenza successiva"
 
+msgid "Next Organization"
+msgstr "Organizzazione successiva"
+
 #. placeholder {0}: formatDateTimeInTimezone( new Date(automation.nextRunAt), automation.timezone ?? "UTC", )
 msgid "Next run {0}"
 msgstr "Prossima esecuzione {0}"
@@ -10553,6 +10556,9 @@ msgstr "Commento precedente"
 
 msgid "Previous match"
 msgstr "Corrispondenza precedente"
+
+msgid "Previous Organization"
+msgstr "Organizzazione precedente"
 
 msgid "Previous prompts"
 msgstr "Prompt precedenti"
@@ -13518,6 +13524,12 @@ msgstr "Passa alla scheda 8"
 
 msgid "Switch to Tab 9"
 msgstr "Passa alla scheda 9"
+
+msgid "Switch to the next organization"
+msgstr "Passa all'organizzazione successiva"
+
+msgid "Switch to the previous organization"
+msgstr "Passa all'organizzazione precedente"
 
 msgid "Switch to Workspace 1"
 msgstr "Passa al workspace 1"

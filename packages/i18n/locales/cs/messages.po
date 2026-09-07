@@ -8640,6 +8640,9 @@ msgstr "Další komentář"
 msgid "Next match"
 msgstr "Další shoda"
 
+msgid "Next Organization"
+msgstr "Další organizace"
+
 #. placeholder {0}: formatDateTimeInTimezone( new Date(automation.nextRunAt), automation.timezone ?? "UTC", )
 msgid "Next run {0}"
 msgstr "Další běh {0}"
@@ -10553,6 +10556,9 @@ msgstr "Předchozí komentář"
 
 msgid "Previous match"
 msgstr "Předchozí shoda"
+
+msgid "Previous Organization"
+msgstr "Předchozí organizace"
 
 msgid "Previous prompts"
 msgstr "Předchozí prompty"
@@ -13518,6 +13524,12 @@ msgstr "Přepnout na kartu 8"
 
 msgid "Switch to Tab 9"
 msgstr "Přepnout na kartu 9"
+
+msgid "Switch to the next organization"
+msgstr "Přepnout na další organizaci"
+
+msgid "Switch to the previous organization"
+msgstr "Přepnout na předchozí organizaci"
 
 msgid "Switch to Workspace 1"
 msgstr "Přepnout na pracovní prostor 1"
