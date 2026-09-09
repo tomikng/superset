@@ -90,6 +90,9 @@ msgstr "(devre dışı)"
 msgid "(external)"
 msgstr "(harici)"
 
+msgid "(no output)"
+msgstr "(çıktı yok)"
+
 #. placeholder {0}: ports.length
 msgid "{0, plural, one {# active port — hide details} other {# active ports — hide details}}"
 msgstr "{0, plural, one {# etkin port — ayrıntıları gizle} other {# etkin port — ayrıntıları gizle}}"
@@ -199,6 +202,10 @@ msgstr "{0, plural, one {# oturum çalışıyor} other {# oturum çalışıyor}}
 msgid "{0, plural, one {# skipped} other {# skipped}}"
 msgstr "{0, plural, one {# atlandı} other {# atlandı}}"
 
+#. placeholder {0}: subagents.length
+msgid "{0, plural, one {# subagent} other {# subagents}}"
+msgstr "{0, plural, one {# alt ajan} other {# alt ajan}}"
+
 #. placeholder {0}: TASKS.length
 msgid "{0, plural, one {# task} other {# tasks}}"
 msgstr "{0, plural, one {# görev} other {# görev}}"
@@ -276,6 +283,10 @@ msgstr "{0} – {1} · yerel oturum günlüklerinden API tarifesi tahmini"
 #. placeholder {0}: error.message
 msgid "{0} — try the Superset tray menu > Host Service > Restart."
 msgstr "{0} — Superset tepsi menüsünde Host hizmeti > Yeniden başlat yolunu deneyin."
+
+#. placeholder {0}: host.version
+msgid "{0} · behind"
+msgstr "{0} · eski"
 
 #. placeholder {0}: creator.name
 msgid "{0} (you)"
@@ -605,6 +616,9 @@ msgstr "{count, plural, one {# kaynak kullanıldı} other {# kaynak kullanıldı
 msgid "{count} GitHub stars"
 msgstr "{count} GitHub yıldızı"
 
+msgid "{count} hosts run an older host service than this app"
+msgstr "{count} ana makine bu uygulamadan daha eski bir ana makine hizmeti çalıştırıyor"
+
 msgid "{count}/day"
 msgstr "{count}/gün"
 
@@ -661,6 +675,9 @@ msgstr "{hidden, plural, one {# gizli satır} other {# gizli satır}}"
 
 msgid "{hidden, plural, one {Show # hidden line} other {Show # hidden lines}}"
 msgstr "{hidden, plural, one {# gizli satırı göster} other {# gizli satırı göster}}"
+
+msgid "{hidden, plural, one {Show # reply} other {Show # replies}}"
+msgstr "{hidden, plural, one {# yanıtı göster} other {# yanıtı göster}}"
 
 msgid "{hiddenCount, plural, one {Show # more frame} other {Show # more frames}}"
 msgstr "{hiddenCount, plural, one {# çerçeve daha göster} other {# çerçeve daha göster}}"
@@ -835,6 +852,9 @@ msgstr "{skipped, plural, one {# atlandı} other {# atlandı}}"
 
 msgid "{starCount} stars and counting"
 msgstr "{starCount} yıldız ve artıyor"
+
+msgid "{subagentCount, plural, one {# subagent running} other {# subagents running}}"
+msgstr "{subagentCount, plural, one {# alt ajan çalışıyor} other {# alt ajan çalışıyor}}"
 
 msgid "{successCount, plural, one {Created # workspace, {failCount} failed} other {Created # workspaces, {failCount} failed}}"
 msgstr "{successCount, plural, one {# çalışma alanı oluşturuldu, {failCount} başarısız} other {# çalışma alanı oluşturuldu, {failCount} başarısız}}"
@@ -1222,6 +1242,9 @@ msgstr "Daveti kabul et"
 
 msgid "Accept terms"
 msgstr "Koşulları kabul et"
+
+msgid "Access denied"
+msgstr "Erişim reddedildi"
 
 msgid "Access your email address"
 msgstr "E-posta adresinize erişme"
@@ -1632,6 +1655,9 @@ msgstr "Tüm kontroller geçti"
 msgid "All checks skipped or cancelled"
 msgstr "Tüm kontroller atlandı veya iptal edildi"
 
+msgid "All comments"
+msgstr "Tüm yorumlar"
+
 msgid "All commits"
 msgstr "Tüm commit'ler"
 
@@ -1801,6 +1827,9 @@ msgstr "Ajanın, ana checkout'unuza dokunmadan çalıştığı yalıtılmış bi
 msgid "An unknown error occurred"
 msgstr "Bilinmeyen bir hata oluştu"
 
+msgid "An update is ready to install."
+msgstr "Yüklenmeye hazır bir güncelleme var."
+
 msgid "Animate the active terminal cursor."
 msgstr "Etkin terminal imlecini canlandır."
 
@@ -1927,6 +1956,9 @@ msgstr "API eşdeğeri"
 msgid "API-equivalent cost"
 msgstr "API eşdeğeri maliyet"
 
+msgid "app {appVersion}"
+msgstr "uygulama {appVersion}"
+
 msgid "App display language"
 msgstr "Uygulama görüntüleme dili"
 
@@ -2001,6 +2033,9 @@ msgstr "Ajanı başlatmak için kullanılan argv."
 
 msgid "Artifact"
 msgstr "Artifact"
+
+msgid "As last reported. The host must be online to update."
+msgstr "Son bildirildiği gibi. Güncellemek için ana makine çevrimiçi olmalı."
 
 msgid "ascending"
 msgstr "artan"
@@ -2191,9 +2226,6 @@ msgstr "Otomasyonlar ({myFailedCount} başarısız)"
 msgid "Automations & event triggers"
 msgstr "Otomasyonlar ve olay tetikleyicileri"
 
-msgid "Automations docs"
-msgstr "Otomasyon belgeleri"
-
 msgid "Automations, {myFailedCount} failing"
 msgstr "Otomasyonlar, {myFailedCount} başarısız"
 
@@ -2270,6 +2302,9 @@ msgstr "Sayfalara dön"
 msgid "Back to tasks"
 msgstr "Görevlere dön"
 
+msgid "Back to the leaderboard"
+msgstr "Lider tablosuna dön"
+
 msgid "Background"
 msgstr "Arka plan"
 
@@ -2321,6 +2356,9 @@ msgstr "PR #{0} temel alınarak"
 #. placeholder {1}: preview.providers.join(" and ")
 msgid "Based on {0} tokens in the last 30 days, counting {1}."
 msgstr "Son 30 gündeki {0} token temel alınmıştır; {1} sayılıyor."
+
+msgid "Become a design partner"
+msgstr "Geliştirme ortağı olun"
 
 msgid "Before"
 msgstr "Önce"
@@ -2524,6 +2562,9 @@ msgstr "Tarama geçmişi"
 msgid "Bug"
 msgstr "Böcek"
 
+msgid "Build the future of Superset in the cloud"
+msgstr "Superset’in buluttaki geleceğini inşa edin"
+
 msgid "Building the last piece of software"
 msgstr "Son yazılım parçasını inşa etmek"
 
@@ -2542,6 +2583,12 @@ msgstr "Madde işaretli liste"
 #. placeholder {0}: versions.expected
 msgid "bundled {0}"
 msgstr "birlikte gelen {0}"
+
+msgid "Bundled with the Superset app on this device."
+msgstr "Bu cihazdaki Superset uygulamasıyla birlikte gelir."
+
+msgid "Bundled with the Superset app on this device. Updates with the app."
+msgstr "Bu cihazdaki Superset uygulamasıyla birlikte gelir. Uygulamayla birlikte güncellenir."
 
 msgid "Burn by vendor (Mercury)"
 msgstr "Tedarikçiye göre harcama (Mercury)"
@@ -2638,6 +2685,9 @@ msgstr "Kendi API anahtarlarımı kullanabilir miyim?"
 
 msgid "Can you standardize the tooltips across the app?"
 msgstr "Uygulama genelindeki tooltip'leri standartlaştırabilir misin?"
+
+msgid "Can't connect right now"
+msgstr "Şu anda bağlanamıyoruz"
 
 msgid "Can't open remote workspace paths in an external editor"
 msgstr "Uzak çalışma alanı yolları harici düzenleyicide açılamaz"
@@ -2832,6 +2882,9 @@ msgstr "Kaynakları denetle"
 
 msgid "Check the rendered prompt and launch output before saving"
 msgstr "Kaydetmeden önce oluşturulan istemi ve başlatma çıktısını kontrol edin"
+
+msgid "Check your access under Settings > Security on that device."
+msgstr "O cihazda Ayarlar > Güvenlik bölümünden erişiminizi kontrol edin."
 
 msgid "Check your connection and try again"
 msgstr "Bağlantınızı kontrol edip yeniden deneyin"
@@ -3110,6 +3163,9 @@ msgstr "Sohbeti kapat"
 msgid "Close Comment"
 msgstr "Yorumu kapat"
 
+msgid "Close comments"
+msgstr "Yorumları kapat"
+
 msgid "Close Diff"
 msgstr "Farkı kapat"
 
@@ -3154,6 +3210,9 @@ msgid "Close preview"
 msgstr "Önizlemeyi kapat"
 
 msgid "Close pull request"
+msgstr "Pull request'i kapat"
+
+msgid "Close Pull Request"
 msgstr "Pull request'i kapat"
 
 msgid "Close review filter"
@@ -3215,6 +3274,9 @@ msgstr "Bu terminali kapatmak çalışan süreci sonlandırır."
 
 msgid "Cloud"
 msgstr "Bulut"
+
+msgid "Cloud is coming. Become a design partner"
+msgstr "Bulut sürümü yakında. Geliştirme ortağı olun"
 
 msgid "Cloud sandboxes"
 msgstr "Bulut sandbox'ları"
@@ -3950,6 +4012,12 @@ msgstr "Masaüstüne ulaşılamadı."
 msgid "Could not reach the host to load this pull request."
 msgstr "Bu pull request'i yüklemek için host'a erişilemedi."
 
+msgid "Could not reach the host to start the update. Check that it is online and try again."
+msgstr "Güncellemeyi başlatmak için ana makineye ulaşılamadı. Çevrimiçi olduğundan emin olup tekrar deneyin."
+
+msgid "Could not reach the server."
+msgstr "Sunucuya ulaşılamadı."
+
 msgid "Could not reach this workspace's machine"
 msgstr "Bu çalışma alanının makinesine erişilemedi"
 
@@ -3970,6 +4038,9 @@ msgstr "Bulut çalışma alanı kaydedilemedi"
 
 msgid "Could not reopen"
 msgstr "Yeniden açılamadı"
+
+msgid "Could not restart the host service"
+msgstr "Ana makine hizmeti yeniden başlatılamadı"
 
 msgid "Could not send"
 msgstr "Gönderilemedi"
@@ -4019,6 +4090,9 @@ msgstr "Bu sayfa izlenemedi"
 
 msgid "Couldn't confirm star status — check that the GitHub CLI (`gh`) is installed, signed in, and that you have a network connection"
 msgstr "Yıldız durumu doğrulanamadı — GitHub CLI'nin (`gh`) kurulu ve oturum açmış olduğunu ve ağ bağlantınızın bulunduğunu kontrol edin"
+
+msgid "Couldn't connect (error {status}). Please try again."
+msgstr "Bağlanılamadı (hata {status}). Lütfen tekrar deneyin."
 
 msgid "Couldn't copy branch name"
 msgstr "Dal adı kopyalanamadı"
@@ -4083,9 +4157,6 @@ msgstr "Yanıt gönderilemedi"
 #. placeholder {1}: first.message
 msgid "Couldn't reach cloud for {0}: {1}"
 msgstr "{0} için buluta erişilemedi: {1}"
-
-msgid "Couldn't reach the relay service. Check this machine's network connection — the other device is probably fine."
-msgstr "Röle hizmetine erişilemedi. Bu makinenin ağ bağlantısını kontrol edin — diğer cihazda büyük olasılıkla sorun yok."
 
 msgid "Couldn't read this terminal's context."
 msgstr "Bu terminalin bağlamı okunamadı."
@@ -4192,11 +4263,11 @@ msgstr "Takım oluştur"
 msgid "Create a workspace for the auth feature on my MacBook"
 msgstr "MacBook'umda auth özelliği için bir çalışma alanı oluştur"
 
+msgid "Create again"
+msgstr "Yeniden oluştur"
+
 msgid "Create an account"
 msgstr "Hesap oluşturun"
-
-msgid "Create an automation with an agent"
-msgstr "Bir ajanla otomasyon oluştur"
 
 msgid "Create failed: {message}"
 msgstr "Oluşturulamadı: {message}"
@@ -4796,6 +4867,9 @@ msgstr "Geliştirici"
 msgid "Developers"
 msgstr "Geliştiriciler"
 
+msgid "Development build"
+msgstr "Geliştirme derlemesi"
+
 msgid "Device: {selectedLabel}"
 msgstr "Cihaz: {selectedLabel}"
 
@@ -4813,6 +4887,9 @@ msgstr "Sesle yaz"
 
 msgid "Dictation is not available on this device"
 msgstr "Bu cihazda sesle yazma kullanılamıyor"
+
+msgid "Didn't hear back"
+msgstr "Yanıt alınamadı"
 
 msgid "diff"
 msgstr "fark"
@@ -5065,6 +5142,9 @@ msgstr "Tema dosyasını indir"
 msgid "downloaded"
 msgstr "indirildi"
 
+msgid "Downloading"
+msgstr "İndiriliyor"
+
 msgid "Downloading..."
 msgstr "İndiriliyor..."
 
@@ -5192,7 +5272,7 @@ msgstr "2027 başı"
 msgid "Early 2028"
 msgstr "2028 başı"
 
-#. placeholder {0}: formatDate(new Date(`${awardedOn}T00:00:00Z`), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC", })
+#. placeholder {0}: formatDate( new Date(`${awardedOn}T00:00:00Z`), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC", }, i18n.locale, )
 msgid "Earned {0}"
 msgstr "{0} tarihinde kazanıldı"
 
@@ -5408,9 +5488,6 @@ msgstr "Her ajan kendi Git worktree'sinde çalışır, böylece on ajan tek bir 
 msgid "Every axis is carrying its weight for the next tier. Hold it and the tier follows."
 msgstr "Her eksen bir sonraki katman için üzerine düşeni yapıyor. Bunu sürdür, katman kendiliğinden gelir."
 
-msgid "Every Friday at 4pm, draft release notes from this week's merged PRs"
-msgstr "Her cuma 16.00'da bu haftanın birleştirilen PR'larından sürüm notları taslağı hazırla"
-
 msgid "Every Friday at 4pm, draft release notes from this week's merged PRs."
 msgstr "Her cuma 16.00'da bu haftanın birleştirilen PR'larından sürüm notları taslağı hazırla."
 
@@ -5431,9 +5508,6 @@ msgstr "Her çarşamba 09.00'da bu haftanın birleştirilen PR'larını incele v
 
 msgid "Every weekday at 9am, read new GitHub issues, apply labels, and draft a first reply for my review."
 msgstr "Her hafta içi 09.00'da yeni GitHub issue'larını oku, etiket uygula ve incelemem için ilk yanıt taslağını hazırla."
-
-msgid "Every weekday at 9am, triage new GitHub issues and draft replies for my review"
-msgstr "Her hafta içi 09.00'da yeni GitHub issue'larını sınıflandır ve incelemem için yanıt taslakları hazırla"
 
 msgid "Everyone argues about whether this generalizes. That argument is the sign the level was reached."
 msgstr "Herkes bunun genellenebilir olup olmadığını tartışır. Bu tartışma, düzeye ulaşıldığının işaretidir."
@@ -6200,6 +6274,9 @@ msgstr "Finder"
 msgid "Finish review"
 msgstr "İncelemeyi bitir"
 
+msgid "Finished"
+msgstr "Tamamlandı"
+
 msgid "finished · worked for 7s"
 msgstr "bitti · 7 sn çalıştı"
 
@@ -6400,6 +6477,9 @@ msgstr "Ücretsiz"
 
 msgid "Free for everyone"
 msgstr "Herkes için ücretsiz"
+
+msgid "Free plan available · No credit card required"
+msgstr "Ücretsiz plan mevcut · Kredi kartı gerekmez"
 
 msgid "Frequently<0/>asked questions"
 msgstr "Sık sorulan<0/>sorular"
@@ -6741,6 +6821,9 @@ msgstr "Pull request listesini gizle"
 msgid "Hide pull request preview"
 msgstr "Pull request önizlemesini gizle"
 
+msgid "Hide resolved ({resolvedCount})"
+msgstr "Çözülenleri gizle ({resolvedCount})"
+
 msgid "Hide review comments"
 msgstr "İnceleme yorumlarını gizle"
 
@@ -6793,6 +6876,9 @@ msgstr "Bu kuruluşta host bulunamadı"
 msgid "Host not found in this organization."
 msgstr "Bu kuruluşta host bulunamadı."
 
+msgid "Host service"
+msgstr "Ana makine hizmeti"
+
 msgid "Host Service"
 msgstr "Host hizmeti"
 
@@ -6808,8 +6894,15 @@ msgstr "Host hizmeti çalışmıyor"
 msgid "Host service is starting…"
 msgstr "Host hizmeti başlatılıyor…"
 
+msgid "Host service restarted"
+msgstr "Ana makine hizmeti yeniden başlatıldı"
+
 msgid "Host service unavailable"
 msgstr "Host hizmeti kullanılamıyor"
+
+#. placeholder {0}: update.progress.target
+msgid "Host service updated to {0}"
+msgstr "Ana makine hizmeti {0} sürümüne güncellendi"
 
 msgid "Host settings"
 msgstr "Host ayarları"
@@ -6819,9 +6912,6 @@ msgstr "Host kullanılamıyor"
 
 msgid "Host unavailable: {hostName}"
 msgstr "Host kullanılamıyor: {hostName}"
-
-msgid "Host unreachable"
-msgstr "Host'a erişilemiyor"
 
 msgid "Hosted in the cloud"
 msgstr "Bulutta barındırılıyor"
@@ -7173,6 +7263,9 @@ msgstr "Kurulu"
 #. js-lingui-explicit-id
 msgid "serverError.plugins.marketplaceHasInstalls"
 msgstr "Kurulu eklentiler {name} kaynağından geldi: {plugins}. Önce onları kaldırın."
+
+msgid "Installed via"
+msgstr "Kurulum yolu"
 
 msgid "Installing..."
 msgstr "Kuruluyor..."
@@ -7535,6 +7628,9 @@ msgstr "Her ayın son günü saat {time}"
 msgid "Last run"
 msgstr "Son çalıştırma"
 
+msgid "Last seen"
+msgstr "Son görülme"
+
 msgid "Last updated"
 msgstr "Son güncelleme"
 
@@ -7829,6 +7925,9 @@ msgstr "Yükleme ve devam eden etkinlik göstergeleri"
 msgid "Loading changes..."
 msgstr "Değişiklikler yükleniyor..."
 
+msgid "Loading comments…"
+msgstr "Yorumlar yükleniyor…"
+
 msgid "Loading contributors…"
 msgstr "Katkıda bulunanlar yükleniyor…"
 
@@ -7990,6 +8089,9 @@ msgstr "Varsayılan yap"
 
 msgid "Make default — launch new terminals and agents on this account."
 msgstr "Varsayılan yap — yeni terminalleri ve ajanları bu hesapta başlat."
+
+msgid "Make sure the device is awake, online, and running Superset."
+msgstr "Cihazın uyanık, çevrimiçi ve Superset’in çalışır durumda olduğundan emin olun."
 
 msgid "Make the chip style the TooltipContent default"
 msgstr "Çip stilini TooltipContent varsayılanı yap"
@@ -8374,6 +8476,9 @@ msgstr "Daha fazla {kindLower} tema"
 msgid "More actions"
 msgstr "Diğer eylemler"
 
+msgid "More options"
+msgstr "Diğer seçenekler"
+
 msgid "More pages"
 msgstr "Daha fazla sayfa"
 
@@ -8490,6 +8595,12 @@ msgstr "İzin gerekiyor"
 msgid "Needs review"
 msgstr "İnceleme gerekiyor"
 
+msgid "needs update"
+msgstr "güncelleme gerekli"
+
+msgid "Needs update"
+msgstr "Güncelleme gerekli"
+
 msgid "Nerd Fonts"
 msgstr "Nerd Fonts"
 
@@ -8531,6 +8642,9 @@ msgstr "yeni rakipler"
 
 msgid "New chat"
 msgstr "Yeni sohbet"
+
+msgid "New cloud workspace"
+msgstr "Yeni bulut çalışma alanı"
 
 msgid "New environment"
 msgstr "Yeni ortam"
@@ -8622,6 +8736,12 @@ msgstr "{name} içinde yeni çalışma alanı"
 msgid "New-user activation"
 msgstr "Yeni kullanıcı aktivasyonu"
 
+msgid "Newer than this app"
+msgstr "Bu uygulamadan daha yeni"
+
+msgid "Newer than this app. Everything works; update the app to match."
+msgstr "Bu uygulamadan daha yeni. Her şey çalışıyor; eşitlemek için uygulamayı güncelleyin."
+
 msgid "News & Updates"
 msgstr "Haberler ve güncellemeler"
 
@@ -8670,9 +8790,6 @@ msgstr "Sonraki: {nextLabel}"
 
 msgid "Nice, open a PR when ready."
 msgstr "Güzel, hazır olduğunda bir PR aç."
-
-msgid "Nightly at 2am, find one small bug, fix it, and open a PR"
-msgstr "Her gece 02.00'de küçük bir hata bul, düzelt ve PR aç"
 
 #. placeholder {0}: AGENT_LABELS[agent]
 msgid "No {0} logins on this host — sign in and usage appears here."
@@ -8790,6 +8907,9 @@ msgstr "Yorum gövdesi yok"
 msgid "No comments yet."
 msgstr "Henüz yorum yok."
 
+msgid "No comments yet. Turn on comment mode and click anything on the page to start one."
+msgstr "Henüz yorum yok. Yorum modunu açıp sayfadaki herhangi bir öğeye tıklayarak başlayın."
+
 msgid "No commits on this branch yet."
 msgstr "Bu dalda henüz commit yok."
 
@@ -8888,6 +9008,9 @@ msgstr "Simge yok"
 
 msgid "No Internet Connection"
 msgstr "İnternet bağlantısı yok"
+
+msgid "No internet connection."
+msgstr "İnternet bağlantısı yok."
 
 msgid "No issues found."
 msgstr "Issue bulunamadı."
@@ -9253,6 +9376,9 @@ msgstr "Şimdi değil"
 msgid "Not on the leaderboard. Opt in first."
 msgstr "Lider tablosunda değilsiniz. Önce katılın."
 
+msgid "Not on this version"
+msgstr "Bu sürümde yok"
+
 msgid "Not receiving events yet: Microsoft Graph refused the notification subscriptions. Check the app's admin consent and protected API approval, then reconnect."
 msgstr "Henüz olay alınmıyor: Microsoft Graph bildirim aboneliklerini reddetti. Uygulamanın yönetici onayını ve korumalı API onayını kontrol edip yeniden bağlanın."
 
@@ -9510,6 +9636,9 @@ msgstr "{0} web sitesini aç"
 msgid "Open {filePath}"
 msgstr "Aç: {filePath}"
 
+msgid "Open {parentLabel}"
+msgstr "{parentLabel} aç"
+
 msgid "Open {path} in file pane"
 msgstr "{path} dosyasını dosya bölmesinde aç"
 
@@ -9684,6 +9813,9 @@ msgstr "Yeni sekmede aç"
 
 msgid "Open in PostHog"
 msgstr "PostHog'da aç"
+
+msgid "Open in Pull Requests"
+msgstr "Pull request'lerde aç"
 
 msgid "Open in Scira AI"
 msgstr "Scira AI'da aç"
@@ -10382,6 +10514,9 @@ msgstr "Oynat: {label}"
 msgid "Play a sound when tasks complete"
 msgstr "Görevler tamamlandığında bir ses çal"
 
+msgid "Please check your internet connection and try again."
+msgstr "Lütfen internet bağlantınızı kontrol edip tekrar deneyin."
+
 msgid "Please enter a project name"
 msgstr "Lütfen bir proje adı girin"
 
@@ -10393,6 +10528,9 @@ msgstr "Lütfen bir proje konumu seçin"
 
 msgid "Please select an organization"
 msgstr "Lütfen bir kuruluş seçin"
+
+msgid "Please try again, or restart Superset on that device."
+msgstr "Lütfen tekrar deneyin veya o cihazda Superset’i yeniden başlatın."
 
 msgid "Please try signing in again from the desktop app."
 msgstr "Lütfen masaüstü uygulamasından yeniden oturum açmayı deneyin."
@@ -10784,9 +10922,6 @@ msgstr "Herkese açık"
 msgid "Public leaderboard"
 msgstr "Herkese açık lider tablosu"
 
-msgid "Publish a page from an agent or the CLI and it will show up here."
-msgstr "Bir ajandan veya CLI'den sayfa yayımlayın, burada görünsün."
-
 msgid "Published"
 msgstr "Yayınlanma"
 
@@ -10803,6 +10938,7 @@ msgstr "<0>{handle}</0> adıyla yayımlanıyor. Yalnızca token sayıları ve mo
 msgid "Pull request"
 msgstr "Pull request"
 
+#. placeholder {0}: data.prNumber
 #. placeholder {0}: pullRequest.prNumber
 msgid "Pull request #{0}"
 msgstr "Pull request #{0}"
@@ -11532,11 +11668,17 @@ msgstr "{restartedOrgCount} host hizmeti yeniden başlatıldı"
 msgid "Restarted 1 host service"
 msgstr "1 host hizmeti yeniden başlatıldı"
 
+msgid "Restarting"
+msgstr "Yeniden başlatılıyor"
+
 msgid "Restarting agents on {accountLabel}."
 msgstr "Ajanlar {accountLabel} üzerinde yeniden başlatılıyor."
 
 msgid "Restarting host services…"
 msgstr "Host hizmetleri yeniden başlatılıyor…"
+
+msgid "Restarting…"
+msgstr "Yeniden başlatılıyor…"
 
 msgid "Restore"
 msgstr "Geri yükle"
@@ -11859,11 +12001,17 @@ msgstr "Makinenizde yerel bir komut çalıştırır"
 msgid "Runs failed earlier this week, but nothing is failing right now"
 msgstr "Bu hafta daha önce çalıştırmalar başarısız oldu, ancak şu anda başarısız olan yok"
 
+msgid "Runs inside the Superset app on that device, so updating it means updating the app there."
+msgstr "O cihazdaki Superset uygulamasının içinde çalışır; bu yüzden güncellemek, oradaki uygulamayı güncellemek demektir."
+
 msgid "Runs land in a workspace. Review the diff, merge what's good."
 msgstr "Çalıştırmalar bir çalışma alanına düşer. Farkı inceleyin, iyi olanı birleştirin."
 
 msgid "Runway"
 msgstr "Nakit ömrü"
+
+msgid "Same version as this app."
+msgstr "Bu uygulamayla aynı sürüm."
 
 msgid "SAML SSO & SCIM provisioning"
 msgstr "SAML SSO ve SCIM sağlama"
@@ -12516,6 +12664,9 @@ msgstr "Renk koyuluğu bu geliştiricinin en yoğun gününe göredir"
 msgid "Share"
 msgstr "Paylaş"
 
+msgid "Share designs and reports. Let your agent handle the feedback."
+msgstr "Tasarımları ve raporları paylaşın. Geri bildirimleri ajanınız ele alsın."
+
 msgid "Share page"
 msgstr "Sayfayı paylaş"
 
@@ -12563,6 +12714,9 @@ msgstr "Tümünü göster ({count})"
 
 msgid "Show all automations again"
 msgstr "Tüm otomasyonları yeniden göster"
+
+msgid "Show all comments"
+msgstr "Tüm yorumları göster"
 
 msgid "Show all lines"
 msgstr "Tüm satırları göster"
@@ -12653,6 +12807,9 @@ msgstr "Pull request listesini göster"
 
 msgid "Show pull request preview"
 msgstr "Pull request önizlemesini göster"
+
+msgid "Show resolved ({resolvedCount})"
+msgstr "Çözülenleri göster ({resolvedCount})"
 
 msgid "Show review comments"
 msgstr "İnceleme yorumlarını göster"
@@ -13174,6 +13331,9 @@ msgstr "{agentLabel} başlatılıyor"
 msgid "Starting cloud workspace"
 msgstr "Bulut çalışma alanı başlatılıyor"
 
+msgid "Starting up. This should only take a moment."
+msgstr "Başlatılıyor. Yalnızca kısa bir süre alacaktır."
+
 msgid "Starting workspace"
 msgstr "Çalışma alanı başlatılıyor"
 
@@ -13214,6 +13374,9 @@ msgstr "Adım {0} / 2"
 
 msgid "Step {step}: {name}"
 msgstr "Adım {step}: {name}"
+
+msgid "Still can't reach the host."
+msgstr "Host'a hâlâ ulaşılamıyor."
 
 msgid "Still working — large repos can take a few minutes. You can leave; the workspace will appear on Home when it's ready."
 msgstr "Hâlâ çalışıyor — büyük depolar birkaç dakika sürebilir. Ayrılabilirsiniz; çalışma alanı hazır olduğunda Ana sayfada görünecek."
@@ -13269,6 +13432,12 @@ msgstr "Yapı, kaydırma ve taşma yönetimi"
 msgid "Structured progress: chain of thought, tasks, plans"
 msgstr "Yapılandırılmış ilerleme: düşünce zinciri, görevler, planlar"
 
+msgid "Subagent"
+msgstr "Alt ajan"
+
+msgid "Subagents"
+msgstr "Alt ajanlar"
+
 msgid "Subject contains..."
 msgstr "Konu şunu içerir..."
 
@@ -13320,9 +13489,6 @@ msgstr "paketi ve paylaşılan uygulama bileşenleri. Kopyalamak için herhangi 
 msgid "Sum of CPU used by Superset and monitored terminal process trees. Over 100% means multiple CPU cores are busy. Sustained high values usually cause UI sluggishness and higher battery drain."
 msgstr "Superset ve izlenen terminal süreç ağaçlarının kullandığı CPU toplamı. %100'ün üzeri, birden fazla CPU çekirdeğinin meşgul olduğu anlamına gelir. Sürekli yüksek değerler genellikle arayüzde yavaşlığa ve daha hızlı pil tüketimine yol açar."
 
-msgid "Summarize failed CI runs every morning before standup"
-msgstr "Her sabah standup'tan önce başarısız CI çalıştırmalarını özetle"
-
 msgid "Summary"
 msgstr "Özet"
 
@@ -13352,6 +13518,9 @@ msgstr "Superset uygulaması"
 
 msgid "Superset cannot reach api.github.com from this machine. Pull request status retries at {until}."
 msgstr "Superset bu makineden api.github.com adresine ulaşamıyor. Pull request durumu saat {until} itibarıyla yeniden denenecek."
+
+msgid "Superset CLI"
+msgstr "Superset CLI"
 
 msgid "Superset components"
 msgstr "Superset bileşenleri"
@@ -13825,12 +13994,6 @@ msgstr "Metin alanı"
 msgid "Thanks for reaching out"
 msgstr "Bize ulaştığınız için teşekkürler"
 
-msgid "That device is online but the connection couldn't be established — usually relay routing rather than the device itself. Retry, and if it persists restart Superset on that device."
-msgstr "O cihaz çevrimiçi ancak bağlantı kurulamadı — bu genellikle cihazdan değil, röle yönlendirmesinden kaynaklanır. Yeniden deneyin; sorun sürerse o cihazda Superset'i yeniden başlatın."
-
-msgid "That device isn't connected to the relay. Check it's awake, online, and running Superset — it reconnects on its own once it is."
-msgstr "O cihaz röleye bağlı değil. Uyanık, çevrimiçi ve Superset çalışır durumda olduğunu kontrol edin — olduğunda kendiliğinden yeniden bağlanır."
-
 msgid "That handle is taken."
 msgstr "Bu kullanıcı adı alınmış."
 
@@ -13858,6 +14021,9 @@ msgstr "Ajan, bir görevi biletten farka kadar sahiplenir. İnsan tuş vuruşlar
 msgid "The agent this automation was set to run no longer exists on its host — the host's agents may have been reset or removed. Re-select an agent in the automation's settings."
 msgstr "Bu otomasyonun çalıştırılacağı ajan, host'unda artık yok — host'un ajanları sıfırlanmış veya kaldırılmış olabilir. Otomasyonun ayarlarından yeni bir ajan seçin."
 
+msgid "The app is on {appVersion} but attached to a host service started by something else, likely an older CLI or another Superset build. Restarting replaces it with this app's copy."
+msgstr "Uygulama {appVersion} sürümünde, ancak başka bir şeyin (muhtemelen eski bir CLI veya başka bir Superset derlemesi) başlattığı bir ana makine hizmetine bağlı. Yeniden başlatmak onu bu uygulamanın kopyasıyla değiştirir."
+
 msgid "The associated device isn't reachable right now"
 msgstr "İlgili cihaza şu anda erişilemiyor"
 
@@ -13866,9 +14032,6 @@ msgstr "En iyi ajan değişecek.<0/>İş akışınız değişmemeli."
 
 msgid "The Codex sign-in"
 msgstr "Codex oturumu"
-
-msgid "The connection failed (relay status {status}). Retry, and if it persists restart Superset on that device."
-msgstr "Bağlantı başarısız oldu (röle durumu {status}). Yeniden deneyin; sorun sürerse o cihazda Superset'i yeniden başlatın."
 
 msgid "The connection timed out"
 msgstr "Bağlantı zaman aşımına uğradı"
@@ -13942,8 +14105,27 @@ msgstr "Eksiksiz çalışma alanı. Ajanları paralel çalıştırın, her birin
 msgid "The future home for reusable Superset agent configs, prompts, and setup guides."
 msgstr "Yeniden kullanılabilir Superset ajan yapılandırmaları, istemleri ve kurulum kılavuzları için gelecekteki adres."
 
+#. placeholder {0}: info.version
+msgid "The host came back on {0}, not {targetVersion}."
+msgstr "Ana makine {targetVersion} yerine {0} ile geri döndü."
+
+msgid "The host did not come back within fifteen minutes."
+msgstr "Ana makine on beş dakika içinde geri gelmedi."
+
+msgid "The host hasn't answered."
+msgstr "Host yanıt vermedi."
+
 msgid "The host isn't connected to the Superset relay. If it's this device, turn on \"Allow remote access to this device via relay\" in Settings > Remote Access, then try again."
 msgstr "Host, Superset rölesine bağlı değil. Bu cihazsa Ayarlar > Uzaktan erişim bölümünde \"Uzaktan erişimnın bu cihaza röle üzerinden erişmesine izin ver\" seçeneğini açıp yeniden deneyin."
+
+msgid "The host reported a failed update."
+msgstr "Ana makine başarısız bir güncelleme bildirdi."
+
+msgid "The host service restarts once the download is verified. Terminals reconnect on their own; the previous build is kept until the new one answers."
+msgstr "İndirme doğrulandıktan sonra ana makine hizmeti yeniden başlar. Terminaller kendiliğinden yeniden bağlanır; yeni derleme yanıt verene kadar önceki derleme korunur."
+
+msgid "The host went back to its previous build."
+msgstr "Ana makine önceki derlemesine geri döndü."
 
 msgid "The human reads every line before it merges."
 msgstr "İnsan, birleştirilmeden önce her satırı okur."
@@ -13972,9 +14154,6 @@ msgstr "Bağlantı yanlış olabilir, sayfa silinmiş olabilir ya da erişiminiz
 msgid "The linked agent is missing or disabled. Showing the snapshot."
 msgstr "Bağlı ajan eksik veya devre dışı. Anlık görüntü gösteriliyor."
 
-msgid "The local host service is still starting up. It should be ready in a few seconds."
-msgstr "Yerel host hizmeti hâlâ başlatılıyor. Birkaç saniye içinde hazır olmalı."
-
 msgid "The local host service is unavailable for {organization} on {device}. Status: {status}. {recovery}"
 msgstr "{device} üzerinde {organization} için yerel host hizmeti kullanılamıyor. Durum: {status}. {recovery}"
 
@@ -13986,9 +14165,6 @@ msgstr "Yerel host hizmeti çalışmıyor, bu yüzden bu cihazda hiçbir şey ç
 
 msgid "The local host service just came up. Reconnecting to it now."
 msgstr "Yerel host hizmeti yeni açıldı. Şimdi ona yeniden bağlanılıyor."
-
-msgid "The local host service stopped answering. Retry first; if that doesn't take, restart it from the Superset tray menu > Host Service > Restart."
-msgstr "Yerel host hizmeti yanıt vermeyi bıraktı. Önce yeniden deneyin; işe yaramazsa Superset tepsi menüsünde Host hizmeti > Yeniden başlat yolundan yeniden başlatın."
 
 msgid "The majority of merged agent PRs need review only, with zero human edits."
 msgstr "Birleştirilen ajan PR'larının çoğu yalnızca inceleme gerektirir, hiç insan düzenlemesi olmaz."
@@ -14028,9 +14204,6 @@ msgstr "Superset'in arkasındaki insanlar."
 
 msgid "The recovery period has ended. Contact support@superset.sh."
 msgstr "Kurtarma süresi sona erdi. support@superset.sh adresine yazın."
-
-msgid "The relay couldn't reach that device right now. This is usually temporary — retrying in a moment normally works."
-msgstr "Röle şu anda o cihaza ulaşamadı. Bu genellikle geçicidir — birazdan yeniden denemek çoğunlukla işe yarar."
 
 msgid "The remote branch has diverged. Pull before continuing."
 msgstr "Uzak dal ayrıştı. Devam etmeden önce pull yapın."
@@ -14108,6 +14281,9 @@ msgstr "Web ajan arayüzü şimdilik salt okunur bir önizlemedir."
 msgid "The workspace is not ready yet. Try again."
 msgstr "Çalışma alanı henüz hazır değil. Yeniden deneyin."
 
+msgid "The workspace may still have been created. This screen opens it if it appears."
+msgstr "Çalışma alanı yine de oluşturulmuş olabilir. Göründüğünde bu ekran onu açar."
+
 msgid "The worktree and any uncommitted changes will be removed. This cannot be undone."
 msgstr "Worktree ve commit'lenmemiş tüm değişiklikler kaldırılacak. Bu geri alınamaz."
 
@@ -14135,6 +14311,9 @@ msgstr "Bu komutlar bir çalışma alanı oluşturulduğunda otomatik olarak ça
 msgid "These ports are still in use"
 msgstr "Bu portlar hâlâ kullanımda"
 
+msgid "Thinking"
+msgstr "Düşünme"
+
 msgid "Thinking about the approach"
 msgstr "Yaklaşım üzerine düşünülüyor"
 
@@ -14155,6 +14334,13 @@ msgstr "Bu uygulama şunları yapabilecek:"
 
 msgid "This application will have access to data in the selected organization."
 msgstr "Bu uygulama, seçili kuruluştaki verilere erişebilecek."
+
+#. placeholder {0}: params?.organizationName
+msgid "This automation belongs to {0}. Switch to that organization to open it."
+msgstr "Bu otomasyon {0} kuruluşuna ait. Açmak için o kuruluşa geçin."
+
+msgid "This automation is in another organization"
+msgstr "Bu otomasyon başka bir kuruluşta"
 
 msgid "This cannot be undone."
 msgstr "Bu geri alınamaz."
@@ -14197,6 +14383,12 @@ msgstr "Bu GitHub kurulumu zaten başka bir Superset kuruluşuna bağlı. Oradak
 
 msgid "This host"
 msgstr "Bu host"
+
+msgid "This host has not reported a version yet."
+msgstr "Bu ana makine henüz bir sürüm bildirmedi."
+
+msgid "This host is behind the app you are using. Workspaces still open, but newer features may fail on it."
+msgstr "Bu ana makine kullandığınız uygulamanın gerisinde. Çalışma alanları hâlâ açılıyor ama yeni özellikler üzerinde çalışmayabilir."
 
 msgid "This host needs an update"
 msgstr "Bu host'un güncellenmesi gerekiyor"
@@ -14273,6 +14465,9 @@ msgstr "Bu eklenti hesap gerektirmez — Becerileri kullanıma hazır."
 msgid "This port is still in use"
 msgstr "Bu port hâlâ kullanımda"
 
+msgid "This profile is busy right now"
+msgstr "Bu profil şu anda yoğun"
+
 msgid "This project is no longer available on your devices."
 msgstr "Bu proje artık cihazlarınızda kullanılamıyor."
 
@@ -14317,6 +14512,9 @@ msgstr "Bu slug zaten alınmış"
 
 msgid "This stops every Teams trigger in your organization and removes the notification subscriptions from your tenant. You can reconnect at any time."
 msgstr "Bu işlem kuruluşunuzdaki tüm Teams tetikleyicilerini durdurur ve bildirim aboneliklerini kiracınızdan kaldırır. İstediğiniz zaman yeniden bağlanabilirsiniz."
+
+msgid "This subagent is no longer tracked by the host. Its transcript stays on disk under the agent's session directory."
+msgstr "Bu alt ajan artık ana makine tarafından izlenmiyor. Dökümü, ajanın oturum dizininde diskte kalır."
 
 msgid "This terminal has no output to hand over yet."
 msgstr "Bu terminalde henüz devredilecek çıktı yok."
@@ -14382,9 +14580,6 @@ msgstr "Bu işlem oturumu ve altındaki süreci sonlandırır."
 msgid "This will unstage and revert all staged changes. Staged new files will be deleted. This cannot be undone."
 msgstr "Bu işlem, hazırlanmış tüm değişiklikleri hazırlıktan çıkarır ve geri alır. Hazırlanmış yeni dosyalar silinir. Bu geri alınamaz."
 
-msgid "This workspace lives on a device Superset can't reach right now. Terminals, files, and agents stay put — they come back as soon as the connection does."
-msgstr "Bu çalışma alanı, Superset'in şu anda erişemediği bir cihazda bulunuyor. Terminaller, dosyalar ve ajanlar yerinde kalır — bağlantı geri geldiğinde onlar da geri gelir."
-
 msgid "This workspace may have been removed, or you no longer have access to it."
 msgstr "Bu çalışma alanı kaldırılmış olabilir ya da artık erişiminiz olmayabilir."
 
@@ -14394,8 +14589,8 @@ msgstr "Bu çalışma alanı kaydı hâlâ var, ancak worktree klasörü artık 
 msgid "This workspace's host is offline"
 msgstr "Bu çalışma alanının host'u çevrimdışı"
 
-msgid "This workspace's host is on an older version of Superset than this client supports. Update the Superset app on that device to reconnect."
-msgstr "Bu çalışma alanının host'u, bu istemcinin desteklediğinden daha eski bir Superset sürümünde. Yeniden bağlanmak için o cihazdaki Superset uygulamasını güncelleyin."
+msgid "This workspace's host runs an older host service than this app supports. Update it to reconnect; the workspace and its files are untouched."
+msgstr "Bu çalışma alanının ana makinesi, bu uygulamanın desteklediğinden daha eski bir ana makine hizmeti çalıştırıyor. Yeniden bağlanmak için güncelleyin; çalışma alanı ve dosyaları olduğu gibi kalır."
 
 msgid "Thorough reasoning effort"
 msgstr "Kapsamlı akıl yürütme çabası"
@@ -14417,9 +14612,6 @@ msgstr "Katman"
 
 msgid "Time range"
 msgstr "Zaman aralığı"
-
-msgid "Timed out waiting for the host to create the workspace."
-msgstr "Host'un çalışma alanını oluşturması beklenirken zaman aşımına uğrandı."
 
 msgid "Title"
 msgstr "Başlık"
@@ -14523,6 +14715,9 @@ msgstr "Bu hesap için çok fazla makine yayın yapıyor."
 msgid "Too many messages. Please try again later."
 msgstr "Çok fazla mesaj. Lütfen daha sonra yeniden deneyin."
 
+msgid "Too many people are looking at once. Try again shortly."
+msgstr "Aynı anda çok fazla kişi bakıyor. Kısa süre sonra tekrar deneyin."
+
 msgid "Too many prompt submissions. Try again later."
 msgstr "Çok fazla istem gönderimi. Daha sonra yeniden deneyin."
 
@@ -14534,6 +14729,12 @@ msgstr "Çok fazla destek bildirimi. Daha sonra yeniden deneyin."
 
 msgid "Too many untitled items here already."
 msgstr "Burada zaten çok fazla adsız öğe var."
+
+msgid "Too old for this app to talk to. Update the Superset app on that device to reconnect."
+msgstr "Bu uygulamanın iletişim kuramayacağı kadar eski. Yeniden bağlanmak için o cihazdaki Superset uygulamasını güncelleyin."
+
+msgid "Too old for this app to talk to. Workspaces on this host will not open until it is updated."
+msgstr "Bu uygulamanın iletişim kuramayacağı kadar eski. Güncellenene kadar bu ana makinedeki çalışma alanları açılmayacak."
 
 msgid "Tools"
 msgstr "Araçlar"
@@ -14633,6 +14834,9 @@ msgstr "Farklı bir arama terimi veya başka bir cihaz deneyin."
 
 msgid "Try again"
 msgstr "Yeniden dene"
+
+msgid "Try again, or restart the host service from the Superset tray menu."
+msgstr "Tekrar deneyin veya sistem tepsisindeki Superset menüsünden ana makine hizmetini yeniden başlatın."
 
 msgid "Try again. If the problem continues, reload Superset."
 msgstr "Yeniden deneyin. Sorun sürerse Superset'i yeniden yükleyin."
@@ -14911,6 +15115,9 @@ msgstr "Sırada"
 msgid "Up Next"
 msgstr "Sırada"
 
+msgid "Up to date"
+msgstr "Güncel"
+
 msgid "Update"
 msgstr "Güncelle"
 
@@ -14932,6 +15139,9 @@ msgstr "Daemon'u güncelle"
 msgid "Update Error"
 msgstr "Güncelleme hatası"
 
+msgid "Update host service"
+msgstr "Ana makine hizmetini güncelle"
+
 msgid "Update naming instructions"
 msgstr "Adlandırma yönergelerini güncelle"
 
@@ -14942,8 +15152,14 @@ msgstr "{0} için adlandırma yönergelerini güncelle"
 msgid "Update Required"
 msgstr "Güncelleme gerekli"
 
+msgid "Update Superset on that device. In-app updates require a supported standalone install and a released app version."
+msgstr "Superset’i o cihazda güncelleyin. Uygulama içinden güncelleme için desteklenen bağımsız bir kurulum ve yayımlanmış bir uygulama sürümü gerekir."
+
 msgid "update the branch prefix"
 msgstr "dal ön ekini güncelleme"
+
+msgid "Updated"
+msgstr "Güncellendi"
 
 msgid "Updated {date}"
 msgstr "Güncelleme: {date}"
@@ -14951,8 +15167,16 @@ msgstr "Güncelleme: {date}"
 msgid "Updated {updatedRelative}"
 msgstr "Güncelleme {updatedRelative}"
 
+#. placeholder {0}: previousVersion ?? "?"
+msgid "Updated just now from {0}."
+msgstr "Az önce {0} sürümünden güncellendi."
+
 msgid "Updates"
 msgstr "Güncellemeler"
+
+#. placeholder {0}: update.progress.target
+msgid "Updating to {0}"
+msgstr "{0} sürümüne güncelleniyor"
 
 msgid "Updating…"
 msgstr "Güncelleniyor…"
@@ -14972,6 +15196,9 @@ msgstr "Dosya yükle"
 
 msgid "Upload image…"
 msgstr "Görsel yükle…"
+
+msgid "Uptime"
+msgstr "Çalışma süresi"
 
 msgid "Uptime SLA"
 msgstr "Çalışma süresi SLA'sı"
@@ -15122,6 +15349,9 @@ msgstr "Sürüm {0}"
 msgid "Version {version}"
 msgstr "Sürüm {version}"
 
+msgid "Version {version} installs the next time you restart."
+msgstr "{version} sürümü bir sonraki yeniden başlatmada yüklenecek."
+
 msgid "Version {version} is the latest version."
 msgstr "{version} sürümü en son sürümdür."
 
@@ -15133,6 +15363,9 @@ msgstr "Sürüm geçmişi"
 
 msgid "Version not found"
 msgstr "Sürüm bulunamadı"
+
+msgid "Version unknown"
+msgstr "Sürüm bilinmiyor"
 
 msgid "Video"
 msgstr "Video"
@@ -15234,6 +15467,9 @@ msgstr "İnceleme bekleniyor"
 msgid "Waiting for sign-in…"
 msgstr "Oturum açma bekleniyor…"
 
+msgid "Waiting for the subagent's first message…"
+msgstr "Alt ajanın ilk mesajı bekleniyor…"
+
 msgid "Waitlist signups"
 msgstr "Bekleme listesi kayıtları"
 
@@ -15267,6 +15503,9 @@ msgstr "Ödeme yönteminizden tahsilat yapamadık. Bu planı sürdürmek için g
 msgid "We couldn't detect a package manager or environment config."
 msgstr "Bir paket yöneticisi veya ortam yapılandırması bulamadık."
 
+msgid "We couldn't reach the device. Please try again in a moment."
+msgstr "Cihaza ulaşamadık. Lütfen birazdan tekrar deneyin."
+
 msgid "We do not forecast full self-driving in 2026 or 2027. The honest unknowns: whether agent review holds up against adversarial complexity, whether specification can replace code reading as the trust anchor at scale, and whether compute economics keep the overnight shift cheaper than the humans it augments. F5 is a rubric entry so we recognize it when we see it, not a promise."
 msgstr "2026 veya 2027'de tam otonomi öngörmüyoruz. Dürüst bilinmezler şunlar: ajan incelemesinin düşmanca karmaşıklık karşısında dayanıp dayanmayacağı, spesifikasyonun ölçekte kod okumanın yerini güven çıpası olarak alıp alamayacağı ve işlem ekonomisinin gece vardiyasını desteklediği insanlardan ucuz tutup tutmayacağı. F5, gördüğümüzde tanıyabilelim diye bir değerlendirme maddesidir, bir vaat değil."
 
@@ -15278,6 +15517,9 @@ msgstr "İndirme bağlantısını {submittedEmail} adresine gönderdik."
 
 msgid "We'll be in touch shortly."
 msgstr "Kısa süre içinde sizinle iletişime geçeceğiz."
+
+msgid "We'll bring you back as soon as we reconnect."
+msgstr "Bağlantı yeniden kurulur kurulmaz kaldığınız yere döneceksiniz."
 
 msgid "We'll get back to you shortly."
 msgstr "Kısa süre içinde size döneceğiz."
@@ -15291,17 +15533,14 @@ msgstr "Bunu yalnızca indirme bağlantınızı göndermek için kullanacağız.
 msgid "We're hiring"
 msgstr "İşe alıyoruz"
 
-msgid "We're hiring engineers"
-msgstr "Mühendis arıyoruz"
-
-msgid "We're hiring engineers in San Francisco"
-msgstr "San Francisco'da mühendis arıyoruz"
-
 msgid "We're hiring engineers in San Francisco. Help us build the first software factory platform."
 msgstr "San Francisco'da mühendis arıyoruz. İlk yazılım fabrikası platformunu kurmamıza yardım edin."
 
 msgid "We're hiring in San Francisco"
 msgstr "San Francisco'da işe alıyoruz"
+
+msgid "We're looking for design partners to help shape our cloud offering. Tell us about your workflow and we'll be in touch to explore working together."
+msgstr "Bulut ürünümüzü şekillendirmeye yardımcı olacak geliştirme ortakları arıyoruz. İş akışınızı anlatın; birlikte çalışma fırsatlarını değerlendirmek için sizinle iletişime geçelim."
 
 msgid "We're rebuilding this feature. Check back soon."
 msgstr "Bu özelliği yeniden yapıyoruz. Yakında tekrar bakın."
@@ -15418,11 +15657,17 @@ msgstr "Superset nedir, kimler geliştiriyor ve kimler için. Paralel kodlama aj
 msgid "What the content is doing: which pages sessions start on, and how much is being published."
 msgstr "İçerik ne yapıyor: oturumlar hangi sayfalarda başlıyor ve ne kadar yayınlanıyor."
 
+msgid "What these were written against is no longer on the page, so they have no pin."
+msgstr "Yazıldıkları öğe artık sayfada olmadığı için işaretleri yok."
+
 msgid "What We're Building"
 msgstr "Ne geliştiriyoruz"
 
 msgid "What we're building now and next."
 msgstr "Şimdi ve sırada ne geliştiriyoruz."
+
+msgid "What would you like to build with Superset in the cloud?"
+msgstr "Bulutta Superset ile ne geliştirmek istersiniz?"
 
 msgid "What would you like to know?"
 msgstr "Ne öğrenmek istersiniz?"
@@ -15510,6 +15755,9 @@ msgstr "Etiketli"
 
 msgid "with or without attachments"
 msgstr "ekli veya eksiz"
+
+msgid "Work email"
+msgstr "İş e-postası"
 
 msgid "Work from tickets"
 msgstr "Biletlerden çalışma"
@@ -15730,9 +15978,6 @@ msgstr "Bu işlemi geri alamazsınız. Terminal bölmelerinde \"Process exited\"
 
 msgid "You don't have access to this host"
 msgstr "Bu host'a erişiminiz yok"
-
-msgid "You don't have access to this host. If it's your own device, turn on relay access there under Settings > Security."
-msgstr "Bu host'a erişiminiz yok. Kendi cihazınızsa orada Ayarlar > Güvenlik bölümünden röle erişimini açın."
 
 msgid "You don't have access to this terminal."
 msgstr "Bu terminale erişiminiz yok."

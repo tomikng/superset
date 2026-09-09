@@ -15,6 +15,7 @@ import {
 	Circle,
 	FileText,
 	GitCompareArrows,
+	GitPullRequest,
 	Globe,
 	MessageSquare,
 	Monitor,
@@ -23,6 +24,7 @@ import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useCallback, useMemo } from "react";
 import {
 	LuArrowDownToLine,
+	LuBot,
 	LuClipboard,
 	LuClipboardCopy,
 	LuEraser,
@@ -49,17 +51,24 @@ import {
 	getDocument,
 	useSharedFileDocument,
 } from "../../state/fileDocumentStore";
-import type {
-	BrowserPaneData,
-	ChatV3PaneData,
-	CommentPaneData,
-	DevtoolsPaneData,
-	FilePaneData,
-	PagePaneData,
-	PaneViewerData,
-	TerminalPaneData,
+import {
+	type BrowserPaneData,
+	type ChatV3PaneData,
+	type CommentPaneData,
+	type DevtoolsPaneData,
+	type FilePaneData,
+	type PagePaneData,
+	type PaneViewerData,
+	type PullRequestPaneData,
+	SUBAGENT_PANE_KIND,
+	type SubagentPaneData,
+	type TerminalPaneData,
 } from "../../types";
-import { focusOrAddTerminalPane } from "../../utils/focusTerminalPane";
+import {
+	findTerminalPaneLocation,
+	focusOrAddTerminalPane,
+} from "../../utils/focusTerminalPane";
+import { openSubagentPaneInStore } from "../../utils/openSubagentPaneInStore";
 import type { TerminalLauncher } from "../useV2TerminalLauncher";
 import { BrowserPane, BrowserPaneToolbar } from "./components/BrowserPane";
 import { ChatV3Pane } from "./components/ChatV3Pane";
@@ -74,6 +83,9 @@ import { FilePaneHeaderExtras } from "./components/FilePane/components/FilePaneH
 import { PagePane } from "./components/PagePane";
 import { PagePaneHeaderExtras } from "./components/PagePaneHeaderExtras";
 import { PagePaneTitle } from "./components/PagePaneTitle";
+import { PullRequestPane } from "./components/PullRequestPane";
+import { PullRequestPaneHeaderExtras } from "./components/PullRequestPane/components/PullRequestPaneHeaderExtras";
+import { SubagentPane } from "./components/SubagentPane";
 import { TerminalPane } from "./components/TerminalPane";
 import { TerminalPaneHeaderExtras } from "./components/TerminalPane/components/TerminalPaneHeaderExtras";
 import { TerminalPaneIcon } from "./components/TerminalPane/components/TerminalPaneIcon";
@@ -371,8 +383,8 @@ export function usePaneRegistry({
 						onCreateNewAgentSession={createNewAgentSession}
 					/>
 				),
-				renderHeaderExtras: () => (
-					<DiffPaneHeaderExtras workspaceId={workspaceId} />
+				renderHeaderExtras: (ctx: RendererContext<PaneViewerData>) => (
+					<DiffPaneHeaderExtras workspaceId={workspaceId} store={ctx.store} />
 				),
 				contextMenuActions: (_ctx, defaults) =>
 					defaults.map((d) =>
@@ -436,6 +448,13 @@ export function usePaneRegistry({
 				},
 				onAfterClose: (pane) => {
 					const { terminalId } = pane.data as TerminalPaneData;
+					// Another pane still shows this terminal (one that followed a
+					// resumed session while its adopted duplicate closes): only
+					// this pane's runtime goes, the session stays.
+					if (findTerminalPaneLocation(store.getState(), terminalId)) {
+						terminalRuntimeRegistry.release(terminalId, pane.id);
+						return;
+					}
 					if (consumeTerminalBackgroundIntent(terminalId)) {
 						terminalRuntimeRegistry.release(terminalId);
 						return;
@@ -464,6 +483,9 @@ export function usePaneRegistry({
 							terminalId={terminalId}
 							terminalInstanceId={ctx.pane.id}
 							onCreateNewAgentSession={createNewAgentSession}
+							onOpenSubagent={(data) =>
+								openSubagentPaneInStore(ctx.store, data)
+							}
 						/>
 					);
 				},
@@ -771,6 +793,51 @@ export function usePaneRegistry({
 							: d,
 					),
 			},
+			"pull-request": {
+				getIcon: () => <GitPullRequest className="size-3.5" />,
+				getTitle: (pane) => {
+					const data = pane.data as PullRequestPaneData;
+					return t({ message: `Pull request #${data.prNumber}` });
+				},
+				renderPane: (ctx: RendererContext<PaneViewerData>) => (
+					<PullRequestPane data={ctx.pane.data as PullRequestPaneData} />
+				),
+				renderHeaderExtras: (ctx: RendererContext<PaneViewerData>) => (
+					<PullRequestPaneHeaderExtras
+						data={ctx.pane.data as PullRequestPaneData}
+					/>
+				),
+				contextMenuActions: (_ctx, defaults) =>
+					defaults.map((d) =>
+						d.key === "close-pane"
+							? {
+									...d,
+									label: t({
+										message: "Close Pull Request",
+									}),
+								}
+							: d,
+					),
+			},
+			[SUBAGENT_PANE_KIND]: {
+				getIcon: () => <LuBot className="size-3.5" />,
+				getTitle: (pane) => {
+					const { agentType } = pane.data as SubagentPaneData;
+					const label = t({ message: "Subagent" });
+					return agentType ? `${label} · ${agentType}` : label;
+				},
+				renderPane: (ctx: RendererContext<PaneViewerData>) => (
+					<SubagentPane
+						data={ctx.pane.data as SubagentPaneData}
+						onOpenParent={() =>
+							focusOrAddTerminalPane(
+								ctx.store,
+								(ctx.pane.data as SubagentPaneData).terminalId,
+							)
+						}
+					/>
+				),
+			},
 			...(isPagesEnabled
 				? {
 						page: {
@@ -797,6 +864,7 @@ export function usePaneRegistry({
 									onDataChange={(data) =>
 										ctx.actions.updateData(data as PaneViewerData)
 									}
+									onFocus={ctx.actions.focus}
 								/>
 							),
 							contextMenuActions: (_ctx, defaults) =>
@@ -829,6 +897,7 @@ export function usePaneRegistry({
 			},
 		}),
 		[
+			store,
 			workspaceId,
 			isChatV3Enabled,
 			isPagesEnabled,
