@@ -90,6 +90,9 @@ msgstr "(nonaktif)"
 msgid "(external)"
 msgstr "(eksternal)"
 
+msgid "(no output)"
+msgstr "(tidak ada keluaran)"
+
 #. placeholder {0}: ports.length
 msgid "{0, plural, one {# active port — hide details} other {# active ports — hide details}}"
 msgstr "{0, plural, one {# port aktif — sembunyikan detail} other {# port aktif — sembunyikan detail}}"
@@ -199,6 +202,10 @@ msgstr "{0, plural, one {# sesi berjalan} other {# sesi berjalan}}"
 msgid "{0, plural, one {# skipped} other {# skipped}}"
 msgstr "{0, plural, one {# dilewati} other {# dilewati}}"
 
+#. placeholder {0}: subagents.length
+msgid "{0, plural, one {# subagent} other {# subagents}}"
+msgstr "{0, plural, other {# subagen}}"
+
 #. placeholder {0}: TASKS.length
 msgid "{0, plural, one {# task} other {# tasks}}"
 msgstr "{0, plural, one {# tugas} other {# tugas}}"
@@ -276,6 +283,10 @@ msgstr "{0} – {1} · perkiraan tarif API dari log sesi lokal"
 #. placeholder {0}: error.message
 msgid "{0} — try the Superset tray menu > Host Service > Restart."
 msgstr "{0} — coba menu tray Superset > Host Service > Restart."
+
+#. placeholder {0}: host.version
+msgid "{0} · behind"
+msgstr "{0} · tertinggal"
 
 #. placeholder {0}: creator.name
 msgid "{0} (you)"
@@ -605,6 +616,9 @@ msgstr "{count, plural, one {Memakai # sumber} other {Memakai # sumber}}"
 msgid "{count} GitHub stars"
 msgstr "{count} star GitHub"
 
+msgid "{count} hosts run an older host service than this app"
+msgstr "{count} host menjalankan layanan host yang lebih lama dari aplikasi ini"
+
 msgid "{count}/day"
 msgstr "{count}/hari"
 
@@ -661,6 +675,9 @@ msgstr "{hidden, plural, one {# baris tersembunyi} other {# baris tersembunyi}}"
 
 msgid "{hidden, plural, one {Show # hidden line} other {Show # hidden lines}}"
 msgstr "{hidden, plural, one {Tampilkan # baris tersembunyi} other {Tampilkan # baris tersembunyi}}"
+
+msgid "{hidden, plural, one {Show # reply} other {Show # replies}}"
+msgstr "{hidden, plural, one {Tampilkan # balasan} other {Tampilkan # balasan}}"
 
 msgid "{hiddenCount, plural, one {Show # more frame} other {Show # more frames}}"
 msgstr "{hiddenCount, plural, one {Tampilkan # frame lagi} other {Tampilkan # frame lagi}}"
@@ -835,6 +852,9 @@ msgstr "{skipped, plural, one {# dilewati} other {# dilewati}}"
 
 msgid "{starCount} stars and counting"
 msgstr "{starCount} star dan terus bertambah"
+
+msgid "{subagentCount, plural, one {# subagent running} other {# subagents running}}"
+msgstr "{subagentCount, plural, other {# subagen berjalan}}"
 
 msgid "{successCount, plural, one {Created # workspace, {failCount} failed} other {Created # workspaces, {failCount} failed}}"
 msgstr "{successCount, plural, one {Membuat # workspace, {failCount} gagal} other {Membuat # workspace, {failCount} gagal}}"
@@ -1222,6 +1242,9 @@ msgstr "Terima undangan"
 
 msgid "Accept terms"
 msgstr "Terima ketentuan"
+
+msgid "Access denied"
+msgstr "Akses ditolak"
 
 msgid "Access your email address"
 msgstr "Mengakses alamat email Anda"
@@ -1632,6 +1655,9 @@ msgstr "Semua Check Lulus"
 msgid "All checks skipped or cancelled"
 msgstr "Semua check dilewati atau dibatalkan"
 
+msgid "All comments"
+msgstr "Semua komentar"
+
 msgid "All commits"
 msgstr "Semua commit"
 
@@ -1801,6 +1827,9 @@ msgstr "Worktree git terisolasi tempat agen berjalan tanpa menyentuh checkout ut
 msgid "An unknown error occurred"
 msgstr "Terjadi kesalahan yang tidak diketahui"
 
+msgid "An update is ready to install."
+msgstr "Pembaruan siap dipasang."
+
 msgid "Animate the active terminal cursor."
 msgstr "Animasikan kursor terminal yang aktif."
 
@@ -1927,6 +1956,9 @@ msgstr "Setara API"
 msgid "API-equivalent cost"
 msgstr "Biaya setara API"
 
+msgid "app {appVersion}"
+msgstr "aplikasi {appVersion}"
+
 msgid "App display language"
 msgstr "Bahasa tampilan aplikasi"
 
@@ -2001,6 +2033,9 @@ msgstr "Argv yang dipakai untuk menjalankan agen."
 
 msgid "Artifact"
 msgstr "Artifact"
+
+msgid "As last reported. The host must be online to update."
+msgstr "Sesuai laporan terakhir. Host harus online untuk memperbarui."
 
 msgid "ascending"
 msgstr "menaik"
@@ -2191,9 +2226,6 @@ msgstr "Otomatisasi ({myFailedCount} gagal)"
 msgid "Automations & event triggers"
 msgstr "Otomatisasi & pemicu event"
 
-msgid "Automations docs"
-msgstr "Dokumentasi otomatisasi"
-
 msgid "Automations, {myFailedCount} failing"
 msgstr "Otomatisasi, {myFailedCount} gagal"
 
@@ -2270,6 +2302,9 @@ msgstr "Kembali ke halaman"
 msgid "Back to tasks"
 msgstr "Kembali ke tugas"
 
+msgid "Back to the leaderboard"
+msgstr "Kembali ke papan peringkat"
+
 msgid "Background"
 msgstr "Latar belakang"
 
@@ -2321,6 +2356,9 @@ msgstr "berdasarkan PR #{0}"
 #. placeholder {1}: preview.providers.join(" and ")
 msgid "Based on {0} tokens in the last 30 days, counting {1}."
 msgstr "Berdasarkan {0} token dalam 30 hari terakhir, menghitung {1}."
+
+msgid "Become a design partner"
+msgstr "Jadi mitra pengembangan"
 
 msgid "Before"
 msgstr "Sebelum"
@@ -2524,6 +2562,9 @@ msgstr "Riwayat penjelajahan"
 msgid "Bug"
 msgstr "Bug"
 
+msgid "Build the future of Superset in the cloud"
+msgstr "Bangun masa depan Superset di komputasi awan"
+
 msgid "Building the last piece of software"
 msgstr "Membangun perangkat lunak yang terakhir"
 
@@ -2542,6 +2583,12 @@ msgstr "Daftar berpoin"
 #. placeholder {0}: versions.expected
 msgid "bundled {0}"
 msgstr "bawaan {0}"
+
+msgid "Bundled with the Superset app on this device."
+msgstr "Disertakan bersama aplikasi Superset di perangkat ini."
+
+msgid "Bundled with the Superset app on this device. Updates with the app."
+msgstr "Disertakan bersama aplikasi Superset di perangkat ini. Diperbarui bersama aplikasi."
 
 msgid "Burn by vendor (Mercury)"
 msgstr "Burn per vendor (Mercury)"
@@ -2638,6 +2685,9 @@ msgstr "Bisakah saya memakai kunci API saya sendiri?"
 
 msgid "Can you standardize the tooltips across the app?"
 msgstr "Bisakah kamu menyeragamkan tooltip di seluruh aplikasi?"
+
+msgid "Can't connect right now"
+msgstr "Belum bisa terhubung"
 
 msgid "Can't open remote workspace paths in an external editor"
 msgstr "Tidak bisa membuka path workspace jarak jauh di editor eksternal"
@@ -2832,6 +2882,9 @@ msgstr "Periksa Sumber Daya"
 
 msgid "Check the rendered prompt and launch output before saving"
 msgstr "Periksa prompt yang dirender dan output peluncuran sebelum menyimpan"
+
+msgid "Check your access under Settings > Security on that device."
+msgstr "Periksa akses Anda di Pengaturan > Keamanan pada perangkat tersebut."
 
 msgid "Check your connection and try again"
 msgstr "Periksa koneksi Anda dan coba lagi"
@@ -3110,6 +3163,9 @@ msgstr "Tutup Chat"
 msgid "Close Comment"
 msgstr "Tutup Komentar"
 
+msgid "Close comments"
+msgstr "Tutup komentar"
+
 msgid "Close Diff"
 msgstr "Tutup Diff"
 
@@ -3155,6 +3211,9 @@ msgstr "Tutup pratinjau"
 
 msgid "Close pull request"
 msgstr "Tutup pull request"
+
+msgid "Close Pull Request"
+msgstr "Tutup Pull Request"
 
 msgid "Close review filter"
 msgstr "Tutup filter review"
@@ -3215,6 +3274,9 @@ msgstr "Menutup terminal ini akan menghentikan proses yang berjalan."
 
 msgid "Cloud"
 msgstr "Cloud"
+
+msgid "Cloud is coming. Become a design partner"
+msgstr "Versi awan segera hadir. Jadi mitra pengembangan"
 
 msgid "Cloud sandboxes"
 msgstr "Sandbox cloud"
@@ -3950,6 +4012,12 @@ msgstr "Tidak dapat menjangkau desktop."
 msgid "Could not reach the host to load this pull request."
 msgstr "Tidak bisa menjangkau host untuk memuat pull request ini."
 
+msgid "Could not reach the host to start the update. Check that it is online and try again."
+msgstr "Tidak dapat menjangkau host untuk memulai pembaruan. Pastikan host online lalu coba lagi."
+
+msgid "Could not reach the server."
+msgstr "Tidak dapat menjangkau server."
+
 msgid "Could not reach this workspace's machine"
 msgstr "Tidak bisa menjangkau mesin workspace ini"
 
@@ -3970,6 +4038,9 @@ msgstr "Tidak bisa mencatat workspace cloud"
 
 msgid "Could not reopen"
 msgstr "Tidak bisa membuka lagi"
+
+msgid "Could not restart the host service"
+msgstr "Tidak dapat memulai ulang layanan host"
 
 msgid "Could not send"
 msgstr "Tidak bisa mengirim"
@@ -4019,6 +4090,9 @@ msgstr "Tidak bisa memantau halaman ini"
 
 msgid "Couldn't confirm star status — check that the GitHub CLI (`gh`) is installed, signed in, and that you have a network connection"
 msgstr "Tidak bisa memastikan status star — pastikan GitHub CLI (`gh`) terpasang, sudah masuk, dan Anda punya koneksi jaringan"
+
+msgid "Couldn't connect (error {status}). Please try again."
+msgstr "Tidak dapat terhubung (kesalahan {status}). Coba lagi."
 
 msgid "Couldn't copy branch name"
 msgstr "Tidak bisa menyalin nama branch"
@@ -4083,9 +4157,6 @@ msgstr "Tidak bisa mengirim balasan"
 #. placeholder {1}: first.message
 msgid "Couldn't reach cloud for {0}: {1}"
 msgstr "Tidak bisa menjangkau cloud untuk {0}: {1}"
-
-msgid "Couldn't reach the relay service. Check this machine's network connection — the other device is probably fine."
-msgstr "Tidak bisa menjangkau layanan relay. Periksa koneksi jaringan mesin ini — perangkat yang satunya kemungkinan baik-baik saja."
 
 msgid "Couldn't read this terminal's context."
 msgstr "Konteks terminal ini tidak bisa dibaca."
@@ -4192,11 +4263,11 @@ msgstr "Buat sebuah tim"
 msgid "Create a workspace for the auth feature on my MacBook"
 msgstr "Buat workspace untuk fitur auth di MacBook saya"
 
+msgid "Create again"
+msgstr "Buat lagi"
+
 msgid "Create an account"
 msgstr "Buat akun"
-
-msgid "Create an automation with an agent"
-msgstr "Buat otomatisasi dengan agen"
 
 msgid "Create failed: {message}"
 msgstr "Gagal membuat: {message}"
@@ -4796,6 +4867,9 @@ msgstr "Developer"
 msgid "Developers"
 msgstr "Developer"
 
+msgid "Development build"
+msgstr "Build pengembangan"
+
 msgid "Device: {selectedLabel}"
 msgstr "Perangkat: {selectedLabel}"
 
@@ -4813,6 +4887,9 @@ msgstr "Dikte"
 
 msgid "Dictation is not available on this device"
 msgstr "Dikte tidak tersedia di perangkat ini"
+
+msgid "Didn't hear back"
+msgstr "Tidak ada respons"
 
 msgid "diff"
 msgstr "diff"
@@ -5065,6 +5142,9 @@ msgstr "Unduh file tema"
 msgid "downloaded"
 msgstr "terunduh"
 
+msgid "Downloading"
+msgstr "Mengunduh"
+
 msgid "Downloading..."
 msgstr "Mengunduh..."
 
@@ -5192,7 +5272,7 @@ msgstr "Awal 2027"
 msgid "Early 2028"
 msgstr "Awal 2028"
 
-#. placeholder {0}: formatDate(new Date(`${awardedOn}T00:00:00Z`), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC", })
+#. placeholder {0}: formatDate( new Date(`${awardedOn}T00:00:00Z`), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC", }, i18n.locale, )
 msgid "Earned {0}"
 msgstr "Diraih pada {0}"
 
@@ -5408,9 +5488,6 @@ msgstr "Tiap agen berjalan di worktree Git-nya sendiri, jadi sepuluh agen bisa b
 msgid "Every axis is carrying its weight for the next tier. Hold it and the tier follows."
 msgstr "Setiap sumbu sudah menopang untuk tingkat berikutnya. Pertahankan, tingkatnya akan menyusul."
 
-msgid "Every Friday at 4pm, draft release notes from this week's merged PRs"
-msgstr "Tiap Jumat jam 4 sore, susun draf catatan rilis dari PR yang di-merge minggu ini"
-
 msgid "Every Friday at 4pm, draft release notes from this week's merged PRs."
 msgstr "Tiap Jumat jam 4 sore, susun draf catatan rilis dari PR yang di-merge minggu ini."
 
@@ -5431,9 +5508,6 @@ msgstr "Tiap Rabu jam 9 pagi, tinjau PR yang di-merge minggu ini dan perbarui do
 
 msgid "Every weekday at 9am, read new GitHub issues, apply labels, and draft a first reply for my review."
 msgstr "Tiap hari kerja jam 9 pagi, baca issue GitHub baru, terapkan label, dan susun draf balasan pertama untuk saya review."
-
-msgid "Every weekday at 9am, triage new GitHub issues and draft replies for my review"
-msgstr "Tiap hari kerja jam 9 pagi, triase issue GitHub baru dan susun draf balasan untuk saya review"
 
 msgid "Everyone argues about whether this generalizes. That argument is the sign the level was reached."
 msgstr "Semua orang berdebat apakah ini bisa digeneralisasi. Perdebatan itu justru tanda bahwa levelnya sudah tercapai."
@@ -6200,6 +6274,9 @@ msgstr "Finder"
 msgid "Finish review"
 msgstr "Selesaikan review"
 
+msgid "Finished"
+msgstr "Selesai"
+
 msgid "finished · worked for 7s"
 msgstr "selesai · bekerja 7 dtk"
 
@@ -6400,6 +6477,9 @@ msgstr "Gratis"
 
 msgid "Free for everyone"
 msgstr "Gratis untuk semua orang"
+
+msgid "Free plan available · No credit card required"
+msgstr "Paket gratis tersedia · Tanpa kartu kredit"
 
 msgid "Frequently<0/>asked questions"
 msgstr "Pertanyaan<0/>yang sering diajukan"
@@ -6741,6 +6821,9 @@ msgstr "Sembunyikan daftar pull request"
 msgid "Hide pull request preview"
 msgstr "Sembunyikan pratinjau pull request"
 
+msgid "Hide resolved ({resolvedCount})"
+msgstr "Sembunyikan yang terselesaikan ({resolvedCount})"
+
 msgid "Hide review comments"
 msgstr "Sembunyikan komentar review"
 
@@ -6793,6 +6876,9 @@ msgstr "Host tidak ditemukan di organisasi ini"
 msgid "Host not found in this organization."
 msgstr "Host tidak ditemukan di organisasi ini."
 
+msgid "Host service"
+msgstr "Layanan host"
+
 msgid "Host Service"
 msgstr "Host Service"
 
@@ -6808,8 +6894,15 @@ msgstr "Layanan host tidak berjalan"
 msgid "Host service is starting…"
 msgstr "Layanan host sedang dimulai…"
 
+msgid "Host service restarted"
+msgstr "Layanan host dimulai ulang"
+
 msgid "Host service unavailable"
 msgstr "Layanan host tidak tersedia"
+
+#. placeholder {0}: update.progress.target
+msgid "Host service updated to {0}"
+msgstr "Layanan host diperbarui ke {0}"
 
 msgid "Host settings"
 msgstr "Pengaturan host"
@@ -6819,9 +6912,6 @@ msgstr "Host tidak tersedia"
 
 msgid "Host unavailable: {hostName}"
 msgstr "Host tidak tersedia: {hostName}"
-
-msgid "Host unreachable"
-msgstr "Host tidak terjangkau"
 
 msgid "Hosted in the cloud"
 msgstr "Dihosting di cloud"
@@ -7173,6 +7263,9 @@ msgstr "Terpasang"
 #. js-lingui-explicit-id
 msgid "serverError.plugins.marketplaceHasInstalls"
 msgstr "Plugin yang terpasang berasal dari {name}: {plugins}. Hapus dulu."
+
+msgid "Installed via"
+msgstr "Diinstal melalui"
 
 msgid "Installing..."
 msgstr "Memasang..."
@@ -7535,6 +7628,9 @@ msgstr "Hari terakhir tiap bulan pukul {time}"
 msgid "Last run"
 msgstr "Run terakhir"
 
+msgid "Last seen"
+msgstr "Terakhir terlihat"
+
 msgid "Last updated"
 msgstr "Terakhir diperbarui"
 
@@ -7829,6 +7925,9 @@ msgstr "Indikator pemuatan dan aktivitas yang sedang berjalan"
 msgid "Loading changes..."
 msgstr "Memuat perubahan..."
 
+msgid "Loading comments…"
+msgstr "Memuat komentar…"
+
 msgid "Loading contributors…"
 msgstr "Memuat kontributor…"
 
@@ -7990,6 +8089,9 @@ msgstr "Jadikan bawaan"
 
 msgid "Make default — launch new terminals and agents on this account."
 msgstr "Jadikan bawaan — jalankan terminal dan agen baru dengan akun ini."
+
+msgid "Make sure the device is awake, online, and running Superset."
+msgstr "Pastikan perangkat aktif, terhubung ke internet, dan menjalankan Superset."
 
 msgid "Make the chip style the TooltipContent default"
 msgstr "Jadikan gaya chip sebagai bawaan TooltipContent"
@@ -8374,6 +8476,9 @@ msgstr "Tema {kindLower} lainnya"
 msgid "More actions"
 msgstr "Aksi lainnya"
 
+msgid "More options"
+msgstr "Opsi lainnya"
+
 msgid "More pages"
 msgstr "Halaman lainnya"
 
@@ -8490,6 +8595,12 @@ msgstr "Perlu izin"
 msgid "Needs review"
 msgstr "Perlu review"
 
+msgid "needs update"
+msgstr "perlu diperbarui"
+
+msgid "Needs update"
+msgstr "Perlu diperbarui"
+
 msgid "Nerd Fonts"
 msgstr "Nerd Fonts"
 
@@ -8531,6 +8642,9 @@ msgstr "penantang baru"
 
 msgid "New chat"
 msgstr "Chat baru"
+
+msgid "New cloud workspace"
+msgstr "Workspace cloud baru"
 
 msgid "New environment"
 msgstr "Environment baru"
@@ -8622,6 +8736,12 @@ msgstr "Workspace baru di {name}"
 msgid "New-user activation"
 msgstr "Aktivasi pengguna baru"
 
+msgid "Newer than this app"
+msgstr "Lebih baru dari aplikasi ini"
+
+msgid "Newer than this app. Everything works; update the app to match."
+msgstr "Lebih baru dari aplikasi ini. Semua berfungsi; perbarui aplikasi agar sesuai."
+
 msgid "News & Updates"
 msgstr "Berita & Pembaruan"
 
@@ -8670,9 +8790,6 @@ msgstr "Berikutnya: {nextLabel}"
 
 msgid "Nice, open a PR when ready."
 msgstr "Bagus, buka PR kalau sudah siap."
-
-msgid "Nightly at 2am, find one small bug, fix it, and open a PR"
-msgstr "Tiap malam jam 2, cari satu bug kecil, perbaiki, dan buka PR"
 
 #. placeholder {0}: AGENT_LABELS[agent]
 msgid "No {0} logins on this host — sign in and usage appears here."
@@ -8790,6 +8907,9 @@ msgstr "Tidak ada isi komentar"
 msgid "No comments yet."
 msgstr "Belum ada komentar."
 
+msgid "No comments yet. Turn on comment mode and click anything on the page to start one."
+msgstr "Belum ada komentar. Aktifkan mode komentar lalu klik apa pun di halaman untuk memulai."
+
 msgid "No commits on this branch yet."
 msgstr "Belum ada commit di branch ini."
 
@@ -8888,6 +9008,9 @@ msgstr "Tanpa ikon"
 
 msgid "No Internet Connection"
 msgstr "Tidak Ada Koneksi Internet"
+
+msgid "No internet connection."
+msgstr "Tidak ada koneksi internet."
 
 msgid "No issues found."
 msgstr "Tidak ada issue ditemukan."
@@ -9253,6 +9376,9 @@ msgstr "Nanti saja"
 msgid "Not on the leaderboard. Opt in first."
 msgstr "Tidak ada di papan peringkat. Ikut serta dulu."
 
+msgid "Not on this version"
+msgstr "Tidak ada di versi ini"
+
 msgid "Not receiving events yet: Microsoft Graph refused the notification subscriptions. Check the app's admin consent and protected API approval, then reconnect."
 msgstr "Belum menerima event: Microsoft Graph menolak langganan notifikasi. Periksa persetujuan admin aplikasi dan persetujuan protected API, lalu hubungkan ulang."
 
@@ -9510,6 +9636,9 @@ msgstr "Buka situs web {0}"
 msgid "Open {filePath}"
 msgstr "Buka {filePath}"
 
+msgid "Open {parentLabel}"
+msgstr "Buka {parentLabel}"
+
 msgid "Open {path} in file pane"
 msgstr "Buka {path} di panel file"
 
@@ -9684,6 +9813,9 @@ msgstr "Buka di Tab Baru"
 
 msgid "Open in PostHog"
 msgstr "Buka di PostHog"
+
+msgid "Open in Pull Requests"
+msgstr "Buka di Pull request"
 
 msgid "Open in Scira AI"
 msgstr "Buka di Scira AI"
@@ -10382,6 +10514,9 @@ msgstr "Putar {label}"
 msgid "Play a sound when tasks complete"
 msgstr "Bunyikan suara saat tugas selesai"
 
+msgid "Please check your internet connection and try again."
+msgstr "Periksa koneksi internet Anda dan coba lagi."
+
 msgid "Please enter a project name"
 msgstr "Silakan masukkan nama proyek"
 
@@ -10393,6 +10528,9 @@ msgstr "Silakan pilih lokasi proyek"
 
 msgid "Please select an organization"
 msgstr "Silakan pilih sebuah organisasi"
+
+msgid "Please try again, or restart Superset on that device."
+msgstr "Coba lagi, atau mulai ulang Superset di perangkat tersebut."
 
 msgid "Please try signing in again from the desktop app."
 msgstr "Silakan coba masuk lagi dari aplikasi desktop."
@@ -10784,9 +10922,6 @@ msgstr "Publik"
 msgid "Public leaderboard"
 msgstr "Papan peringkat publik"
 
-msgid "Publish a page from an agent or the CLI and it will show up here."
-msgstr "Publikasikan halaman dari agen atau CLI dan halaman itu akan muncul di sini."
-
 msgid "Published"
 msgstr "Diterbitkan"
 
@@ -10803,6 +10938,7 @@ msgstr "Dipublikasikan sebagai <0>{handle}</0>. Hanya jumlah token dan nama mode
 msgid "Pull request"
 msgstr "Pull request"
 
+#. placeholder {0}: data.prNumber
 #. placeholder {0}: pullRequest.prNumber
 msgid "Pull request #{0}"
 msgstr "Pull request #{0}"
@@ -11532,11 +11668,17 @@ msgstr "Memulai ulang {restartedOrgCount} layanan host"
 msgid "Restarted 1 host service"
 msgstr "Memulai ulang 1 layanan host"
 
+msgid "Restarting"
+msgstr "Memulai ulang"
+
 msgid "Restarting agents on {accountLabel}."
 msgstr "Menjalankan ulang agen di {accountLabel}."
 
 msgid "Restarting host services…"
 msgstr "Memulai ulang layanan host…"
+
+msgid "Restarting…"
+msgstr "Memulai ulang…"
 
 msgid "Restore"
 msgstr "Pulihkan"
@@ -11859,11 +12001,17 @@ msgstr "Menjalankan perintah lokal di mesin Anda"
 msgid "Runs failed earlier this week, but nothing is failing right now"
 msgstr "Ada run yang gagal awal minggu ini, tapi sekarang tidak ada yang gagal"
 
+msgid "Runs inside the Superset app on that device, so updating it means updating the app there."
+msgstr "Berjalan di dalam aplikasi Superset di perangkat itu, jadi memperbaruinya berarti memperbarui aplikasi di sana."
+
 msgid "Runs land in a workspace. Review the diff, merge what's good."
 msgstr "Run mendarat di sebuah workspace. Review diff-nya, merge yang bagus."
 
 msgid "Runway"
 msgstr "Runway"
+
+msgid "Same version as this app."
+msgstr "Versi yang sama dengan aplikasi ini."
 
 msgid "SAML SSO & SCIM provisioning"
 msgstr "SAML SSO & provisioning SCIM"
@@ -12516,6 +12664,9 @@ msgstr "Kepekatan warna relatif terhadap hari tersibuk pengembang ini"
 msgid "Share"
 msgstr "Bagikan"
 
+msgid "Share designs and reports. Let your agent handle the feedback."
+msgstr "Bagikan desain dan laporan. Biarkan agen Anda menangani masukan."
+
 msgid "Share page"
 msgstr "Bagikan halaman"
 
@@ -12563,6 +12714,9 @@ msgstr "Tampilkan semua {count}"
 
 msgid "Show all automations again"
 msgstr "Tampilkan lagi semua otomatisasi"
+
+msgid "Show all comments"
+msgstr "Tampilkan semua komentar"
 
 msgid "Show all lines"
 msgstr "Tampilkan semua baris"
@@ -12653,6 +12807,9 @@ msgstr "Tampilkan daftar pull request"
 
 msgid "Show pull request preview"
 msgstr "Tampilkan pratinjau pull request"
+
+msgid "Show resolved ({resolvedCount})"
+msgstr "Tampilkan yang terselesaikan ({resolvedCount})"
 
 msgid "Show review comments"
 msgstr "Tampilkan komentar review"
@@ -13174,6 +13331,9 @@ msgstr "Memulai {agentLabel}"
 msgid "Starting cloud workspace"
 msgstr "Memulai workspace cloud"
 
+msgid "Starting up. This should only take a moment."
+msgstr "Sedang memulai. Ini hanya perlu sebentar."
+
 msgid "Starting workspace"
 msgstr "Memulai workspace"
 
@@ -13214,6 +13374,9 @@ msgstr "Langkah {0} dari 2"
 
 msgid "Step {step}: {name}"
 msgstr "Langkah {step}: {name}"
+
+msgid "Still can't reach the host."
+msgstr "Host masih tidak dapat dijangkau."
 
 msgid "Still working — large repos can take a few minutes. You can leave; the workspace will appear on Home when it's ready."
 msgstr "Masih berjalan — repo besar bisa makan beberapa menit. Anda boleh keluar; workspace-nya akan muncul di Beranda saat siap."
@@ -13269,6 +13432,12 @@ msgstr "Struktur, penggulungan, dan penanganan overflow"
 msgid "Structured progress: chain of thought, tasks, plans"
 msgstr "Progres terstruktur: rantai pemikiran, tugas, rencana"
 
+msgid "Subagent"
+msgstr "Subagen"
+
+msgid "Subagents"
+msgstr "Subagen"
+
 msgid "Subject contains..."
 msgstr "Subjek mengandung..."
 
@@ -13320,9 +13489,6 @@ msgstr "untuk UI agen, dan komponen aplikasi bersama. Klik path impor mana pun u
 msgid "Sum of CPU used by Superset and monitored terminal process trees. Over 100% means multiple CPU cores are busy. Sustained high values usually cause UI sluggishness and higher battery drain."
 msgstr "Jumlah CPU yang dipakai Superset dan pohon proses terminal yang dipantau. Di atas 100% berarti beberapa inti CPU sedang sibuk. Nilai tinggi yang bertahan lama biasanya membuat UI terasa lambat dan baterai lebih boros."
 
-msgid "Summarize failed CI runs every morning before standup"
-msgstr "Rangkum run CI yang gagal tiap pagi sebelum standup"
-
 msgid "Summary"
 msgstr "Ringkasan"
 
@@ -13352,6 +13518,9 @@ msgstr "Aplikasi Superset"
 
 msgid "Superset cannot reach api.github.com from this machine. Pull request status retries at {until}."
 msgstr "Superset tidak dapat menjangkau api.github.com dari mesin ini. Status pull request akan dicoba lagi pada {until}."
+
+msgid "Superset CLI"
+msgstr "Superset CLI"
 
 msgid "Superset components"
 msgstr "Komponen Superset"
@@ -13825,12 +13994,6 @@ msgstr "Textarea"
 msgid "Thanks for reaching out"
 msgstr "Terima kasih sudah menghubungi"
 
-msgid "That device is online but the connection couldn't be established — usually relay routing rather than the device itself. Retry, and if it persists restart Superset on that device."
-msgstr "Perangkat itu online tapi koneksinya tidak bisa dibangun — biasanya soal perutean relay, bukan perangkatnya. Coba lagi, dan kalau terus terjadi mulai ulang Superset di perangkat itu."
-
-msgid "That device isn't connected to the relay. Check it's awake, online, and running Superset — it reconnects on its own once it is."
-msgstr "Perangkat itu tidak terhubung ke relay. Pastikan perangkatnya menyala, online, dan menjalankan Superset — perangkat akan tersambung sendiri setelah itu."
-
 msgid "That handle is taken."
 msgstr "Handle itu sudah dipakai."
 
@@ -13858,6 +14021,9 @@ msgstr "Agen memegang tugas dari tiket sampai diff. Manusia mereview hasilnya, b
 msgid "The agent this automation was set to run no longer exists on its host — the host's agents may have been reset or removed. Re-select an agent in the automation's settings."
 msgstr "Agen yang disetel untuk menjalankan otomatisasi ini sudah tidak ada di host-nya — agen host itu mungkin telah direset atau dihapus. Pilih ulang agen di pengaturan otomatisasi."
 
+msgid "The app is on {appVersion} but attached to a host service started by something else, likely an older CLI or another Superset build. Restarting replaces it with this app's copy."
+msgstr "Aplikasi berada di {appVersion} tetapi terhubung ke layanan host yang dimulai oleh hal lain, kemungkinan CLI lama atau build Superset lain. Memulai ulang akan menggantinya dengan salinan dari aplikasi ini."
+
 msgid "The associated device isn't reachable right now"
 msgstr "Perangkat terkait tidak bisa dijangkau saat ini"
 
@@ -13866,9 +14032,6 @@ msgstr "Agen terbaik akan berganti.<0/>Alur kerja Anda tidak perlu."
 
 msgid "The Codex sign-in"
 msgstr "Sesi masuk Codex"
-
-msgid "The connection failed (relay status {status}). Retry, and if it persists restart Superset on that device."
-msgstr "Koneksinya gagal (status relay {status}). Coba lagi, dan kalau terus terjadi mulai ulang Superset di perangkat itu."
 
 msgid "The connection timed out"
 msgstr "Koneksinya kehabisan waktu"
@@ -13942,8 +14105,27 @@ msgstr "Workspace lengkap. Jalankan agen secara paralel, simpan masing-masing di
 msgid "The future home for reusable Superset agent configs, prompts, and setup guides."
 msgstr "Rumah masa depan untuk konfigurasi agen Superset, prompt, dan panduan penyiapan yang dapat digunakan ulang."
 
+#. placeholder {0}: info.version
+msgid "The host came back on {0}, not {targetVersion}."
+msgstr "Host kembali dengan {0}, bukan {targetVersion}."
+
+msgid "The host did not come back within fifteen minutes."
+msgstr "Host tidak kembali dalam lima belas menit."
+
+msgid "The host hasn't answered."
+msgstr "Host tidak merespons."
+
 msgid "The host isn't connected to the Superset relay. If it's this device, turn on \"Allow remote access to this device via relay\" in Settings > Remote Access, then try again."
 msgstr "Host tidak terhubung ke relay Superset. Kalau ini perangkatnya, aktifkan \"Izinkan akses jarak jauh ke perangkat ini melalui relay\" di Pengaturan > Akses Jarak Jauh, lalu coba lagi."
+
+msgid "The host reported a failed update."
+msgstr "Host melaporkan pembaruan yang gagal."
+
+msgid "The host service restarts once the download is verified. Terminals reconnect on their own; the previous build is kept until the new one answers."
+msgstr "Layanan host dimulai ulang setelah unduhan diverifikasi. Terminal tersambung kembali sendiri; build sebelumnya disimpan sampai yang baru merespons."
+
+msgid "The host went back to its previous build."
+msgstr "Host kembali ke build sebelumnya."
 
 msgid "The human reads every line before it merges."
 msgstr "Manusia membaca tiap baris sebelum di-merge."
@@ -13972,9 +14154,6 @@ msgstr "Tautannya mungkin salah, halamannya mungkin sudah dihapus, atau Anda mun
 msgid "The linked agent is missing or disabled. Showing the snapshot."
 msgstr "Agen yang ditautkan hilang atau nonaktif. Menampilkan snapshot."
 
-msgid "The local host service is still starting up. It should be ready in a few seconds."
-msgstr "Layanan host lokal masih dimulai. Seharusnya siap dalam beberapa detik."
-
 msgid "The local host service is unavailable for {organization} on {device}. Status: {status}. {recovery}"
 msgstr "Layanan host lokal tidak tersedia untuk {organization} di {device}. Status: {status}. {recovery}"
 
@@ -13986,9 +14165,6 @@ msgstr "Layanan host lokal tidak berjalan, jadi tidak ada yang bisa melayani wor
 
 msgid "The local host service just came up. Reconnecting to it now."
 msgstr "Layanan host lokal baru saja aktif. Menyambungkan kembali sekarang."
-
-msgid "The local host service stopped answering. Retry first; if that doesn't take, restart it from the Superset tray menu > Host Service > Restart."
-msgstr "Layanan host lokal berhenti merespons. Coba lagi dulu; kalau tidak berhasil, mulai ulang dari menu tray Superset > Host Service > Restart."
 
 msgid "The majority of merged agent PRs need review only, with zero human edits."
 msgstr "Mayoritas PR agen yang di-merge hanya perlu direview, tanpa suntingan manusia."
@@ -14028,9 +14204,6 @@ msgstr "Orang-orang di balik Superset."
 
 msgid "The recovery period has ended. Contact support@superset.sh."
 msgstr "Masa pemulihan sudah berakhir. Hubungi support@superset.sh."
-
-msgid "The relay couldn't reach that device right now. This is usually temporary — retrying in a moment normally works."
-msgstr "Relay tidak bisa menjangkau perangkat itu saat ini. Ini biasanya sementara — coba lagi sebentar lagi biasanya berhasil."
 
 msgid "The remote branch has diverged. Pull before continuing."
 msgstr "Branch remote sudah menyimpang. Lakukan pull sebelum melanjutkan."
@@ -14108,6 +14281,9 @@ msgstr "UI agen di web masih pratinjau baca-saja untuk saat ini."
 msgid "The workspace is not ready yet. Try again."
 msgstr "Workspace belum siap. Coba lagi."
 
+msgid "The workspace may still have been created. This screen opens it if it appears."
+msgstr "Workspace mungkin tetap dibuat. Layar ini akan membukanya jika muncul."
+
 msgid "The worktree and any uncommitted changes will be removed. This cannot be undone."
 msgstr "Worktree beserta perubahan yang belum di-commit akan dihapus. Ini tidak bisa dibatalkan."
 
@@ -14135,6 +14311,9 @@ msgstr "Perintah ini berjalan otomatis saat workspace dibuat. <0>Baca dokumentas
 msgid "These ports are still in use"
 msgstr "Port ini masih dipakai"
 
+msgid "Thinking"
+msgstr "Pemikiran"
+
 msgid "Thinking about the approach"
 msgstr "Memikirkan pendekatannya"
 
@@ -14155,6 +14334,13 @@ msgstr "Aplikasi ini akan bisa:"
 
 msgid "This application will have access to data in the selected organization."
 msgstr "Aplikasi ini akan punya akses ke data di organisasi yang dipilih."
+
+#. placeholder {0}: params?.organizationName
+msgid "This automation belongs to {0}. Switch to that organization to open it."
+msgstr "Otomatisasi ini milik {0}. Ganti ke organisasi tersebut untuk membukanya."
+
+msgid "This automation is in another organization"
+msgstr "Otomatisasi ini berada di organisasi lain"
 
 msgid "This cannot be undone."
 msgstr "Ini tidak bisa dibatalkan."
@@ -14197,6 +14383,12 @@ msgstr "Instalasi GitHub ini sudah terhubung ke organisasi Superset lain. Putusk
 
 msgid "This host"
 msgstr "Host ini"
+
+msgid "This host has not reported a version yet."
+msgstr "Host ini belum melaporkan versi."
+
+msgid "This host is behind the app you are using. Workspaces still open, but newer features may fail on it."
+msgstr "Host ini tertinggal dari aplikasi yang Anda gunakan. Workspace masih terbuka, tetapi fitur baru mungkin gagal di sana."
 
 msgid "This host needs an update"
 msgstr "Host ini perlu diperbarui"
@@ -14273,6 +14465,9 @@ msgstr "Plugin ini tidak memerlukan akun — Skill-nya siap dipakai."
 msgid "This port is still in use"
 msgstr "Port ini masih dipakai"
 
+msgid "This profile is busy right now"
+msgstr "Profil ini sedang sibuk"
+
 msgid "This project is no longer available on your devices."
 msgstr "Proyek ini sudah tidak tersedia di perangkat Anda."
 
@@ -14317,6 +14512,9 @@ msgstr "Slug ini sudah dipakai"
 
 msgid "This stops every Teams trigger in your organization and removes the notification subscriptions from your tenant. You can reconnect at any time."
 msgstr "Ini menghentikan setiap pemicu Teams di organisasi Anda dan menghapus langganan notifikasi dari tenant Anda. Anda bisa menghubungkan ulang kapan saja."
+
+msgid "This subagent is no longer tracked by the host. Its transcript stays on disk under the agent's session directory."
+msgstr "Subagen ini tidak lagi dilacak oleh host. Transkripnya tetap tersimpan di disk pada direktori sesi agen."
 
 msgid "This terminal has no output to hand over yet."
 msgstr "Terminal ini belum punya keluaran untuk diserahkan."
@@ -14382,9 +14580,6 @@ msgstr "Ini akan menghentikan sesi beserta proses di baliknya."
 msgid "This will unstage and revert all staged changes. Staged new files will be deleted. This cannot be undone."
 msgstr "Ini akan meng-unstage dan mengembalikan semua perubahan yang di-stage. File baru yang di-stage akan dihapus. Ini tidak bisa dibatalkan."
 
-msgid "This workspace lives on a device Superset can't reach right now. Terminals, files, and agents stay put — they come back as soon as the connection does."
-msgstr "Workspace ini ada di perangkat yang tidak bisa dijangkau Superset saat ini. Terminal, file, dan agen tetap di tempatnya — semuanya kembali begitu koneksinya pulih."
-
 msgid "This workspace may have been removed, or you no longer have access to it."
 msgstr "Workspace ini mungkin sudah dihapus, atau Anda sudah tidak punya akses ke sana."
 
@@ -14394,8 +14589,8 @@ msgstr "Catatan workspace ini masih ada, tapi folder worktree-nya sudah tidak ad
 msgid "This workspace's host is offline"
 msgstr "Host workspace ini sedang offline"
 
-msgid "This workspace's host is on an older version of Superset than this client supports. Update the Superset app on that device to reconnect."
-msgstr "Host workspace ini memakai versi Superset yang lebih lama daripada yang didukung klien ini. Perbarui aplikasi Superset di perangkat itu untuk tersambung lagi."
+msgid "This workspace's host runs an older host service than this app supports. Update it to reconnect; the workspace and its files are untouched."
+msgstr "Host workspace ini menjalankan layanan host yang lebih lama dari yang didukung aplikasi ini. Perbarui untuk tersambung kembali; workspace dan berkasnya tidak tersentuh."
 
 msgid "Thorough reasoning effort"
 msgstr "Upaya penalaran menyeluruh"
@@ -14417,9 +14612,6 @@ msgstr "Tingkat"
 
 msgid "Time range"
 msgstr "Rentang waktu"
-
-msgid "Timed out waiting for the host to create the workspace."
-msgstr "Kehabisan waktu menunggu host membuat workspace."
 
 msgid "Title"
 msgstr "Judul"
@@ -14523,6 +14715,9 @@ msgstr "Terlalu banyak mesin yang mempublikasikan untuk akun ini."
 msgid "Too many messages. Please try again later."
 msgstr "Terlalu banyak pesan. Silakan coba lagi nanti."
 
+msgid "Too many people are looking at once. Try again shortly."
+msgstr "Terlalu banyak orang yang melihat sekaligus. Coba lagi sebentar lagi."
+
 msgid "Too many prompt submissions. Try again later."
 msgstr "Terlalu banyak prompt yang dikirim. Coba lagi nanti."
 
@@ -14534,6 +14729,12 @@ msgstr "Terlalu banyak laporan dukungan. Coba lagi nanti."
 
 msgid "Too many untitled items here already."
 msgstr "Sudah terlalu banyak item tanpa judul di sini."
+
+msgid "Too old for this app to talk to. Update the Superset app on that device to reconnect."
+msgstr "Terlalu lama untuk berkomunikasi dengan aplikasi ini. Perbarui aplikasi Superset di perangkat itu untuk tersambung kembali."
+
+msgid "Too old for this app to talk to. Workspaces on this host will not open until it is updated."
+msgstr "Terlalu lama untuk berkomunikasi dengan aplikasi ini. Workspace di host ini tidak akan terbuka sampai diperbarui."
 
 msgid "Tools"
 msgstr "Alat"
@@ -14633,6 +14834,9 @@ msgstr "Coba kata kunci lain atau perangkat lain."
 
 msgid "Try again"
 msgstr "Coba lagi"
+
+msgid "Try again, or restart the host service from the Superset tray menu."
+msgstr "Coba lagi, atau mulai ulang layanan host dari menu Superset di baki sistem."
 
 msgid "Try again. If the problem continues, reload Superset."
 msgstr "Coba lagi. Kalau masih bermasalah, muat ulang Superset."
@@ -14911,6 +15115,9 @@ msgstr "Berikutnya"
 msgid "Up Next"
 msgstr "Berikutnya"
 
+msgid "Up to date"
+msgstr "Terbaru"
+
 msgid "Update"
 msgstr "Perbarui"
 
@@ -14932,6 +15139,9 @@ msgstr "Perbarui daemon"
 msgid "Update Error"
 msgstr "Kesalahan Pembaruan"
 
+msgid "Update host service"
+msgstr "Perbarui layanan host"
+
 msgid "Update naming instructions"
 msgstr "Perbarui instruksi penamaan"
 
@@ -14942,8 +15152,14 @@ msgstr "Perbarui instruksi penamaan untuk {0}"
 msgid "Update Required"
 msgstr "Pembaruan Diperlukan"
 
+msgid "Update Superset on that device. In-app updates require a supported standalone install and a released app version."
+msgstr "Perbarui Superset di perangkat tersebut. Pembaruan dari aplikasi memerlukan instalasi mandiri yang didukung dan versi aplikasi yang telah dirilis."
+
 msgid "update the branch prefix"
 msgstr "memperbarui prefix branch"
+
+msgid "Updated"
+msgstr "Diperbarui"
 
 msgid "Updated {date}"
 msgstr "Diperbarui {date}"
@@ -14951,8 +15167,16 @@ msgstr "Diperbarui {date}"
 msgid "Updated {updatedRelative}"
 msgstr "Diperbarui {updatedRelative}"
 
+#. placeholder {0}: previousVersion ?? "?"
+msgid "Updated just now from {0}."
+msgstr "Baru saja diperbarui dari {0}."
+
 msgid "Updates"
 msgstr "Pembaruan"
+
+#. placeholder {0}: update.progress.target
+msgid "Updating to {0}"
+msgstr "Memperbarui ke {0}"
 
 msgid "Updating…"
 msgstr "Memperbarui…"
@@ -14972,6 +15196,9 @@ msgstr "Unggah file"
 
 msgid "Upload image…"
 msgstr "Unggah gambar…"
+
+msgid "Uptime"
+msgstr "Waktu aktif"
 
 msgid "Uptime SLA"
 msgstr "SLA uptime"
@@ -15122,6 +15349,9 @@ msgstr "Versi {0}"
 msgid "Version {version}"
 msgstr "Versi {version}"
 
+msgid "Version {version} installs the next time you restart."
+msgstr "Versi {version} akan dipasang saat Anda memulai ulang berikutnya."
+
 msgid "Version {version} is the latest version."
 msgstr "Versi {version} adalah versi terbaru."
 
@@ -15133,6 +15363,9 @@ msgstr "Riwayat versi"
 
 msgid "Version not found"
 msgstr "Versi tidak ditemukan"
+
+msgid "Version unknown"
+msgstr "Versi tidak diketahui"
 
 msgid "Video"
 msgstr "Video"
@@ -15234,6 +15467,9 @@ msgstr "Menunggu Review"
 msgid "Waiting for sign-in…"
 msgstr "Menunggu proses masuk…"
 
+msgid "Waiting for the subagent's first message…"
+msgstr "Menunggu pesan pertama dari subagen…"
+
 msgid "Waitlist signups"
 msgstr "Pendaftaran daftar tunggu"
 
@@ -15267,6 +15503,9 @@ msgstr "Kami tidak bisa menagih metode pembayaran Anda. Perbarui untuk mempertah
 msgid "We couldn't detect a package manager or environment config."
 msgstr "Kami tidak menemukan package manager atau konfigurasi environment."
 
+msgid "We couldn't reach the device. Please try again in a moment."
+msgstr "Perangkat tidak dapat dijangkau. Coba lagi sebentar lagi."
+
 msgid "We do not forecast full self-driving in 2026 or 2027. The honest unknowns: whether agent review holds up against adversarial complexity, whether specification can replace code reading as the trust anchor at scale, and whether compute economics keep the overnight shift cheaper than the humans it augments. F5 is a rubric entry so we recognize it when we see it, not a promise."
 msgstr "Kami tidak memperkirakan full self-driving pada 2026 atau 2027. Yang jujur belum diketahui: apakah review oleh agen bertahan menghadapi kompleksitas yang bermusuhan, apakah spesifikasi bisa menggantikan pembacaan kode sebagai jangkar kepercayaan dalam skala besar, dan apakah ekonomi komputasi menjaga shift malam tetap lebih murah daripada manusia yang dibantunya. F5 adalah entri rubrik supaya kami mengenalinya saat melihatnya, bukan sebuah janji."
 
@@ -15278,6 +15517,9 @@ msgstr "Kami mengirim tautan unduhan ke {submittedEmail}."
 
 msgid "We'll be in touch shortly."
 msgstr "Kami akan segera menghubungi Anda."
+
+msgid "We'll bring you back as soon as we reconnect."
+msgstr "Anda akan kembali begitu koneksi tersambung lagi."
 
 msgid "We'll get back to you shortly."
 msgstr "Kami akan segera menghubungi Anda kembali."
@@ -15291,17 +15533,14 @@ msgstr "Kami hanya memakainya untuk mengirim tautan unduhan Anda."
 msgid "We're hiring"
 msgstr "Kami sedang merekrut"
 
-msgid "We're hiring engineers"
-msgstr "Kami sedang merekrut engineer"
-
-msgid "We're hiring engineers in San Francisco"
-msgstr "Kami sedang merekrut engineer di San Francisco"
-
 msgid "We're hiring engineers in San Francisco. Help us build the first software factory platform."
 msgstr "Kami merekrut engineer di San Francisco. Bantu kami membangun platform software factory pertama."
 
 msgid "We're hiring in San Francisco"
 msgstr "Kami sedang merekrut di San Francisco"
+
+msgid "We're looking for design partners to help shape our cloud offering. Tell us about your workflow and we'll be in touch to explore working together."
+msgstr "Kami mencari mitra pengembangan untuk membantu membentuk layanan awan kami. Ceritakan alur kerja Anda dan kami akan menghubungi Anda untuk menjajaki kerja sama."
 
 msgid "We're rebuilding this feature. Check back soon."
 msgstr "Kami sedang membangun ulang fitur ini. Cek lagi nanti."
@@ -15418,11 +15657,17 @@ msgstr "Apa itu Superset, siapa yang membangunnya, dan untuk siapa. Tim San Fran
 msgid "What the content is doing: which pages sessions start on, and how much is being published."
 msgstr "Apa yang dilakukan konten: di halaman mana sesi dimulai, dan seberapa banyak yang dipublikasikan."
 
+msgid "What these were written against is no longer on the page, so they have no pin."
+msgstr "Yang menjadi acuannya sudah tidak ada di halaman, jadi tidak punya penanda."
+
 msgid "What We're Building"
 msgstr "Yang Sedang Kami Bangun"
 
 msgid "What we're building now and next."
 msgstr "Apa yang kami bangun sekarang dan berikutnya."
+
+msgid "What would you like to build with Superset in the cloud?"
+msgstr "Apa yang ingin Anda bangun dengan Superset di komputasi awan?"
 
 msgid "What would you like to know?"
 msgstr "Apa yang ingin Anda ketahui?"
@@ -15510,6 +15755,9 @@ msgstr "Dengan label"
 
 msgid "with or without attachments"
 msgstr "dengan atau tanpa lampiran"
+
+msgid "Work email"
+msgstr "Email kerja"
 
 msgid "Work from tickets"
 msgstr "Bekerja dari tiket"
@@ -15730,9 +15978,6 @@ msgstr "Tindakan ini tidak bisa dibatalkan. Panel terminal akan menampilkan \"Pr
 
 msgid "You don't have access to this host"
 msgstr "Anda tidak punya akses ke host ini"
-
-msgid "You don't have access to this host. If it's your own device, turn on relay access there under Settings > Security."
-msgstr "Anda tidak punya akses ke host ini. Kalau ini perangkat Anda sendiri, aktifkan akses relay di sana lewat Pengaturan > Keamanan."
 
 msgid "You don't have access to this terminal."
 msgstr "Anda tidak punya akses ke terminal ini."

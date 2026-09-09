@@ -90,6 +90,9 @@ msgstr "(wyłączona)"
 msgid "(external)"
 msgstr "(zewnętrzny)"
 
+msgid "(no output)"
+msgstr "(brak wyniku)"
+
 #. placeholder {0}: ports.length
 msgid "{0, plural, one {# active port — hide details} other {# active ports — hide details}}"
 msgstr "{0, plural, one {# aktywny port — ukryj szczegóły} few {# aktywne porty — ukryj szczegóły} many {# aktywnych portów — ukryj szczegóły} other {# aktywnego portu — ukryj szczegóły}}"
@@ -199,6 +202,10 @@ msgstr "{0, plural, one {# sesja działa} few {# sesje działają} many {# sesji
 msgid "{0, plural, one {# skipped} other {# skipped}}"
 msgstr "{0, plural, one {# pominięty} few {# pominięte} many {# pominiętych} other {# pominiętego}}"
 
+#. placeholder {0}: subagents.length
+msgid "{0, plural, one {# subagent} other {# subagents}}"
+msgstr "{0, plural, one {# subagent} few {# subagenty} many {# subagentów} other {# subagenta}}"
+
 #. placeholder {0}: TASKS.length
 msgid "{0, plural, one {# task} other {# tasks}}"
 msgstr "{0, plural, one {# zadanie} few {# zadania} many {# zadań} other {# zadania}}"
@@ -276,6 +283,10 @@ msgstr "{0} – {1} · szacunek wg stawek API z lokalnych logów sesji"
 #. placeholder {0}: error.message
 msgid "{0} — try the Superset tray menu > Host Service > Restart."
 msgstr "{0} — spróbuj przez menu zasobnika Superset > Usługa hosta > Uruchom ponownie."
+
+#. placeholder {0}: host.version
+msgid "{0} · behind"
+msgstr "{0} · nieaktualny"
 
 #. placeholder {0}: creator.name
 msgid "{0} (you)"
@@ -605,6 +616,9 @@ msgstr "{count, plural, one {Użyto # źródła} few {Użyto # źródeł} many {
 msgid "{count} GitHub stars"
 msgstr "{count} gwiazdek GitHub"
 
+msgid "{count} hosts run an older host service than this app"
+msgstr "{count} hostów działa na starszej usłudze hosta niż ta aplikacja"
+
 msgid "{count}/day"
 msgstr "{count}/dzień"
 
@@ -661,6 +675,9 @@ msgstr "{hidden, plural, one {# ukryty wiersz} few {# ukryte wiersze} many {# uk
 
 msgid "{hidden, plural, one {Show # hidden line} other {Show # hidden lines}}"
 msgstr "{hidden, plural, one {Pokaż # ukryty wiersz} few {Pokaż # ukryte wiersze} many {Pokaż # ukrytych wierszy} other {Pokaż # ukrytego wiersza}}"
+
+msgid "{hidden, plural, one {Show # reply} other {Show # replies}}"
+msgstr "{hidden, plural, one {Pokaż # odpowiedź} few {Pokaż # odpowiedzi} many {Pokaż # odpowiedzi} other {Pokaż # odpowiedzi}}"
 
 msgid "{hiddenCount, plural, one {Show # more frame} other {Show # more frames}}"
 msgstr "{hiddenCount, plural, one {Pokaż # kolejną ramkę} few {Pokaż # kolejne ramki} many {Pokaż # kolejnych ramek} other {Pokaż # kolejnej ramki}}"
@@ -835,6 +852,9 @@ msgstr "{skipped, plural, one {# pominięty} few {# pominięte} many {# pominię
 
 msgid "{starCount} stars and counting"
 msgstr "{starCount} gwiazdek i rośnie"
+
+msgid "{subagentCount, plural, one {# subagent running} other {# subagents running}}"
+msgstr "{subagentCount, plural, one {# subagent działa} few {# subagenty działają} many {# subagentów działa} other {# subagenta działa}}"
 
 msgid "{successCount, plural, one {Created # workspace, {failCount} failed} other {Created # workspaces, {failCount} failed}}"
 msgstr "{successCount, plural, one {Utworzono # obszar roboczy, {failCount} nieudanych} few {Utworzono # obszary robocze, {failCount} nieudanych} many {Utworzono # obszarów roboczych, {failCount} nieudanych} other {Utworzono # obszaru roboczego, {failCount} nieudanych}}"
@@ -1222,6 +1242,9 @@ msgstr "Przyjmij zaproszenie"
 
 msgid "Accept terms"
 msgstr "Akceptuję warunki"
+
+msgid "Access denied"
+msgstr "Odmowa dostępu"
 
 msgid "Access your email address"
 msgstr "Uzyskać dostęp do Twojego adresu e-mail"
@@ -1632,6 +1655,9 @@ msgstr "Wszystkie kontrole przeszły"
 msgid "All checks skipped or cancelled"
 msgstr "Wszystkie kontrole pominięte lub anulowane"
 
+msgid "All comments"
+msgstr "Wszystkie komentarze"
+
 msgid "All commits"
 msgstr "Wszystkie commity"
 
@@ -1801,6 +1827,9 @@ msgstr "Izolowany worktree gita, w którym agent pracuje bez dotykania Twojego g
 msgid "An unknown error occurred"
 msgstr "Wystąpił nieznany błąd"
 
+msgid "An update is ready to install."
+msgstr "Aktualizacja jest gotowa do zainstalowania."
+
 msgid "Animate the active terminal cursor."
 msgstr "Animuj kursor w aktywnym terminalu."
 
@@ -1927,6 +1956,9 @@ msgstr "równowartość API"
 msgid "API-equivalent cost"
 msgstr "Koszt w przeliczeniu na API"
 
+msgid "app {appVersion}"
+msgstr "aplikacja {appVersion}"
+
 msgid "App display language"
 msgstr "Język interfejsu aplikacji"
 
@@ -2001,6 +2033,9 @@ msgstr "Argv używane do uruchomienia agenta."
 
 msgid "Artifact"
 msgstr "Artefakt"
+
+msgid "As last reported. The host must be online to update."
+msgstr "Według ostatniego zgłoszenia. Host musi być online, aby się zaktualizować."
 
 msgid "ascending"
 msgstr "rosnąco"
@@ -2191,9 +2226,6 @@ msgstr "Automatyzacje ({myFailedCount} nieudanych)"
 msgid "Automations & event triggers"
 msgstr "Automatyzacje i wyzwalacze zdarzeń"
 
-msgid "Automations docs"
-msgstr "Dokumentacja automatyzacji"
-
 msgid "Automations, {myFailedCount} failing"
 msgstr "Automatyzacje, {myFailedCount} nieudanych"
 
@@ -2270,6 +2302,9 @@ msgstr "Wróć do stron"
 msgid "Back to tasks"
 msgstr "Wróć do zadań"
 
+msgid "Back to the leaderboard"
+msgstr "Wróć do rankingu"
+
 msgid "Background"
 msgstr "Tło"
 
@@ -2321,6 +2356,9 @@ msgstr "na podstawie PR #{0}"
 #. placeholder {1}: preview.providers.join(" and ")
 msgid "Based on {0} tokens in the last 30 days, counting {1}."
 msgstr "Na podstawie {0} tokenów z ostatnich 30 dni, licząc {1}."
+
+msgid "Become a design partner"
+msgstr "Zostań partnerem projektowym"
 
 msgid "Before"
 msgstr "Przed"
@@ -2524,6 +2562,9 @@ msgstr "Historia przeglądania"
 msgid "Bug"
 msgstr "Robak"
 
+msgid "Build the future of Superset in the cloud"
+msgstr "Twórz przyszłość Superset w chmurze"
+
 msgid "Building the last piece of software"
 msgstr "Budujemy ostatni kawałek oprogramowania"
 
@@ -2542,6 +2583,12 @@ msgstr "Lista punktowana"
 #. placeholder {0}: versions.expected
 msgid "bundled {0}"
 msgstr "dołączona {0}"
+
+msgid "Bundled with the Superset app on this device."
+msgstr "Dołączony do aplikacji Superset na tym urządzeniu."
+
+msgid "Bundled with the Superset app on this device. Updates with the app."
+msgstr "Dołączony do aplikacji Superset na tym urządzeniu. Aktualizuje się razem z aplikacją."
 
 msgid "Burn by vendor (Mercury)"
 msgstr "Wypływ gotówki wg dostawcy (Mercury)"
@@ -2638,6 +2685,9 @@ msgstr "Czy mogę używać własnych kluczy API?"
 
 msgid "Can you standardize the tooltips across the app?"
 msgstr "Czy możesz ujednolicić tooltipy w całej aplikacji?"
+
+msgid "Can't connect right now"
+msgstr "Nie można teraz się połączyć"
 
 msgid "Can't open remote workspace paths in an external editor"
 msgstr "Nie można otwierać ścieżek zdalnego obszaru roboczego w zewnętrznym edytorze"
@@ -2832,6 +2882,9 @@ msgstr "Sprawdź zasoby"
 
 msgid "Check the rendered prompt and launch output before saving"
 msgstr "Sprawdź wyrenderowany prompt i wynik uruchomienia przed zapisaniem"
+
+msgid "Check your access under Settings > Security on that device."
+msgstr "Sprawdź swój dostęp w Ustawienia > Bezpieczeństwo na tym urządzeniu."
 
 msgid "Check your connection and try again"
 msgstr "Sprawdź połączenie i spróbuj ponownie"
@@ -3110,6 +3163,9 @@ msgstr "Zamknij czat"
 msgid "Close Comment"
 msgstr "Zamknij komentarz"
 
+msgid "Close comments"
+msgstr "Zamknij komentarze"
+
 msgid "Close Diff"
 msgstr "Zamknij różnice"
 
@@ -3154,6 +3210,9 @@ msgid "Close preview"
 msgstr "Zamknij podgląd"
 
 msgid "Close pull request"
+msgstr "Zamknij pull request"
+
+msgid "Close Pull Request"
 msgstr "Zamknij pull request"
 
 msgid "Close review filter"
@@ -3215,6 +3274,9 @@ msgstr "Zamknięcie tego terminala zakończy działający proces."
 
 msgid "Cloud"
 msgstr "Chmura"
+
+msgid "Cloud is coming. Become a design partner"
+msgstr "Chmura już wkrótce. Zostań partnerem projektowym"
 
 msgid "Cloud sandboxes"
 msgstr "Piaskownice w chmurze"
@@ -3950,6 +4012,12 @@ msgstr "Nie można połączyć się z pulpitem."
 msgid "Could not reach the host to load this pull request."
 msgstr "Nie udało się połączyć z hostem, aby wczytać ten pull request."
 
+msgid "Could not reach the host to start the update. Check that it is online and try again."
+msgstr "Nie udało się połączyć z hostem, aby rozpocząć aktualizację. Sprawdź, czy jest online, i spróbuj ponownie."
+
+msgid "Could not reach the server."
+msgstr "Nie można połączyć się z serwerem."
+
 msgid "Could not reach this workspace's machine"
 msgstr "Nie udało się połączyć z maszyną tego obszaru roboczego"
 
@@ -3970,6 +4038,9 @@ msgstr "Nie udało się zapisać obszaru roboczego w chmurze"
 
 msgid "Could not reopen"
 msgstr "Nie udało się otworzyć ponownie"
+
+msgid "Could not restart the host service"
+msgstr "Nie udało się ponownie uruchomić usługi hosta"
 
 msgid "Could not send"
 msgstr "Nie udało się wysłać"
@@ -4019,6 +4090,9 @@ msgstr "Nie udało się obserwować tej strony"
 
 msgid "Couldn't confirm star status — check that the GitHub CLI (`gh`) is installed, signed in, and that you have a network connection"
 msgstr "Nie udało się potwierdzić statusu gwiazdki — sprawdź, czy GitHub CLI (`gh`) jest zainstalowane, zalogowane i czy masz połączenie z siecią"
+
+msgid "Couldn't connect (error {status}). Please try again."
+msgstr "Nie udało się połączyć (błąd {status}). Spróbuj ponownie."
 
 msgid "Couldn't copy branch name"
 msgstr "Nie udało się skopiować nazwy gałęzi"
@@ -4083,9 +4157,6 @@ msgstr "Nie udało się opublikować odpowiedzi"
 #. placeholder {1}: first.message
 msgid "Couldn't reach cloud for {0}: {1}"
 msgstr "Nie udało się połączyć z chmurą dla {0}: {1}"
-
-msgid "Couldn't reach the relay service. Check this machine's network connection — the other device is probably fine."
-msgstr "Nie udało się połączyć z usługą przekaźnika. Sprawdź połączenie sieciowe tej maszyny — z drugim urządzeniem prawdopodobnie wszystko w porządku."
 
 msgid "Couldn't read this terminal's context."
 msgstr "Nie udało się odczytać kontekstu tego terminala."
@@ -4192,11 +4263,11 @@ msgstr "Utwórz zespół"
 msgid "Create a workspace for the auth feature on my MacBook"
 msgstr "Utwórz obszar roboczy dla funkcji auth na moim MacBooku"
 
+msgid "Create again"
+msgstr "Utwórz ponownie"
+
 msgid "Create an account"
 msgstr "Utwórz konto"
-
-msgid "Create an automation with an agent"
-msgstr "Utwórz automatyzację z agentem"
 
 msgid "Create failed: {message}"
 msgstr "Tworzenie nie powiodło się: {message}"
@@ -4796,6 +4867,9 @@ msgstr "Programista"
 msgid "Developers"
 msgstr "Programiści"
 
+msgid "Development build"
+msgstr "Kompilacja deweloperska"
+
 msgid "Device: {selectedLabel}"
 msgstr "Urządzenie: {selectedLabel}"
 
@@ -4813,6 +4887,9 @@ msgstr "Dyktuj"
 
 msgid "Dictation is not available on this device"
 msgstr "Dyktowanie jest niedostępne na tym urządzeniu"
+
+msgid "Didn't hear back"
+msgstr "Brak odpowiedzi"
 
 msgid "diff"
 msgstr "różnice"
@@ -5065,6 +5142,9 @@ msgstr "Pobierz plik motywu"
 msgid "downloaded"
 msgstr "pobrano"
 
+msgid "Downloading"
+msgstr "Pobieranie"
+
 msgid "Downloading..."
 msgstr "Pobieranie..."
 
@@ -5192,7 +5272,7 @@ msgstr "Początek 2027"
 msgid "Early 2028"
 msgstr "Początek 2028"
 
-#. placeholder {0}: formatDate(new Date(`${awardedOn}T00:00:00Z`), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC", })
+#. placeholder {0}: formatDate( new Date(`${awardedOn}T00:00:00Z`), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC", }, i18n.locale, )
 msgid "Earned {0}"
 msgstr "Zdobyto {0}"
 
@@ -5408,9 +5488,6 @@ msgstr "Każdy agent działa we własnym worktree gita, więc dziesięciu agent�
 msgid "Every axis is carrying its weight for the next tier. Hold it and the tier follows."
 msgstr "Każda oś pracuje na następny poziom. Utrzymaj to, a poziom przyjdzie sam."
 
-msgid "Every Friday at 4pm, draft release notes from this week's merged PRs"
-msgstr "W każdy piątek o 16:00 przygotuj notatki wydania z PR-ów scalonych w tym tygodniu"
-
 msgid "Every Friday at 4pm, draft release notes from this week's merged PRs."
 msgstr "W każdy piątek o 16:00 przygotuj notatki wydania z PR-ów scalonych w tym tygodniu."
 
@@ -5431,9 +5508,6 @@ msgstr "W każdą środę o 9:00 przejrzyj scalone w tym tygodniu PR-y i zaktual
 
 msgid "Every weekday at 9am, read new GitHub issues, apply labels, and draft a first reply for my review."
 msgstr "W każdy dzień roboczy o 9:00 przeczytaj nowe zgłoszenia GitHub, nadaj etykiety i przygotuj pierwszą odpowiedź do mojego przeglądu."
-
-msgid "Every weekday at 9am, triage new GitHub issues and draft replies for my review"
-msgstr "W każdy dzień roboczy o 9:00 posegreguj nowe zgłoszenia GitHub i przygotuj odpowiedzi do mojego przeglądu"
 
 msgid "Everyone argues about whether this generalizes. That argument is the sign the level was reached."
 msgstr "Wszyscy spierają się, czy to się uogólnia. Ten spór jest znakiem, że poziom został osiągnięty."
@@ -6200,6 +6274,9 @@ msgstr "Finder"
 msgid "Finish review"
 msgstr "Zakończ przegląd"
 
+msgid "Finished"
+msgstr "Zakończono"
+
 msgid "finished · worked for 7s"
 msgstr "zakończono · pracował 7 s"
 
@@ -6400,6 +6477,9 @@ msgstr "Darmowy"
 
 msgid "Free for everyone"
 msgstr "Za darmo dla wszystkich"
+
+msgid "Free plan available · No credit card required"
+msgstr "Dostępny bezpłatny plan · Bez karty kredytowej"
 
 msgid "Frequently<0/>asked questions"
 msgstr "Często<0/>zadawane pytania"
@@ -6741,6 +6821,9 @@ msgstr "Ukryj listę pull requestów"
 msgid "Hide pull request preview"
 msgstr "Ukryj podgląd pull requesta"
 
+msgid "Hide resolved ({resolvedCount})"
+msgstr "Ukryj rozwiązane ({resolvedCount})"
+
 msgid "Hide review comments"
 msgstr "Ukryj komentarze przeglądu"
 
@@ -6793,6 +6876,9 @@ msgstr "Nie znaleziono hosta w tej organizacji"
 msgid "Host not found in this organization."
 msgstr "Nie znaleziono hosta w tej organizacji."
 
+msgid "Host service"
+msgstr "Usługa hosta"
+
 msgid "Host Service"
 msgstr "Usługa hosta"
 
@@ -6808,8 +6894,15 @@ msgstr "Usługa hosta nie działa"
 msgid "Host service is starting…"
 msgstr "Usługa hosta się uruchamia…"
 
+msgid "Host service restarted"
+msgstr "Usługa hosta uruchomiona ponownie"
+
 msgid "Host service unavailable"
 msgstr "Usługa hosta niedostępna"
+
+#. placeholder {0}: update.progress.target
+msgid "Host service updated to {0}"
+msgstr "Usługa hosta zaktualizowana do {0}"
 
 msgid "Host settings"
 msgstr "Ustawienia hosta"
@@ -6819,9 +6912,6 @@ msgstr "Host niedostępny"
 
 msgid "Host unavailable: {hostName}"
 msgstr "Host niedostępny: {hostName}"
-
-msgid "Host unreachable"
-msgstr "Host nieosiągalny"
 
 msgid "Hosted in the cloud"
 msgstr "Hostowany w chmurze"
@@ -7173,6 +7263,9 @@ msgstr "Zainstalowane"
 #. js-lingui-explicit-id
 msgid "serverError.plugins.marketplaceHasInstalls"
 msgstr "Zainstalowane wtyczki pochodzą z {name}: {plugins}. Najpierw je usuń."
+
+msgid "Installed via"
+msgstr "Zainstalowano przez"
 
 msgid "Installing..."
 msgstr "Instalowanie..."
@@ -7535,6 +7628,9 @@ msgstr "Ostatni dzień każdego miesiąca o {time}"
 msgid "Last run"
 msgstr "Ostatnie uruchomienie"
 
+msgid "Last seen"
+msgstr "Ostatnio widziany"
+
 msgid "Last updated"
 msgstr "Ostatnia aktualizacja"
 
@@ -7829,6 +7925,9 @@ msgstr "Wskaźniki ładowania i trwającej aktywności"
 msgid "Loading changes..."
 msgstr "Wczytywanie zmian..."
 
+msgid "Loading comments…"
+msgstr "Wczytywanie komentarzy…"
+
 msgid "Loading contributors…"
 msgstr "Wczytywanie współtwórców…"
 
@@ -7990,6 +8089,9 @@ msgstr "Ustaw jako domyślne"
 
 msgid "Make default — launch new terminals and agents on this account."
 msgstr "Ustaw jako domyślne — uruchamiaj nowe terminale i agentów na tym koncie."
+
+msgid "Make sure the device is awake, online, and running Superset."
+msgstr "Upewnij się, że urządzenie jest wybudzone, ma dostęp do internetu i działa na nim Superset."
 
 msgid "Make the chip style the TooltipContent default"
 msgstr "Ustaw styl chipa jako domyślny dla TooltipContent"
@@ -8374,6 +8476,9 @@ msgstr "Więcej motywów {kindLower}"
 msgid "More actions"
 msgstr "Więcej akcji"
 
+msgid "More options"
+msgstr "Więcej opcji"
+
 msgid "More pages"
 msgstr "Więcej stron"
 
@@ -8490,6 +8595,12 @@ msgstr "Wymaga uprawnienia"
 msgid "Needs review"
 msgstr "Wymaga przeglądu"
 
+msgid "needs update"
+msgstr "wymaga aktualizacji"
+
+msgid "Needs update"
+msgstr "Wymaga aktualizacji"
+
 msgid "Nerd Fonts"
 msgstr "Nerd Fonts"
 
@@ -8531,6 +8642,9 @@ msgstr "nowi przeciwnicy"
 
 msgid "New chat"
 msgstr "Nowy czat"
+
+msgid "New cloud workspace"
+msgstr "Nowy obszar roboczy w chmurze"
 
 msgid "New environment"
 msgstr "Nowe środowisko"
@@ -8622,6 +8736,12 @@ msgstr "Nowy obszar roboczy w {name}"
 msgid "New-user activation"
 msgstr "Aktywacja nowych użytkowników"
 
+msgid "Newer than this app"
+msgstr "Nowszy niż ta aplikacja"
+
+msgid "Newer than this app. Everything works; update the app to match."
+msgstr "Nowszy niż ta aplikacja. Wszystko działa; zaktualizuj aplikację, aby je wyrównać."
+
 msgid "News & Updates"
 msgstr "Nowości i aktualizacje"
 
@@ -8670,9 +8790,6 @@ msgstr "Dalej: {nextLabel}"
 
 msgid "Nice, open a PR when ready."
 msgstr "Świetnie, otwórz PR, gdy będzie gotowy."
-
-msgid "Nightly at 2am, find one small bug, fix it, and open a PR"
-msgstr "Co noc o 2:00 znajdź jeden mały błąd, napraw go i otwórz PR"
 
 #. placeholder {0}: AGENT_LABELS[agent]
 msgid "No {0} logins on this host — sign in and usage appears here."
@@ -8790,6 +8907,9 @@ msgstr "Brak treści komentarza"
 msgid "No comments yet."
 msgstr "Brak komentarzy."
 
+msgid "No comments yet. Turn on comment mode and click anything on the page to start one."
+msgstr "Nie ma jeszcze komentarzy. Włącz tryb komentowania i kliknij dowolny element strony, aby rozpocząć."
+
 msgid "No commits on this branch yet."
 msgstr "Brak commitów na tej gałęzi."
 
@@ -8888,6 +9008,9 @@ msgstr "Brak ikony"
 
 msgid "No Internet Connection"
 msgstr "Brak połączenia z internetem"
+
+msgid "No internet connection."
+msgstr "Brak połączenia z internetem."
 
 msgid "No issues found."
 msgstr "Nie znaleziono zgłoszeń."
@@ -9253,6 +9376,9 @@ msgstr "Nie teraz"
 msgid "Not on the leaderboard. Opt in first."
 msgstr "Nie ma Cię w rankingu. Najpierw dołącz."
 
+msgid "Not on this version"
+msgstr "Nie ma w tej wersji"
+
 msgid "Not receiving events yet: Microsoft Graph refused the notification subscriptions. Check the app's admin consent and protected API approval, then reconnect."
 msgstr "Brak zdarzeń: Microsoft Graph odrzucił subskrypcje powiadomień. Sprawdź zgodę administratora i zatwierdzenie chronionych API, a potem połącz ponownie."
 
@@ -9510,6 +9636,9 @@ msgstr "Otwórz stronę {0}"
 msgid "Open {filePath}"
 msgstr "Otwórz {filePath}"
 
+msgid "Open {parentLabel}"
+msgstr "Otwórz {parentLabel}"
+
 msgid "Open {path} in file pane"
 msgstr "Otwórz {path} w panelu plików"
 
@@ -9684,6 +9813,9 @@ msgstr "Otwórz w nowej karcie"
 
 msgid "Open in PostHog"
 msgstr "Otwórz w PostHog"
+
+msgid "Open in Pull Requests"
+msgstr "Otwórz w Pull requestach"
 
 msgid "Open in Scira AI"
 msgstr "Otwórz w Scira AI"
@@ -10382,6 +10514,9 @@ msgstr "Odtwórz {label}"
 msgid "Play a sound when tasks complete"
 msgstr "Odtwarzaj dźwięk po zakończeniu zadań"
 
+msgid "Please check your internet connection and try again."
+msgstr "Sprawdź połączenie z internetem i spróbuj ponownie."
+
 msgid "Please enter a project name"
 msgstr "Podaj nazwę projektu"
 
@@ -10393,6 +10528,9 @@ msgstr "Wybierz lokalizację projektu"
 
 msgid "Please select an organization"
 msgstr "Wybierz organizację"
+
+msgid "Please try again, or restart Superset on that device."
+msgstr "Spróbuj ponownie lub uruchom ponownie Superset na tym urządzeniu."
 
 msgid "Please try signing in again from the desktop app."
 msgstr "Spróbuj zalogować się ponownie z aplikacji desktopowej."
@@ -10784,9 +10922,6 @@ msgstr "Publiczne"
 msgid "Public leaderboard"
 msgstr "Publiczny ranking"
 
-msgid "Publish a page from an agent or the CLI and it will show up here."
-msgstr "Opublikuj stronę z agenta lub CLI, a pojawi się tutaj."
-
 msgid "Published"
 msgstr "Opublikowano"
 
@@ -10803,6 +10938,7 @@ msgstr "Publikujesz jako <0>{handle}</0>. Tylko liczby tokenów i nazwy modeli, 
 msgid "Pull request"
 msgstr "Pull request"
 
+#. placeholder {0}: data.prNumber
 #. placeholder {0}: pullRequest.prNumber
 msgid "Pull request #{0}"
 msgstr "Pull request #{0}"
@@ -11532,11 +11668,17 @@ msgstr "Zrestartowano usługi hosta: {restartedOrgCount}"
 msgid "Restarted 1 host service"
 msgstr "Zrestartowano 1 usługę hosta"
 
+msgid "Restarting"
+msgstr "Ponowne uruchamianie"
+
 msgid "Restarting agents on {accountLabel}."
 msgstr "Ponowne uruchamianie agentów na {accountLabel}."
 
 msgid "Restarting host services…"
 msgstr "Restartowanie usług hosta…"
+
+msgid "Restarting…"
+msgstr "Ponowne uruchamianie…"
 
 msgid "Restore"
 msgstr "Przywróć"
@@ -11859,11 +12001,17 @@ msgstr "Uruchamia lokalne polecenie na Twojej maszynie"
 msgid "Runs failed earlier this week, but nothing is failing right now"
 msgstr "Uruchomienia zawiodły wcześniej w tym tygodniu, ale teraz nic się nie psuje"
 
+msgid "Runs inside the Superset app on that device, so updating it means updating the app there."
+msgstr "Działa wewnątrz aplikacji Superset na tamtym urządzeniu, więc aktualizacja oznacza aktualizację aplikacji tam."
+
 msgid "Runs land in a workspace. Review the diff, merge what's good."
 msgstr "Uruchomienia lądują w obszarze roboczym. Przejrzyj różnice, scal to, co dobre."
 
 msgid "Runway"
 msgstr "Runway"
+
+msgid "Same version as this app."
+msgstr "Ta sama wersja co ta aplikacja."
 
 msgid "SAML SSO & SCIM provisioning"
 msgstr "SAML SSO i provisioning SCIM"
@@ -12516,6 +12664,9 @@ msgstr "Nasycenie koloru odnosi się do najbardziej pracowitego dnia tego progra
 msgid "Share"
 msgstr "Udostępnij"
 
+msgid "Share designs and reports. Let your agent handle the feedback."
+msgstr "Udostępniaj projekty i raporty. Pozwól agentowi zająć się opiniami."
+
 msgid "Share page"
 msgstr "Udostępnij stronę"
 
@@ -12563,6 +12714,9 @@ msgstr "Pokaż wszystkie ({count})"
 
 msgid "Show all automations again"
 msgstr "Pokaż ponownie wszystkie automatyzacje"
+
+msgid "Show all comments"
+msgstr "Pokaż wszystkie komentarze"
 
 msgid "Show all lines"
 msgstr "Pokaż wszystkie wiersze"
@@ -12653,6 +12807,9 @@ msgstr "Pokaż listę pull requestów"
 
 msgid "Show pull request preview"
 msgstr "Pokaż podgląd pull requesta"
+
+msgid "Show resolved ({resolvedCount})"
+msgstr "Pokaż rozwiązane ({resolvedCount})"
 
 msgid "Show review comments"
 msgstr "Pokaż komentarze przeglądu"
@@ -13174,6 +13331,9 @@ msgstr "Uruchamianie {agentLabel}"
 msgid "Starting cloud workspace"
 msgstr "Uruchamianie obszaru roboczego w chmurze"
 
+msgid "Starting up. This should only take a moment."
+msgstr "Uruchamianie. To powinno zająć tylko chwilę."
+
 msgid "Starting workspace"
 msgstr "Uruchamianie obszaru roboczego"
 
@@ -13214,6 +13374,9 @@ msgstr "Krok {0} z 2"
 
 msgid "Step {step}: {name}"
 msgstr "Krok {step}: {name}"
+
+msgid "Still can't reach the host."
+msgstr "Host nadal jest nieosiągalny."
 
 msgid "Still working — large repos can take a few minutes. You can leave; the workspace will appear on Home when it's ready."
 msgstr "Wciąż trwa — duże repozytoria mogą zająć kilka minut. Możesz wyjść; obszar roboczy pojawi się na ekranie głównym, gdy będzie gotowy."
@@ -13269,6 +13432,12 @@ msgstr "Struktura, przewijanie i obsługa przepełnienia"
 msgid "Structured progress: chain of thought, tasks, plans"
 msgstr "Ustrukturyzowany postęp: tok rozumowania, zadania, plany"
 
+msgid "Subagent"
+msgstr "Subagent"
+
+msgid "Subagents"
+msgstr "Subagenci"
+
 msgid "Subject contains..."
 msgstr "Temat zawiera..."
 
@@ -13320,9 +13489,6 @@ msgstr "dla interfejsów agentów i wspólne komponenty aplikacji. Kliknij dowol
 msgid "Sum of CPU used by Superset and monitored terminal process trees. Over 100% means multiple CPU cores are busy. Sustained high values usually cause UI sluggishness and higher battery drain."
 msgstr "Suma CPU zużywanego przez Superset i monitorowane drzewa procesów terminala. Ponad 100% oznacza, że pracuje wiele rdzeni. Utrzymujące się wysokie wartości zwykle powodują ociężałość interfejsu i szybsze rozładowanie baterii."
 
-msgid "Summarize failed CI runs every morning before standup"
-msgstr "Podsumuj nieudane uruchomienia CI każdego ranka przed standupem"
-
 msgid "Summary"
 msgstr "Podsumowanie"
 
@@ -13352,6 +13518,9 @@ msgstr "Aplikacja Superset"
 
 msgid "Superset cannot reach api.github.com from this machine. Pull request status retries at {until}."
 msgstr "Superset nie może połączyć się z api.github.com z tego komputera. Stan pull requestów zostanie ponownie sprawdzony o {until}."
+
+msgid "Superset CLI"
+msgstr "Superset CLI"
 
 msgid "Superset components"
 msgstr "Komponenty Superset"
@@ -13825,12 +13994,6 @@ msgstr "Textarea"
 msgid "Thanks for reaching out"
 msgstr "Dziękujemy za kontakt"
 
-msgid "That device is online but the connection couldn't be established — usually relay routing rather than the device itself. Retry, and if it persists restart Superset on that device."
-msgstr "To urządzenie jest online, ale nie udało się nawiązać połączenia — zwykle to kwestia routingu przekaźnika, a nie samego urządzenia. Ponów, a jeśli problem się utrzymuje, uruchom ponownie Superset na tamtym urządzeniu."
-
-msgid "That device isn't connected to the relay. Check it's awake, online, and running Superset — it reconnects on its own once it is."
-msgstr "To urządzenie nie jest połączone z przekaźnikiem. Sprawdź, czy jest wybudzone, online i czy działa na nim Superset — połączy się samo, gdy tak będzie."
-
 msgid "That handle is taken."
 msgstr "Ten pseudonim jest zajęty."
 
@@ -13858,6 +14021,9 @@ msgstr "Agent prowadzi zadanie od zgłoszenia do diffa. Człowiek przegląda wyn
 msgid "The agent this automation was set to run no longer exists on its host — the host's agents may have been reset or removed. Re-select an agent in the automation's settings."
 msgstr "Agent, na którym miała działać ta automatyzacja, już nie istnieje na swoim hoście — agenci hosta mogli zostać zresetowani lub usunięci. Wybierz ponownie agenta w ustawieniach automatyzacji."
 
+msgid "The app is on {appVersion} but attached to a host service started by something else, likely an older CLI or another Superset build. Restarting replaces it with this app's copy."
+msgstr "Aplikacja jest w wersji {appVersion}, ale podłączona do usługi hosta uruchomionej przez coś innego, prawdopodobnie starszą CLI lub inną kompilację Superset. Ponowne uruchomienie zastąpi ją kopią z tej aplikacji."
+
 msgid "The associated device isn't reachable right now"
 msgstr "Powiązane urządzenie jest teraz nieosiągalne"
 
@@ -13866,9 +14032,6 @@ msgstr "Najlepszy agent się zmieni.<0/>Twój workflow nie musi."
 
 msgid "The Codex sign-in"
 msgstr "Logowanie Codex"
-
-msgid "The connection failed (relay status {status}). Retry, and if it persists restart Superset on that device."
-msgstr "Połączenie nie powiodło się (status przekaźnika {status}). Ponów, a jeśli problem się utrzymuje, uruchom ponownie Superset na tamtym urządzeniu."
 
 msgid "The connection timed out"
 msgstr "Przekroczono czas połączenia"
@@ -13942,8 +14105,27 @@ msgstr "Pełny obszar roboczy. Uruchamiaj agentów równolegle, każdego w osobn
 msgid "The future home for reusable Superset agent configs, prompts, and setup guides."
 msgstr "Przyszłe miejsce dla wielokrotnie używanych konfiguracji agentów Superset, promptów i przewodników po konfiguracji."
 
+#. placeholder {0}: info.version
+msgid "The host came back on {0}, not {targetVersion}."
+msgstr "Host wrócił w wersji {0}, a nie {targetVersion}."
+
+msgid "The host did not come back within fifteen minutes."
+msgstr "Host nie wrócił do działania w ciągu piętnastu minut."
+
+msgid "The host hasn't answered."
+msgstr "Host nie odpowiedział."
+
 msgid "The host isn't connected to the Superset relay. If it's this device, turn on \"Allow remote access to this device via relay\" in Settings > Remote Access, then try again."
 msgstr "Host nie jest połączony z przekaźnikiem Superset. Jeśli chodzi o to urządzenie, włącz „Zezwól na zdalny dostęp do tego urządzenia przez przekaźnik” w Ustawienia > Dostęp zdalny i spróbuj ponownie."
+
+msgid "The host reported a failed update."
+msgstr "Host zgłosił nieudaną aktualizację."
+
+msgid "The host service restarts once the download is verified. Terminals reconnect on their own; the previous build is kept until the new one answers."
+msgstr "Usługa hosta uruchomi się ponownie po zweryfikowaniu pobrania. Terminale połączą się same; poprzednia kompilacja jest zachowana, dopóki nowa nie odpowie."
+
+msgid "The host went back to its previous build."
+msgstr "Host wrócił do poprzedniej kompilacji."
 
 msgid "The human reads every line before it merges."
 msgstr "Człowiek czyta każdą linię przed scaleniem."
@@ -13972,9 +14154,6 @@ msgstr "Link może być błędny, strona mogła zostać usunięta albo nie masz 
 msgid "The linked agent is missing or disabled. Showing the snapshot."
 msgstr "Powiązany agent nie istnieje lub jest wyłączony. Pokazywana jest migawka."
 
-msgid "The local host service is still starting up. It should be ready in a few seconds."
-msgstr "Lokalna usługa hosta wciąż się uruchamia. Powinna być gotowa za kilka sekund."
-
 msgid "The local host service is unavailable for {organization} on {device}. Status: {status}. {recovery}"
 msgstr "Lokalna usługa hosta jest niedostępna dla {organization} na {device}. Status: {status}. {recovery}"
 
@@ -13986,9 +14165,6 @@ msgstr "Lokalna usługa hosta nie działa, więc nic na tym urządzeniu nie obs�
 
 msgid "The local host service just came up. Reconnecting to it now."
 msgstr "Lokalna usługa hosta właśnie wstała. Trwa ponowne łączenie."
-
-msgid "The local host service stopped answering. Retry first; if that doesn't take, restart it from the Superset tray menu > Host Service > Restart."
-msgstr "Lokalna usługa hosta przestała odpowiadać. Najpierw ponów; jeśli to nie pomoże, zrestartuj ją z menu zasobnika Superset > Usługa hosta > Uruchom ponownie."
 
 msgid "The majority of merged agent PRs need review only, with zero human edits."
 msgstr "Większość scalonych PR-ów od agentów wymaga tylko przeglądu, bez żadnych poprawek człowieka."
@@ -14028,9 +14204,6 @@ msgstr "Ludzie stojący za Superset."
 
 msgid "The recovery period has ended. Contact support@superset.sh."
 msgstr "Okres odzyskiwania dobiegł końca. Napisz na support@superset.sh."
-
-msgid "The relay couldn't reach that device right now. This is usually temporary — retrying in a moment normally works."
-msgstr "Przekaźnik nie mógł teraz dosięgnąć tego urządzenia. Zwykle jest to chwilowe — ponowna próba za moment zazwyczaj pomaga."
 
 msgid "The remote branch has diverged. Pull before continuing."
 msgstr "Zdalna gałąź się rozjechała. Pobierz zmiany przed kontynuowaniem."
@@ -14108,6 +14281,9 @@ msgstr "Webowy interfejs agentów jest na razie podglądem tylko do odczytu."
 msgid "The workspace is not ready yet. Try again."
 msgstr "Obszar roboczy nie jest jeszcze gotowy. Spróbuj ponownie."
 
+msgid "The workspace may still have been created. This screen opens it if it appears."
+msgstr "Obszar roboczy mógł mimo to zostać utworzony. Ten ekran otworzy go, gdy się pojawi."
+
 msgid "The worktree and any uncommitted changes will be removed. This cannot be undone."
 msgstr "Worktree i wszystkie niezacommitowane zmiany zostaną usunięte. Tej operacji nie można cofnąć."
 
@@ -14135,6 +14311,9 @@ msgstr "Te polecenia uruchamiają się automatycznie przy tworzeniu obszaru robo
 msgid "These ports are still in use"
 msgstr "Te porty są nadal używane"
 
+msgid "Thinking"
+msgstr "Rozumowanie"
+
 msgid "Thinking about the approach"
 msgstr "Myślenie nad podejściem"
 
@@ -14155,6 +14334,13 @@ msgstr "Ta aplikacja będzie mogła:"
 
 msgid "This application will have access to data in the selected organization."
 msgstr "Ta aplikacja uzyska dostęp do danych w wybranej organizacji."
+
+#. placeholder {0}: params?.organizationName
+msgid "This automation belongs to {0}. Switch to that organization to open it."
+msgstr "Ta automatyzacja należy do organizacji {0}. Przełącz się na tę organizację, aby ją otworzyć."
+
+msgid "This automation is in another organization"
+msgstr "Ta automatyzacja znajduje się w innej organizacji"
 
 msgid "This cannot be undone."
 msgstr "Tej operacji nie można cofnąć."
@@ -14197,6 +14383,12 @@ msgstr "Ta instalacja GitHub jest już połączona z inną organizacją Superset
 
 msgid "This host"
 msgstr "Ten host"
+
+msgid "This host has not reported a version yet."
+msgstr "Ten host nie zgłosił jeszcze wersji."
+
+msgid "This host is behind the app you are using. Workspaces still open, but newer features may fail on it."
+msgstr "Ten host jest starszy niż używana aplikacja. Przestrzenie robocze nadal się otwierają, ale nowsze funkcje mogą na nim zawodzić."
 
 msgid "This host needs an update"
 msgstr "Ten host wymaga aktualizacji"
@@ -14273,6 +14465,9 @@ msgstr "Ta wtyczka nie wymaga konta — jej Umiejętności są gotowe do użycia
 msgid "This port is still in use"
 msgstr "Ten port jest nadal używany"
 
+msgid "This profile is busy right now"
+msgstr "Ten profil jest teraz przeciążony"
+
 msgid "This project is no longer available on your devices."
 msgstr "Ten projekt nie jest już dostępny na Twoich urządzeniach."
 
@@ -14317,6 +14512,9 @@ msgstr "Ten slug jest już zajęty"
 
 msgid "This stops every Teams trigger in your organization and removes the notification subscriptions from your tenant. You can reconnect at any time."
 msgstr "Zatrzyma to wszystkie wyzwalacze Teams w Twojej organizacji i usunie subskrypcje powiadomień z tenanta. Możesz połączyć ponownie w dowolnej chwili."
+
+msgid "This subagent is no longer tracked by the host. Its transcript stays on disk under the agent's session directory."
+msgstr "Ten subagent nie jest już śledzony przez hosta. Jego zapis pozostaje na dysku w katalogu sesji agenta."
 
 msgid "This terminal has no output to hand over yet."
 msgstr "Ten terminal nie ma jeszcze danych do przekazania."
@@ -14382,9 +14580,6 @@ msgstr "Zakończy to sesję i jej proces bazowy."
 msgid "This will unstage and revert all staged changes. Staged new files will be deleted. This cannot be undone."
 msgstr "Usunie to z indeksu i cofnie wszystkie zaindeksowane zmiany. Zaindeksowane nowe pliki zostaną usunięte. Tej operacji nie można cofnąć."
 
-msgid "This workspace lives on a device Superset can't reach right now. Terminals, files, and agents stay put — they come back as soon as the connection does."
-msgstr "Ten obszar roboczy żyje na urządzeniu, którego Superset teraz nie dosięga. Terminale, pliki i agenci pozostają na miejscu — wrócą, gdy tylko wróci połączenie."
-
 msgid "This workspace may have been removed, or you no longer have access to it."
 msgstr "Ten obszar roboczy mógł zostać usunięty albo nie masz już do niego dostępu."
 
@@ -14394,8 +14589,8 @@ msgstr "Wpis tego obszaru roboczego wciąż istnieje, ale jego folderu worktree 
 msgid "This workspace's host is offline"
 msgstr "Host tego obszaru roboczego jest offline"
 
-msgid "This workspace's host is on an older version of Superset than this client supports. Update the Superset app on that device to reconnect."
-msgstr "Host tego obszaru roboczego ma starszą wersję Superset, niż obsługuje ten klient. Zaktualizuj aplikację Superset na tamtym urządzeniu, aby połączyć ponownie."
+msgid "This workspace's host runs an older host service than this app supports. Update it to reconnect; the workspace and its files are untouched."
+msgstr "Host tej przestrzeni roboczej działa na starszej usłudze hosta, niż obsługuje ta aplikacja. Zaktualizuj go, aby połączyć się ponownie; przestrzeń robocza i jej pliki pozostają nietknięte."
 
 msgid "Thorough reasoning effort"
 msgstr "Dogłębne rozumowanie"
@@ -14417,9 +14612,6 @@ msgstr "Poziom"
 
 msgid "Time range"
 msgstr "Zakres czasu"
-
-msgid "Timed out waiting for the host to create the workspace."
-msgstr "Przekroczono czas oczekiwania na utworzenie obszaru roboczego przez host."
 
 msgid "Title"
 msgstr "Tytuł"
@@ -14523,6 +14715,9 @@ msgstr "Zbyt wiele maszyn publikuje dla tego konta."
 msgid "Too many messages. Please try again later."
 msgstr "Zbyt wiele wiadomości. Spróbuj ponownie później."
 
+msgid "Too many people are looking at once. Try again shortly."
+msgstr "Zbyt wiele osób ogląda go jednocześnie. Spróbuj ponownie za chwilę."
+
 msgid "Too many prompt submissions. Try again later."
 msgstr "Zbyt wiele wysłanych promptów. Spróbuj ponownie później."
 
@@ -14534,6 +14729,12 @@ msgstr "Zbyt wiele zgłoszeń do pomocy. Spróbuj ponownie później."
 
 msgid "Too many untitled items here already."
 msgstr "Jest tu już za dużo elementów bez nazwy."
+
+msgid "Too old for this app to talk to. Update the Superset app on that device to reconnect."
+msgstr "Za stary, aby ta aplikacja mogła się z nim komunikować. Zaktualizuj aplikację Superset na tamtym urządzeniu, aby połączyć się ponownie."
+
+msgid "Too old for this app to talk to. Workspaces on this host will not open until it is updated."
+msgstr "Za stary, aby ta aplikacja mogła się z nim komunikować. Przestrzenie robocze na tym hoście nie otworzą się, dopóki nie zostanie zaktualizowany."
 
 msgid "Tools"
 msgstr "Narzędzia"
@@ -14633,6 +14834,9 @@ msgstr "Spróbuj innego wyszukiwania lub innego urządzenia."
 
 msgid "Try again"
 msgstr "Spróbuj ponownie"
+
+msgid "Try again, or restart the host service from the Superset tray menu."
+msgstr "Spróbuj ponownie lub uruchom ponownie usługę hosta z menu Superset w zasobniku systemowym."
 
 msgid "Try again. If the problem continues, reload Superset."
 msgstr "Spróbuj ponownie. Jeśli problem się powtarza, przeładuj Superset."
@@ -14911,6 +15115,9 @@ msgstr "Następne"
 msgid "Up Next"
 msgstr "Następne"
 
+msgid "Up to date"
+msgstr "Aktualny"
+
 msgid "Update"
 msgstr "Aktualizuj"
 
@@ -14932,6 +15139,9 @@ msgstr "Zaktualizuj demona"
 msgid "Update Error"
 msgstr "Błąd aktualizacji"
 
+msgid "Update host service"
+msgstr "Zaktualizuj usługę hosta"
+
 msgid "Update naming instructions"
 msgstr "Zaktualizuj instrukcje nazewnictwa"
 
@@ -14942,8 +15152,14 @@ msgstr "Zaktualizuj instrukcje nazewnictwa dla {0}"
 msgid "Update Required"
 msgstr "Wymagana aktualizacja"
 
+msgid "Update Superset on that device. In-app updates require a supported standalone install and a released app version."
+msgstr "Zaktualizuj Superset na tym urządzeniu. Aktualizacje z poziomu aplikacji wymagają obsługiwanej samodzielnej instalacji oraz wydanej wersji aplikacji."
+
 msgid "update the branch prefix"
 msgstr "zaktualizować prefiksu gałęzi"
+
+msgid "Updated"
+msgstr "Zaktualizowano"
 
 msgid "Updated {date}"
 msgstr "Zaktualizowano {date}"
@@ -14951,8 +15167,16 @@ msgstr "Zaktualizowano {date}"
 msgid "Updated {updatedRelative}"
 msgstr "Zaktualizowano {updatedRelative}"
 
+#. placeholder {0}: previousVersion ?? "?"
+msgid "Updated just now from {0}."
+msgstr "Przed chwilą zaktualizowano z {0}."
+
 msgid "Updates"
 msgstr "Aktualizacje"
+
+#. placeholder {0}: update.progress.target
+msgid "Updating to {0}"
+msgstr "Aktualizowanie do {0}"
 
 msgid "Updating…"
 msgstr "Aktualizowanie…"
@@ -14972,6 +15196,9 @@ msgstr "Prześlij pliki"
 
 msgid "Upload image…"
 msgstr "Prześlij obraz…"
+
+msgid "Uptime"
+msgstr "Czas działania"
 
 msgid "Uptime SLA"
 msgstr "SLA dostępności"
@@ -15122,6 +15349,9 @@ msgstr "Wersja {0}"
 msgid "Version {version}"
 msgstr "Wersja {version}"
 
+msgid "Version {version} installs the next time you restart."
+msgstr "Wersja {version} zainstaluje się przy następnym ponownym uruchomieniu."
+
 msgid "Version {version} is the latest version."
 msgstr "Wersja {version} jest najnowsza."
 
@@ -15133,6 +15363,9 @@ msgstr "Historia wersji"
 
 msgid "Version not found"
 msgstr "Nie znaleziono wersji"
+
+msgid "Version unknown"
+msgstr "Nieznana wersja"
 
 msgid "Video"
 msgstr "Wideo"
@@ -15234,6 +15467,9 @@ msgstr "Oczekiwanie na przegląd"
 msgid "Waiting for sign-in…"
 msgstr "Oczekiwanie na logowanie…"
 
+msgid "Waiting for the subagent's first message…"
+msgstr "Oczekiwanie na pierwszą wiadomość subagenta…"
+
 msgid "Waitlist signups"
 msgstr "Zapisy na listę oczekujących"
 
@@ -15267,6 +15503,9 @@ msgstr "Nie udało się obciążyć Twojej metody płatności. Zaktualizuj ją, 
 msgid "We couldn't detect a package manager or environment config."
 msgstr "Nie wykryto menedżera pakietów ani konfiguracji środowiska."
 
+msgid "We couldn't reach the device. Please try again in a moment."
+msgstr "Nie udało się połączyć z urządzeniem. Spróbuj ponownie za chwilę."
+
 msgid "We do not forecast full self-driving in 2026 or 2027. The honest unknowns: whether agent review holds up against adversarial complexity, whether specification can replace code reading as the trust anchor at scale, and whether compute economics keep the overnight shift cheaper than the humans it augments. F5 is a rubric entry so we recognize it when we see it, not a promise."
 msgstr "Nie prognozujemy pełnej autonomii w 2026 ani 2027 roku. Uczciwe niewiadome: czy przegląd wykonywany przez agenta wytrzyma zderzenie ze złośliwą złożonością, czy specyfikacja może zastąpić czytanie kodu jako kotwica zaufania w skali i czy ekonomia mocy obliczeniowej utrzyma nocną zmianę taniej niż ludzie, których wspiera. F5 to pozycja w rubryce, byśmy rozpoznali go, gdy nadejdzie, a nie obietnica."
 
@@ -15278,6 +15517,9 @@ msgstr "Wysłaliśmy link do pobrania na {submittedEmail}."
 
 msgid "We'll be in touch shortly."
 msgstr "Wkrótce się odezwiemy."
+
+msgid "We'll bring you back as soon as we reconnect."
+msgstr "Wrócisz do pracy, gdy tylko odzyskamy połączenie."
 
 msgid "We'll get back to you shortly."
 msgstr "Odezwiemy się wkrótce."
@@ -15291,17 +15533,14 @@ msgstr "Użyjemy go tylko do wysłania linku do pobrania."
 msgid "We're hiring"
 msgstr "Rekrutujemy"
 
-msgid "We're hiring engineers"
-msgstr "Zatrudniamy inżynierów"
-
-msgid "We're hiring engineers in San Francisco"
-msgstr "Zatrudniamy inżynierów w San Francisco"
-
 msgid "We're hiring engineers in San Francisco. Help us build the first software factory platform."
 msgstr "Zatrudniamy inżynierów w San Francisco. Pomóż nam zbudować pierwszą platformę fabryki oprogramowania."
 
 msgid "We're hiring in San Francisco"
 msgstr "Zatrudniamy w San Francisco"
+
+msgid "We're looking for design partners to help shape our cloud offering. Tell us about your workflow and we'll be in touch to explore working together."
+msgstr "Szukamy partnerów projektowych, którzy pomogą kształtować naszą ofertę chmurową. Opowiedz nam o swoim sposobie pracy, a skontaktujemy się, aby omówić współpracę."
 
 msgid "We're rebuilding this feature. Check back soon."
 msgstr "Przebudowujemy tę funkcję. Zajrzyj wkrótce."
@@ -15418,11 +15657,17 @@ msgstr "Czym jest Superset, kto go tworzy i dla kogo jest. Zespół z San Franci
 msgid "What the content is doing: which pages sessions start on, and how much is being published."
 msgstr "Co robią treści: na których stronach zaczynają się sesje i ile jest publikowane."
 
+msgid "What these were written against is no longer on the page, so they have no pin."
+msgstr "To, czego dotyczyły, nie znajduje się już na stronie, więc nie mają znacznika."
+
 msgid "What We're Building"
 msgstr "Co budujemy"
 
 msgid "What we're building now and next."
 msgstr "Co budujemy teraz i co dalej."
+
+msgid "What would you like to build with Superset in the cloud?"
+msgstr "Co chcesz stworzyć z Superset w chmurze?"
 
 msgid "What would you like to know?"
 msgstr "Czego chcesz się dowiedzieć?"
@@ -15510,6 +15755,9 @@ msgstr "Z etykietą"
 
 msgid "with or without attachments"
 msgstr "z załącznikami lub bez"
+
+msgid "Work email"
+msgstr "Służbowy adres e-mail"
 
 msgid "Work from tickets"
 msgstr "Praca z ticketów"
@@ -15730,9 +15978,6 @@ msgstr "Tej operacji nie można cofnąć. Panele terminala pokażą „Proces za
 
 msgid "You don't have access to this host"
 msgstr "Nie masz dostępu do tego hosta"
-
-msgid "You don't have access to this host. If it's your own device, turn on relay access there under Settings > Security."
-msgstr "Nie masz dostępu do tego hosta. Jeśli to Twoje urządzenie, włącz tam dostęp przez przekaźnik w Ustawienia > Bezpieczeństwo."
 
 msgid "You don't have access to this terminal."
 msgstr "Nie masz dostępu do tego terminala."

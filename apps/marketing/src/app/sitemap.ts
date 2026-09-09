@@ -1,7 +1,7 @@
 import { SUPPORTED_LOCALES } from "@superset/i18n";
 import { COMPANY } from "@superset/shared/constants";
 import type { MetadataRoute } from "next";
-import { localeUrl } from "@/app/[lang]/metadata";
+import { hasLocalizedContent, localeUrl } from "@/app/[lang]/metadata";
 import { fetchPublicHandles } from "@/app/[lang]/utils/fetchLeaderboard";
 import { getBlogPosts } from "@/lib/blog";
 import { getCategoryPages } from "@/lib/category";
@@ -15,6 +15,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const baseUrl = COMPANY.MARKETING_URL;
 
 	const staticPages: MetadataRoute.Sitemap = [
+		{
+			url: `${baseUrl}/cloud`,
+			lastModified: new Date(),
+			changeFrequency: "monthly",
+			priority: 0.8,
+		},
 		{
 			url: baseUrl,
 			lastModified: new Date(),
@@ -80,12 +86,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 			lastModified: new Date(),
 			changeFrequency: "monthly",
 			priority: 0.5,
-		},
-		{
-			url: `${baseUrl}/llms.txt`,
-			lastModified: new Date(),
-			changeFrequency: "weekly",
-			priority: 0.3,
 		},
 		{
 			url: `${baseUrl}/enterprise`,
@@ -209,11 +209,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		...themePages,
 	];
 
-	// Every page exists once per locale (English at the bare URL, others under
-	// /{locale}), and every entry names its siblings via hreflang alternates —
-	// this is what makes the localized tree discoverable to search engines.
+	// Only translated content has independently indexable locale variants.
+	// English-only articles remain accessible with translated navigation, but
+	// their canonical URL is the bare English path.
 	const expand = (entry: MetadataRoute.Sitemap[number]) => {
 		const path = entry.url === baseUrl ? "/" : entry.url.slice(baseUrl.length);
+		if (!hasLocalizedContent(path)) return [entry];
 		const languages: Record<string, string> = {
 			"x-default": localeUrl("en", path),
 		};
