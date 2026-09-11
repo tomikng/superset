@@ -19,6 +19,18 @@ export const serverErrorMessages: Record<
 				message: "Active organization required to create an API key",
 			}),
 		),
+	"serverError.attachment.notFound": () =>
+		i18n._(
+			msg({
+				message: "Attachment not found",
+			}),
+		),
+	"serverError.attachment.notUploaded": () =>
+		i18n._(
+			msg({
+				message: "Attachment was not uploaded — send the bytes first",
+			}),
+		),
 	"serverError.automation.aRunForThisAutomation": () =>
 		i18n._(
 			msg({
@@ -133,12 +145,13 @@ export const serverErrorMessages: Record<
 				message: "No active organization selected",
 			}),
 		),
-	"serverError.cloudWorkspace.cloudWorkspacesAreNotAvailableYet": () =>
-		i18n._(
-			msg({
-				message: "Cloud workspaces are not available yet",
-			}),
-		),
+	"serverError.cloudWorkspace.cloudSandboxesAreInternalOnly": (params) =>
+		i18n._({
+			id: "serverError.cloudWorkspace.cloudSandboxesAreInternalOnly",
+			message:
+				"Cloud sandboxes are not enabled for {account}. Ask the Superset team for access.",
+			values: params,
+		}),
 	"serverError.cloudWorkspace.couldNotRecordCloudWorkspace": () =>
 		i18n._(
 			msg({
