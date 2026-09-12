@@ -206,7 +206,6 @@ export const jwtProcedure = t.procedure
 					return next({
 						ctx: {
 							userId: payload.sub,
-							email: (payload.email as string) ?? "",
 							organizationIds,
 							activeOrganizationId: resolveActiveOrganizationId(
 								organizationIds,
@@ -234,7 +233,6 @@ export const jwtProcedure = t.procedure
 			return next({
 				ctx: {
 					userId,
-					email: ctx.session.user.email ?? "",
 					organizationIds,
 					activeOrganizationId: headerOrgId
 						? resolveActiveOrganizationId(organizationIds, headerOrgId)
