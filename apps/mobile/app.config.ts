@@ -70,10 +70,10 @@ export default ({ config }: ConfigContext) => ({
 	updates: {
 		url: "https://u.expo.dev/f501cafd-9f75-4f43-99fc-611cce656403",
 		requestHeaders: { "expo-channel-name": "selfhost" },
-		checkAutomatically: "ON_LOAD" as const,
+		checkAutomatically: "ON_LOAD",
 		fallbackToCacheTimeout: 0,
 	},
-	runtimeVersion: { policy: "fingerprint" as const },
+	runtimeVersion: { policy: "fingerprint" },
 	ios: {
 		supportsTablet: false,
 		// Apple sign-in is off — the self-host only has password accounts.
