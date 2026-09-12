@@ -23,7 +23,6 @@ export function CashBalanceTile() {
 	const chartConfig = {
 		cashUsd: {
 			label: t({
-				id: "admin.cashBalance.seriesTotalCash",
 				message: "total cash",
 			}),
 			color: "var(--chart-2)",
@@ -39,28 +38,29 @@ export function CashBalanceTile() {
 	return (
 		<InsightTileFrame
 			title={t({
-				id: "admin.cashBalance.title",
 				message: "Cash — total balance (Mercury)",
 			})}
 			description={t({
-				id: "admin.cashBalance.description",
 				message:
 					"Checking + savings + Treasury over time; fundraise tranches are the steps",
 			})}
 			lastRefresh={query.data?.available ? query.data.asOf : null}
+			fill
 			isLoading={query.isLoading}
 			error={query.error}
 			empty={points.length === 0}
 			emptyLabel={
 				unavailableReason
 					? t({
-							id: "admin.tile.unavailableReason",
 							message: `Unavailable: ${unavailableReason}`,
 						})
 					: undefined
 			}
 		>
-			<ChartContainer config={chartConfig} className="h-[240px] w-full">
+			<ChartContainer
+				config={chartConfig}
+				className="aspect-auto h-full min-h-[220px] w-full"
+			>
 				<AreaChart data={points}>
 					<XAxis
 						dataKey="date"

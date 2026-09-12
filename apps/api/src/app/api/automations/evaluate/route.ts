@@ -1,4 +1,4 @@
-import { dbWs } from "@superset/db/client";
+import { db } from "@superset/db/client";
 import {
 	automations,
 	automationTriggers,
@@ -45,8 +45,8 @@ function scheduleFromConfig(
  * sweep finished, and a sweep that is still going is not worth joining.
  */
 async function sweepUndispatched() {
-	const sweep = await singleFlight("automations.redispatch", () =>
-		redispatchUndispatched(),
+	const sweep = await singleFlight("automations.redispatch", (tx) =>
+		redispatchUndispatched(tx),
 	);
 	return sweep.ran ? sweep.result : { skipped: true };
 }
@@ -62,7 +62,7 @@ export async function POST(request: Request): Promise<Response> {
 
 	const now = new Date();
 
-	const rows = await dbWs
+	const rows = await db
 		.select({
 			automationId: automations.id,
 			triggerId: automationTriggers.id,
@@ -154,7 +154,7 @@ export async function POST(request: Request): Promise<Response> {
 
 	const advanceResults = await Promise.allSettled(
 		planned.map(async ({ triggerId, next }) => {
-			await dbWs
+			await db
 				.update(automationTriggers)
 				// Always a date for rules the product accepts (finite recurrences
 				// are refused at save); legacy finite data writes null and simply

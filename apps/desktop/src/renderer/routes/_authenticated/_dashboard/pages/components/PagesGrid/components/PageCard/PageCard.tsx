@@ -1,5 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { formatRelativeTime } from "@superset/i18n/format";
+import { useFormat } from "@superset/i18n/react";
 import { Button } from "@superset/ui/button";
 import {
 	DropdownMenu,
@@ -54,6 +54,8 @@ export function PageCard({
 	onTogglePin,
 	onDelete,
 }: PageCardProps) {
+	const { formatRelativeTime } = useFormat();
+
 	const { t } = useLingui();
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const isShared = page.visibility === "org";
@@ -71,14 +73,12 @@ export function PageCard({
 			await navigator.clipboard.writeText(page.url);
 			toast.success(
 				t({
-					id: "dashboard.pages.pageCard.linkCopied",
 					message: "Link copied",
 				}),
 			);
 		} catch {
 			toast.error(
 				t({
-					id: "dashboard.pages.pageCard.copyLinkFailed",
 					message: "Could not copy the link",
 				}),
 			);
@@ -99,11 +99,7 @@ export function PageCard({
 						<VisibilityIcon className="size-3 shrink-0" />
 						<span aria-hidden="true">·</span>
 						<span className="truncate">
-							{wasEdited ? (
-								<Trans id="dashboard.pages.pageCard.edited">Edited</Trans>
-							) : (
-								<Trans id="dashboard.pages.pageCard.created">Created</Trans>
-							)}{" "}
+							{wasEdited ? <Trans>Edited</Trans> : <Trans>Created</Trans>}{" "}
 							{timestamp}
 						</span>
 						{ownerName ? (
@@ -127,7 +123,6 @@ export function PageCard({
 						variant="ghost"
 						size="icon-sm"
 						aria-label={t({
-							id: "dashboard.pages.pageCard.actionsFor",
 							message: `Actions for ${page.title}`,
 						})}
 						className={cn(
@@ -145,15 +140,11 @@ export function PageCard({
 						) : (
 							<Pin className="size-4" />
 						)}
-						{isPinned ? (
-							<Trans id="dashboard.pages.pageCard.unpin">Unpin</Trans>
-						) : (
-							<Trans id="dashboard.pages.pageCard.pin">Pin</Trans>
-						)}
+						{isPinned ? <Trans>Unpin</Trans> : <Trans>Pin</Trans>}
 					</DropdownMenuItem>
 					<DropdownMenuItem onSelect={() => void copyLink()}>
 						<Link2 className="size-4" />
-						<Trans id="dashboard.pages.pageCard.copyLink">Copy link</Trans>
+						<Trans>Copy link</Trans>
 					</DropdownMenuItem>
 					{isOwner ? (
 						<DropdownMenuItem
@@ -161,7 +152,7 @@ export function PageCard({
 							onSelect={() => setDeleteOpen(true)}
 						>
 							<Trash2 className="size-4" />
-							<Trans id="dashboard.pages.pageCard.delete">Delete</Trans>
+							<Trans>Delete</Trans>
 						</DropdownMenuItem>
 					) : null}
 				</DropdownMenuContent>

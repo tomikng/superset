@@ -1,11 +1,9 @@
 "use client";
 
+import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import {
-	formatCompactNumber,
-	formatCurrency,
-	formatPercent,
-} from "@superset/i18n/format";
+import { formatCompactNumber } from "@superset/i18n/format";
+import { useFormat } from "@superset/i18n/react";
 import type { LanguageModelUsage } from "ai";
 import { type ComponentProps, createContext, useContext } from "react";
 import { getUsage } from "tokenlens";
@@ -75,10 +73,11 @@ const ContextIcon = () => {
 
 	return (
 		<svg
-			aria-label={i18n._({
-				id: "ui.context.iconLabel",
-				message: "Model context usage",
-			})}
+			aria-label={i18n._(
+				msg({
+					message: "Model context usage",
+				}),
+			)}
 			height="20"
 			role="img"
 			style={{ color: "currentcolor" }}
@@ -114,6 +113,8 @@ const ContextIcon = () => {
 export type ContextTriggerProps = ComponentProps<typeof Button>;
 
 export const ContextTrigger = ({ children, ...props }: ContextTriggerProps) => {
+	const { formatPercent } = useFormat();
+
 	const { usedTokens, maxTokens } = useContextValue();
 	const usedPercent = maxTokens > 0 ? usedTokens / maxTokens : 0;
 	const renderedPercent = formatPercent(usedPercent);
@@ -151,6 +152,8 @@ export const ContextContentHeader = ({
 	className,
 	...props
 }: ContextContentHeaderProps) => {
+	const { formatCompactNumber, formatPercent } = useFormat();
+
 	const { usedTokens, maxTokens } = useContextValue();
 	const usedPercent = maxTokens > 0 ? usedTokens / maxTokens : 0;
 	const displayPct = formatPercent(usedPercent);
@@ -195,6 +198,8 @@ export const ContextContentFooter = ({
 	className,
 	...props
 }: ContextContentFooterProps) => {
+	const { formatCurrency } = useFormat();
+
 	const { modelId, usage } = useContextValue();
 	const costUSD = modelId
 		? getUsage({
@@ -218,7 +223,7 @@ export const ContextContentFooter = ({
 			{children ?? (
 				<>
 					<span className="text-muted-foreground">
-						<Trans id="ui.context.totalCost">Total cost</Trans>
+						<Trans>Total cost</Trans>
 					</span>
 					<span>{totalCost}</span>
 				</>
@@ -234,6 +239,8 @@ export const ContextInputUsage = ({
 	children,
 	...props
 }: ContextInputUsageProps) => {
+	const { formatCurrency } = useFormat();
+
 	const { usage, modelId } = useContextValue();
 	const inputTokens = usage?.inputTokens ?? 0;
 
@@ -259,7 +266,7 @@ export const ContextInputUsage = ({
 			{...props}
 		>
 			<span className="text-muted-foreground">
-				<Trans id="ui.context.input">Input</Trans>
+				<Trans>Input</Trans>
 			</span>
 			<TokensWithCost costText={inputCostText} tokens={inputTokens} />
 		</div>
@@ -273,6 +280,8 @@ export const ContextOutputUsage = ({
 	children,
 	...props
 }: ContextOutputUsageProps) => {
+	const { formatCurrency } = useFormat();
+
 	const { usage, modelId } = useContextValue();
 	const outputTokens = usage?.outputTokens ?? 0;
 
@@ -298,7 +307,7 @@ export const ContextOutputUsage = ({
 			{...props}
 		>
 			<span className="text-muted-foreground">
-				<Trans id="ui.context.output">Output</Trans>
+				<Trans>Output</Trans>
 			</span>
 			<TokensWithCost costText={outputCostText} tokens={outputTokens} />
 		</div>
@@ -312,6 +321,8 @@ export const ContextReasoningUsage = ({
 	children,
 	...props
 }: ContextReasoningUsageProps) => {
+	const { formatCurrency } = useFormat();
+
 	const { usage, modelId } = useContextValue();
 	const reasoningTokens = usage?.reasoningTokens ?? 0;
 
@@ -337,7 +348,7 @@ export const ContextReasoningUsage = ({
 			{...props}
 		>
 			<span className="text-muted-foreground">
-				<Trans id="ui.context.reasoning">Reasoning</Trans>
+				<Trans>Reasoning</Trans>
 			</span>
 			<TokensWithCost costText={reasoningCostText} tokens={reasoningTokens} />
 		</div>
@@ -351,6 +362,8 @@ export const ContextCacheUsage = ({
 	children,
 	...props
 }: ContextCacheUsageProps) => {
+	const { formatCurrency } = useFormat();
+
 	const { usage, modelId } = useContextValue();
 	const cacheTokens = usage?.cachedInputTokens ?? 0;
 
@@ -376,7 +389,7 @@ export const ContextCacheUsage = ({
 			{...props}
 		>
 			<span className="text-muted-foreground">
-				<Trans id="ui.context.cache">Cache</Trans>
+				<Trans>Cache</Trans>
 			</span>
 			<TokensWithCost costText={cacheCostText} tokens={cacheTokens} />
 		</div>

@@ -1,5 +1,5 @@
 import { createNodeWebSocket } from "@hono/node-ws";
-import { RELAY_CLOSE } from "@superset/shared/tunnel-v2-protocol";
+import { RELAY_CLOSE } from "@superset/shared/tunnel-protocol";
 import type { Context, MiddlewareHandler } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -344,6 +344,13 @@ export function createRelayApp(deps: RelayDeps) {
 			body: new Uint8Array(await c.req.raw.arrayBuffer()),
 		});
 		if (!result.ok) {
+			if (result.reason === "dial-failed") {
+				return trpcErrorResponse(
+					c,
+					"BAD_GATEWAY",
+					"Host could not reach the relay",
+				);
+			}
 			return tunnel.isConnected()
 				? trpcErrorResponse(c, "BAD_GATEWAY", "Request timed out")
 				: trpcErrorResponse(c, "SERVICE_UNAVAILABLE", "Host is not online");
@@ -380,6 +387,9 @@ export function createRelayApp(deps: RelayDeps) {
 			}
 			if (prepared === "timeout") {
 				return c.json({ error: "Host did not answer" }, 504);
+			}
+			if (prepared === "dial-failed") {
+				return c.json({ error: "Host could not reach the relay" }, 502);
 			}
 			c.set("ticket", ticket);
 			return next();

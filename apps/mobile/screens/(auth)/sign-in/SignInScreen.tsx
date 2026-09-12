@@ -51,7 +51,7 @@ export function SignInScreen() {
 
 			<View className="items-center gap-2">
 				<Text className="text-2xl font-semibold text-foreground">
-					<Trans id="mobile.signIn.title">Welcome to Superset</Trans>
+					<Trans>Welcome to Superset</Trans>
 				</Text>
 				<Text className="text-base text-muted-foreground">
 					{new URL(env.EXPO_PUBLIC_API_URL).host}

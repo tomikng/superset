@@ -1,12 +1,16 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { WorkspaceStore } from "@superset/panes";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import { cn } from "@superset/ui/utils";
 import { Eye, EyeOff, MessageSquare, MessageSquareOff } from "lucide-react";
 import { useSettings } from "renderer/stores/settings";
+import type { StoreApi } from "zustand/vanilla";
+import type { PaneViewerData } from "../../../../../../types";
 import { DiffPanePRLink } from "./components/DiffPanePRLink";
 
 interface DiffPaneHeaderExtrasProps {
 	workspaceId: string;
+	store: StoreApi<WorkspaceStore<PaneViewerData>>;
 }
 
 // Unified/split moved into the in-pane DiffViewToolbar (shared with the PR
@@ -14,6 +18,7 @@ interface DiffPaneHeaderExtrasProps {
 // toggles that change what the diff shows rather than how it's laid out.
 export function DiffPaneHeaderExtras({
 	workspaceId,
+	store,
 }: DiffPaneHeaderExtrasProps) {
 	const { t } = useLingui();
 	const showDiffComments = useSettings((s) => s.showDiffComments);
@@ -30,7 +35,7 @@ export function DiffPaneHeaderExtras({
 
 	return (
 		<div className="flex items-center">
-			<DiffPanePRLink workspaceId={workspaceId} />
+			<DiffPanePRLink workspaceId={workspaceId} store={store} />
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<button
@@ -39,11 +44,9 @@ export function DiffPaneHeaderExtras({
 						aria-label={
 							showDiffComments
 								? t({
-										id: "workspace.diffPane.hideReviewCommentsAria",
 										message: "Hide PR review comments",
 									})
 								: t({
-										id: "workspace.diffPane.showReviewCommentsAria",
 										message: "Show PR review comments",
 									})
 						}
@@ -59,13 +62,9 @@ export function DiffPaneHeaderExtras({
 				</TooltipTrigger>
 				<TooltipContent side="bottom">
 					{showDiffComments ? (
-						<Trans id="workspace.diffPane.hideReviewComments">
-							Hide review comments
-						</Trans>
+						<Trans>Hide review comments</Trans>
 					) : (
-						<Trans id="workspace.diffPane.showReviewComments">
-							Show review comments
-						</Trans>
+						<Trans>Show review comments</Trans>
 					)}
 				</TooltipContent>
 			</Tooltip>
@@ -77,11 +76,9 @@ export function DiffPaneHeaderExtras({
 						aria-label={
 							expandUnchanged
 								? t({
-										id: "workspace.diffPane.hideUnchangedRegionsAria",
 										message: "Hide unchanged regions",
 									})
 								: t({
-										id: "workspace.diffPane.showAllLinesAria",
 										message: "Show all lines",
 									})
 						}
@@ -97,11 +94,9 @@ export function DiffPaneHeaderExtras({
 				</TooltipTrigger>
 				<TooltipContent side="bottom">
 					{expandUnchanged ? (
-						<Trans id="workspace.diffPane.hideUnchangedRegions">
-							Hide unchanged regions
-						</Trans>
+						<Trans>Hide unchanged regions</Trans>
 					) : (
-						<Trans id="workspace.diffPane.showAllLines">Show all lines</Trans>
+						<Trans>Show all lines</Trans>
 					)}
 				</TooltipContent>
 			</Tooltip>

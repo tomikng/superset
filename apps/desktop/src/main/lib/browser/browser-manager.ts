@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import { msg } from "@lingui/core/macro";
 import { i18n } from "@superset/i18n";
 import { clipboard, Menu, webContents } from "electron";
 import { safeOpenExternal } from "main/lib/safe-url";
@@ -7,7 +8,7 @@ import type {
 	DesignModeScreenshot,
 	DesignModeSelectionResult,
 } from "shared/browser-design-mode";
-import { chordFromInput } from "shared/hotkey-chord";
+import { chordFromInput, type ForwardedKey } from "shared/hotkey-chord";
 import {
 	forwardSessionFor,
 	handleTargetCommand,
@@ -41,23 +42,16 @@ export interface BrowserPaneInfo {
 
 export interface BrowserOpenRequest {
 	workspaceId: string;
+	projectId: string | null;
 	url: string;
 	target: "current-tab" | "new-tab";
+	show: boolean;
 	requestId: string;
 }
 
 export interface CdpSession {
 	send: (rawMessage: string) => void;
 	detach: () => void;
-}
-
-export interface ForwardedKey {
-	key: string;
-	code: string;
-	meta: boolean;
-	control: boolean;
-	alt: boolean;
-	shift: boolean;
 }
 
 const MAX_CONSOLE_ENTRIES = 500;
@@ -329,6 +323,24 @@ class BrowserManager extends EventEmitter {
 		} catch {
 			// webContents may be destroyed
 		}
+	}
+
+	/**
+	 * The host window's own subframes — a page pane's iframe, the PDF viewer —
+	 * swallow keystrokes the way a guest webview does: while one has focus the
+	 * host document's listeners never see them. Suppress the forwardable chords
+	 * there too and hand them to that window's renderer to replay. Focus in the
+	 * top frame is left alone so the renderer handles the real event.
+	 */
+	registerHostWindow(wc: Electron.WebContents): void {
+		wc.on("before-input-event", (event, input) => {
+			if (input.type !== "keyDown") return;
+			if (!wc.focusedFrame?.parent) return;
+			const key = this.forwardableKey(input);
+			if (!key) return;
+			event.preventDefault();
+			this.emit(`host-key-forward:${wc.id}`, key);
+		});
 	}
 
 	unregisterAll(): void {
@@ -940,19 +952,21 @@ class BrowserManager extends EventEmitter {
 			if (linkURL) {
 				menuItems.push(
 					{
-						label: i18n._({
-							id: "main.browserContextMenu.openLinkExternally",
-							message: "Open Link in Default Browser",
-						}),
+						label: i18n._(
+							msg({
+								message: "Open Link in Default Browser",
+							}),
+						),
 						click: () => {
 							void safeOpenExternal(linkURL);
 						},
 					},
 					{
-						label: i18n._({
-							id: "main.browserContextMenu.openLinkAsSplit",
-							message: "Open Link as New Split",
-						}),
+						label: i18n._(
+							msg({
+								message: "Open Link as New Split",
+							}),
+						),
 						click: () =>
 							this.emit(`context-menu-action:${paneId}`, {
 								action: "open-in-split" as const,
@@ -960,10 +974,11 @@ class BrowserManager extends EventEmitter {
 							}),
 					},
 					{
-						label: i18n._({
-							id: "main.browserContextMenu.copyLinkAddress",
-							message: "Copy Link Address",
-						}),
+						label: i18n._(
+							msg({
+								message: "Copy Link Address",
+							}),
+						),
 						click: () => clipboard.writeText(linkURL),
 					},
 					{ type: "separator" },
@@ -972,10 +987,11 @@ class BrowserManager extends EventEmitter {
 
 			if (selectionText) {
 				menuItems.push({
-					label: i18n._({
-						id: "main.browserContextMenu.copy",
-						message: "Copy",
-					}),
+					label: i18n._(
+						msg({
+							message: "Copy",
+						}),
+					),
 					enabled: editFlags.canCopy,
 					click: () => wc.copy(),
 				});
@@ -983,20 +999,22 @@ class BrowserManager extends EventEmitter {
 
 			if (editFlags.canPaste) {
 				menuItems.push({
-					label: i18n._({
-						id: "main.browserContextMenu.paste",
-						message: "Paste",
-					}),
+					label: i18n._(
+						msg({
+							message: "Paste",
+						}),
+					),
 					click: () => wc.paste(),
 				});
 			}
 
 			if (editFlags.canSelectAll) {
 				menuItems.push({
-					label: i18n._({
-						id: "main.browserContextMenu.selectAll",
-						message: "Select All",
-					}),
+					label: i18n._(
+						msg({
+							message: "Select All",
+						}),
+					),
 					click: () => wc.selectAll(),
 				});
 			}
@@ -1007,26 +1025,29 @@ class BrowserManager extends EventEmitter {
 
 			menuItems.push(
 				{
-					label: i18n._({
-						id: "main.browserContextMenu.back",
-						message: "Back",
-					}),
+					label: i18n._(
+						msg({
+							message: "Back",
+						}),
+					),
 					enabled: wc.canGoBack(),
 					click: () => wc.goBack(),
 				},
 				{
-					label: i18n._({
-						id: "main.browserContextMenu.forward",
-						message: "Forward",
-					}),
+					label: i18n._(
+						msg({
+							message: "Forward",
+						}),
+					),
 					enabled: wc.canGoForward(),
 					click: () => wc.goForward(),
 				},
 				{
-					label: i18n._({
-						id: "main.browserContextMenu.reload",
-						message: "Reload",
-					}),
+					label: i18n._(
+						msg({
+							message: "Reload",
+						}),
+					),
 					click: () => wc.reload(),
 				},
 			);
@@ -1035,10 +1056,11 @@ class BrowserManager extends EventEmitter {
 				menuItems.push(
 					{ type: "separator" },
 					{
-						label: i18n._({
-							id: "main.browserContextMenu.openPageExternally",
-							message: "Open Page in Default Browser",
-						}),
+						label: i18n._(
+							msg({
+								message: "Open Page in Default Browser",
+							}),
+						),
 						click: () => {
 							if (pageURL && pageURL !== "about:blank") {
 								void safeOpenExternal(pageURL);
@@ -1047,10 +1069,11 @@ class BrowserManager extends EventEmitter {
 						enabled: !!pageURL && pageURL !== "about:blank",
 					},
 					{
-						label: i18n._({
-							id: "main.browserContextMenu.copyPageUrl",
-							message: "Copy Page URL",
-						}),
+						label: i18n._(
+							msg({
+								message: "Copy Page URL",
+							}),
+						),
 						click: () => {
 							if (pageURL) clipboard.writeText(pageURL);
 						},
@@ -1071,6 +1094,20 @@ class BrowserManager extends EventEmitter {
 				// webContents may be destroyed
 			}
 		});
+	}
+
+	/** The keystroke as a forwardable chord, or null when it is not one. */
+	private forwardableKey(input: Electron.Input): ForwardedKey | null {
+		const chord = chordFromInput(input);
+		if (!chord || !this.forwardableChords.has(chord)) return null;
+		return {
+			key: input.key,
+			code: input.code,
+			meta: input.meta,
+			control: input.control,
+			alt: input.alt,
+			shift: input.shift,
+		};
 	}
 
 	// When a webview has focus, keystrokes route to the guest renderer — host
@@ -1097,17 +1134,10 @@ class BrowserManager extends EventEmitter {
 				}
 			}
 
-			const chord = chordFromInput(input);
-			if (!chord || !this.forwardableChords.has(chord)) return;
+			const key = this.forwardableKey(input);
+			if (!key) return;
 			event.preventDefault();
-			this.emit(`key-forward:${paneId}`, {
-				key: input.key,
-				code: input.code,
-				meta: input.meta,
-				control: input.control,
-				alt: input.alt,
-				shift: input.shift,
-			} satisfies ForwardedKey);
+			this.emit(`key-forward:${paneId}`, key);
 		};
 
 		wc.on("before-input-event", handler);

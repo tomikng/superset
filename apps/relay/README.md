@@ -31,7 +31,7 @@ table and the presence authority. **Redis is no longer used by the relay.**
 | `GET /hosts/:hostId/*` (upgrade) | clients | WebSocket spliced verbatim to the host-service; the 101 is deferred until the host has dialed |
 
 Close codes on WebSocket upgrades are the typed `RELAY_CLOSE` values from
-`@superset/shared/tunnel-v2-protocol` (4401 auth, 4403 forbidden, 4404 unknown
+`@superset/shared/tunnel-protocol` (4401 auth, 4403 forbidden, 4404 unknown
 ticket, 4408 stale host, 4409 replaced, 4410 tunnel gone).
 
 ## Layout

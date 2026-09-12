@@ -75,7 +75,6 @@ export function TrendSeriesTile({
 				s.custom_name ??
 				s.label ??
 				t({
-					id: "admin.trendSeries.seriesFallback",
 					message: `series ${i + 1}`,
 				});
 			const color = SERIES_COLORS[i % SERIES_COLORS.length];
@@ -87,7 +86,6 @@ export function TrendSeriesTile({
 								`s${i}partial`,
 								{
 									label: t({
-										id: "admin.trendSeries.partialWeek",
 										message: `${label} (partial week)`,
 									}),
 									color,
@@ -104,6 +102,7 @@ export function TrendSeriesTile({
 			title={query.data?.name ?? insight}
 			description={description}
 			lastRefresh={query.data?.lastRefresh}
+			fill
 			isLoading={query.isLoading || query.data?.result == null}
 			error={query.error}
 			href={`${POSTHOG_PROJECT_URL}/insights/${ADMIN_INSIGHTS[insight]}`}
@@ -111,7 +110,10 @@ export function TrendSeriesTile({
 			isRefreshing={query.isFetching}
 			empty={data.length === 0}
 		>
-			<ChartContainer config={chartConfig} className="h-[240px] w-full">
+			<ChartContainer
+				config={chartConfig}
+				className="aspect-auto h-full min-h-[220px] w-full"
+			>
 				<LineChart data={data}>
 					<XAxis
 						dataKey="x"

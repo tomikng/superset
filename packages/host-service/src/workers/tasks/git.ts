@@ -4,6 +4,7 @@
 // the credential provider) and crosses as plain data.
 
 import {
+	getGitAuthorName,
 	type ResolvedGitInfo,
 	readGitIdentity,
 } from "../../runtime/git/identity.ts";
@@ -15,6 +16,11 @@ import {
 import type { ChangedFile } from "../../trpc/router/git/types.ts";
 import type { BaseRefFetchTarget } from "../../trpc/router/git/utils/base-ref-freshness.ts";
 import { buildDiffPatch } from "../../trpc/router/git/utils/diff-patch.ts";
+import {
+	type DiffSide,
+	diffSideObjectSpec,
+	readDiffSideBlob,
+} from "../../trpc/router/git/utils/diff-side-blob.ts";
 import {
 	type DiffCategory,
 	getChangedFilesForDiff,
@@ -175,13 +181,70 @@ export const gitDiffPatchTask = defineWorkerTask<
 			commitHash,
 			fromHash,
 		});
-		const patch = await buildDiffPatch(git, {
+		const patch = await buildDiffPatch({
+			cwd: worktreePath,
+			env: gitEnv,
 			category,
 			refs,
 			paths,
 			untrackedPaths,
 		});
 		return { patch };
+	},
+});
+
+export type DiffSideBlobResult =
+	| { kind: "missing" }
+	| {
+			kind: "bytes";
+			/** base64; null when the blob is over the cap */
+			content: string | null;
+			byteLength: number;
+			exceededLimit: boolean;
+	  };
+
+export const gitDiffSideBlobTask = defineWorkerTask<
+	{
+		worktreePath: string;
+		category: DiffCategory;
+		side: DiffSide;
+		path: string;
+		maxBytes: number;
+		baseBranch?: string;
+		commitHash?: string;
+		fromHash?: string;
+		gitEnv: GitTaskEnv;
+	},
+	DiffSideBlobResult
+>({
+	type: "git/readDiffSideBlob",
+	handler: async ({
+		worktreePath,
+		category,
+		side,
+		path,
+		maxBytes,
+		baseBranch,
+		commitHash,
+		fromHash,
+		gitEnv,
+	}) => {
+		const git = createUserSimpleGit(worktreePath).env(gitEnv);
+		const refs = await resolveDiffCategoryRefs(git, category, {
+			baseBranch,
+			commitHash,
+			fromHash,
+		});
+		const spec = diffSideObjectSpec(category, side, path, refs);
+		if (!spec) return { kind: "missing" };
+		const blob = await readDiffSideBlob(git, spec, maxBytes);
+		if (blob.kind === "missing") return { kind: "missing" };
+		return {
+			kind: "bytes",
+			content: blob.content?.toString("base64") ?? null,
+			byteLength: blob.byteLength,
+			exceededLimit: blob.exceededLimit,
+		};
 	},
 });
 
@@ -202,6 +265,23 @@ export const gitIdentityTask = defineWorkerTask<
 >({
 	type: "git/readGitIdentity",
 	handler: ({ shellEnv }) => readGitIdentity(shellEnv),
+});
+
+/**
+ * Repository-scoped `user.name`, unlike `gitIdentityTask` (which reads the
+ * home-directory/global identity). A repo can locally override `user.name`,
+ * so branch-prefix resolution must read the same repo `create` binds its
+ * on-loop client to — reading the global identity instead would let the
+ * "author" prefix disagree between the branch `create` makes and the one an
+ * AI/derived rename or live preview later proposes for it.
+ */
+export const gitAuthorNameTask = defineWorkerTask<
+	{ worktreePath: string },
+	string | null
+>({
+	type: "git/readAuthorName",
+	handler: ({ worktreePath }) =>
+		getGitAuthorName(createUserSimpleGit(worktreePath)),
 });
 
 // Delete-preview + destroy-preflight state for workspace cleanup.
@@ -243,7 +323,7 @@ export const gitWorktreeStateTask = defineWorkerTask<
 
 export const gitWorktreeRemoveTask = defineWorkerTask<
 	{ repoPath: string; worktreePath: string; gitEnv: GitTaskEnv },
-	{ stillRegistered: boolean }
+	{ stillRegistered: boolean; removeError?: string }
 >({
 	type: "git/removeWorktree",
 	// This task outlives its caller's budget in the field (HOST-SERVICE-17,
@@ -260,15 +340,25 @@ export const gitWorktreeRemoveTask = defineWorkerTask<
 		// (macOS `/var` → `/private/var`) still matches its registration.
 		// `realpathSync.native` is a blocking syscall, hence its own phase.
 		const target = normalizeWorktreePath(worktreePath);
-		// Best-effort: the registry read below is authoritative, not the
-		// command's locale- and version-dependent exit text. `--force --force`
-		// also unregisters a worktree whose directory is already gone, so no
-		// separate prune (which would clobber other stale worktrees' metadata)
-		// is needed.
+		// The registry read below decides "registered or not" (the command's
+		// exit text is locale- and version-dependent), but registration is
+		// not the whole story: git can unregister the worktree and still fail
+		// partway through its recursive delete (#6730). Keep the error — it
+		// is the only record of why files were left behind — and let the
+		// caller re-check the disk. `--force --force` also unregisters a
+		// worktree whose directory is already gone, so no separate prune
+		// (which would clobber other stale worktrees' metadata) is needed.
 		reportPhase?.("worktree-remove");
+		let removeError: string | undefined;
 		await git
 			.raw(["worktree", "remove", "--force", "--force", target])
-			.catch(() => {});
+			.catch((err: unknown) => {
+				removeError = (err instanceof Error ? err.message : String(err)).trim();
+				console.warn("[git/removeWorktree] git worktree remove failed", {
+					target,
+					error: removeError,
+				});
+			});
 		// A `worktree list` failure throws out of the task: the post-remove
 		// state is unknown and the caller must not treat it as removed.
 		reportPhase?.("worktree-list");
@@ -277,6 +367,7 @@ export const gitWorktreeRemoveTask = defineWorkerTask<
 			stillRegistered: parseWorktreeList(raw).some(
 				(w) => normalizeWorktreePath(w.path) === target,
 			),
+			removeError,
 		};
 	},
 });
@@ -437,8 +528,10 @@ export const gitTasks = [
 	gitCommitFilesTask,
 	gitDiffBulkTask,
 	gitDiffPatchTask,
+	gitDiffSideBlobTask,
 	gitWorkspaceRefsTask,
 	gitIdentityTask,
+	gitAuthorNameTask,
 	gitWorktreeStateTask,
 	gitWorktreeRemoveTask,
 	gitDeleteBranchTask,

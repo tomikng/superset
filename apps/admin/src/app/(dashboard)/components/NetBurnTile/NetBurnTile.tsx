@@ -1,6 +1,7 @@
 "use client";
 
 import { useLingui } from "@lingui/react/macro";
+import { useFormat } from "@superset/i18n/react";
 import {
 	type ChartConfig,
 	ChartContainer,
@@ -19,16 +20,17 @@ import { InsightTileFrame } from "../InsightTileFrame";
 // sweeps excluded). Net flow lives on the cash card — tranche wires would
 // dwarf burn on this scale. Current month is partial and rendered muted.
 export function NetBurnTile() {
+	const { formatNumber } = useFormat();
+
 	const { t } = useLingui();
 	const trpc = useTRPC();
 	const chartConfig = {
 		netBurnUsd: {
-			label: t({ id: "admin.netBurn.seriesNetBurn", message: "net burn" }),
+			label: t({ message: "net burn" }),
 			color: "var(--chart-1)",
 		},
 		stripeInUsd: {
 			label: t({
-				id: "admin.netBurn.seriesStripeRevenue",
 				message: "Stripe revenue",
 			}),
 			color: "var(--chart-2)",
@@ -47,28 +49,29 @@ export function NetBurnTile() {
 	return (
 		<InsightTileFrame
 			title={t({
-				id: "admin.netBurn.title",
 				message: "Net burn — monthly (Mercury)",
 			})}
 			description={t({
-				id: "admin.netBurn.description",
 				message:
 					"Outflows less Stripe payouts per month (treasury sweeps excluded); current month partial",
 			})}
 			lastRefresh={query.data?.available ? query.data.asOf : null}
+			fill
 			isLoading={query.isLoading}
 			error={query.error}
 			empty={months.length === 0}
 			emptyLabel={
 				unavailableReason
 					? t({
-							id: "admin.tile.unavailableReason",
 							message: `Unavailable: ${unavailableReason}`,
 						})
 					: undefined
 			}
 		>
-			<ChartContainer config={chartConfig} className="h-[240px] w-full">
+			<ChartContainer
+				config={chartConfig}
+				className="aspect-auto h-full min-h-[220px] w-full"
+			>
 				<BarChart data={months}>
 					<XAxis
 						dataKey="month"
@@ -84,7 +87,7 @@ export function NetBurnTile() {
 						// Clamp at zero: a cash-flow-positive month is a rounding
 						// artifact of the partial current month, not a scale we need.
 						domain={[0, "auto"]}
-						tickFormatter={(v: number) => `$${v.toLocaleString()}`}
+						tickFormatter={(v: number) => `$${formatNumber(v, undefined)}`}
 					/>
 					<ChartTooltip content={<ChartTooltipContent />} />
 					<Bar dataKey="netBurnUsd" radius={3}>

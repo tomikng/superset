@@ -1,3 +1,5 @@
+import { msg } from "@lingui/core/macro";
+import { useLingui as useTranslation } from "@lingui/react";
 import { i18n } from "@superset/i18n";
 import { GlobeIcon } from "lucide-react-native";
 import { useState } from "react";
@@ -45,6 +47,8 @@ export const WebFetchTool = ({
 	state,
 	className,
 }: WebFetchToolProps) => {
+	const { _: translate } = useTranslation();
+
 	const [isExpanded, setIsExpanded] = useState(false);
 	const isPending = state === "input-streaming" || state === "input-available";
 	const isError = state === "output-error";
@@ -63,11 +67,12 @@ export const WebFetchTool = ({
 		<Text className="text-destructive text-xs">
 			{statusCode
 				? i18n._({
-						id: "mobile.tool.errorWithStatus",
-						message: "Error {statusCode}",
+						...msg({
+							message: "Error {statusCode}",
+						}),
 						values: { statusCode },
 					})
-				: i18n._({ id: "mobile.tool.failed", message: "Failed" })}
+				: i18n._(msg({ message: "Failed" }))}
 		</Text>
 	) : bytes !== undefined ? (
 		<Text className="text-muted-foreground text-xs">{formatBytes(bytes)}</Text>
@@ -81,7 +86,7 @@ export const WebFetchTool = ({
 			isError={isError}
 			isPending={isPending}
 			statusNode={statusNode}
-			title="Web Fetch"
+			title={translate(msg({ message: "Web Fetch" }))}
 		>
 			{hasContent ? (
 				<View className="px-2.5 py-2">
@@ -101,14 +106,16 @@ export const WebFetchTool = ({
 						>
 							<Text className="mt-1 text-muted-foreground text-xs underline">
 								{isExpanded
-									? i18n._({
-											id: "mobile.common.showLess",
-											message: "Show less",
-										})
-									: i18n._({
-											id: "mobile.common.showMore",
-											message: "Show more",
-										})}
+									? i18n._(
+											msg({
+												message: "Show less",
+											}),
+										)
+									: i18n._(
+											msg({
+												message: "Show more",
+											}),
+										)}
 							</Text>
 						</Pressable>
 					) : null}

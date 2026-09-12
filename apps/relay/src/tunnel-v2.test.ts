@@ -11,7 +11,7 @@ import {
 	buildHostRoutingKey,
 	parseHostRoutingKey,
 } from "@superset/shared/host-routing";
-import { RELAY_CLOSE } from "@superset/shared/tunnel-v2-protocol";
+import { RELAY_CLOSE } from "@superset/shared/tunnel-protocol";
 import { TunnelClientV2 } from "../../../packages/host-service/src/tunnel/tunnel-client-v2";
 import { createRelayApp } from "./app";
 import { HOST_STALE_MS, HostTunnel } from "./host-tunnel";

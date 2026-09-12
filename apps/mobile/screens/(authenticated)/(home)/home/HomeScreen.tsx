@@ -5,8 +5,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { isAfter } from "date-fns";
 import * as Haptics from "expo-haptics";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { RefreshControl, useWindowDimensions, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+	ActivityIndicator,
+	RefreshControl,
+	useWindowDimensions,
+	View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
 import {
@@ -18,6 +23,7 @@ import {
 	type HostWorkspaceItem,
 	useHostWorkspaces,
 } from "@/hooks/useHostWorkspaces";
+import { useOrgHostsQuery } from "@/hooks/useOrgHosts";
 import { useSelectedHost } from "@/screens/(authenticated)/(home)/hooks/useSelectedHost";
 import { useWorkspaceScope } from "@/screens/(authenticated)/(home)/hooks/useWorkspaceScope";
 import { HeaderNotice } from "@/screens/(authenticated)/components/HeaderNotice";
@@ -37,6 +43,7 @@ import { ProjectSectionHeader } from "./components/ProjectSectionHeader";
 import { ScopeBar } from "./components/ScopeBar";
 import { WorkspaceRow } from "./components/WorkspaceRow";
 import { useCloudRepoPrefix } from "./hooks/useCloudRepoPrefixes";
+import { useFirstPaint } from "./hooks/useFirstPaint";
 import {
 	type TerminalsHost,
 	useHostsTerminals,
@@ -115,7 +122,7 @@ export function HomeScreen() {
 	const handleCopied = useCallback(
 		() =>
 			setNotice((prev) => ({
-				text: t({ id: "mobile.workspaceRow.copied", message: "Copied" }),
+				text: t({ message: "Copied" }),
 				seq: (prev?.seq ?? 0) + 1,
 			})),
 		[t],
@@ -129,47 +136,47 @@ export function HomeScreen() {
 	const requestComposerFocus = useComposerFocusStore(
 		(state) => state.requestFocus,
 	);
-	const { isLoadingOrganizations, activeOrganization } = useOrganizations();
+	const { isLoadingOrganizations, activeOrganization, activeOrganizationId } =
+		useOrganizations();
 
 	const selectedHost = useSelectedHost();
 	const pinnedAt = usePinnedWorkspacesStore((state) => state.pinnedAt);
-	const { workspaces, isReady, cache } = useHostWorkspaces(selectedHost);
+	const {
+		workspaces,
+		isReady: workspacesReady,
+		cache,
+	} = useHostWorkspaces(selectedHost);
 	const {
 		items: cloudItems,
-		targets: sandboxes,
 		cache: cloudCache,
 		isReady: cloudReady,
 	} = useCloudWorkspaceItems();
 	const cloudScope = useWorkspaceScope() === "cloud";
-	// Every addressed sandbox is a host of its own for the terminal fan-out,
-	// so cloud rows get session marks and attention like any other row. Lazier
-	// than the machine host on purpose: each sandbox is its own request, and a
-	// phone paying N requests every 5s for list decoration is the mistake
-	// desktop just walked back (#6570). Opening a workspace speeds up its own
-	// host via the shared query key.
-	// Only the scope on screen is polled: a sandbox costs its own request, and
-	// paying for every one of them to decorate rows the list isn't showing is
-	// the mistake desktop just walked back (#6570).
+	// No session marks for cloud rows: a request per sandbox keeps each one
+	// awake for as long as Home is on screen.
 	const terminalHosts = useMemo<TerminalsHost[]>(
-		() =>
-			cloudScope
-				? sandboxes.map((sandbox) => ({
-						organizationId: sandbox.organizationId,
-						machineId: sandbox.workspaceId,
-						isOnline: true,
-						refetchIntervalMs: 30_000,
-					}))
-				: selectedHost
-					? [selectedHost]
-					: [],
-		[selectedHost, sandboxes, cloudScope],
+		() => (cloudScope || !selectedHost ? [] : [selectedHost]),
+		[selectedHost, cloudScope],
 	);
 	const { terminalsByWorkspace, attentionByWorkspace } =
 		useHostsTerminals(terminalHosts);
 
 	// Projects are fully local — served by the selected host, not the cloud.
-	const { projects } = useHostProjects(selectedHost);
+	const { projects, isReady: projectsReady } = useHostProjects(selectedHost);
 	const pullRequests = usePullRequests();
+	const hostsQuery = useOrgHostsQuery();
+
+	// An answer, not rows: an offline host and a host with no workspaces both
+	// settle. Decoration is not waited on. With no active organization the
+	// hosts query is disabled and stays pending forever, which is an answer of
+	// its own — waiting on it there left the list spinning permanently.
+	const contentReady =
+		hasHydrated &&
+		!isLoadingOrganizations &&
+		(!activeOrganizationId || !hostsQuery.isPending) &&
+		(cloudScope ? cloudReady : workspacesReady && projectsReady);
+
+	const hasPainted = useFirstPaint(contentReady);
 
 	const collapsed = useCollapsedProjectsStore((state) => state.collapsed);
 	const collapseHydrated = useCollapsedProjectsStore(
@@ -307,7 +314,7 @@ export function HomeScreen() {
 			items.push({
 				kind: "projectHeader",
 				projectId: "__none",
-				name: t({ id: "mobile.home.noProject", message: "No project" }),
+				name: t({ message: "No project" }),
 				count: orphans.length,
 				collapsed: false,
 			});
@@ -413,7 +420,19 @@ export function HomeScreen() {
 		void queryClient.invalidateQueries({ queryKey: ["diff-stats"] });
 	}, [queryClient]);
 
-	useFocusEffect(refreshHostData);
+	// Only on RE-focus: the first is the mount, where these queries already
+	// fetch themselves, and invalidating there fetched every one of them twice
+	// on a cold start.
+	const hasFocused = useRef(false);
+	useFocusEffect(
+		useCallback(() => {
+			if (!hasFocused.current) {
+				hasFocused.current = true;
+				return;
+			}
+			refreshHostData();
+		}, [refreshHostData]),
+	);
 
 	const onRefresh = useCallback(async () => {
 		setRefreshing(true);
@@ -520,6 +539,9 @@ export function HomeScreen() {
 		],
 	);
 
+	// The native splash is still up until hideSplash() below; nothing to draw.
+	if (!hasPainted) return null;
+
 	const sortOption = SORT_OPTIONS.find((option) => option.value === sort);
 	const sortLabel = sortOption ? i18n._(sortOption.label) : "";
 
@@ -575,7 +597,6 @@ export function HomeScreen() {
 					<Stack.Toolbar.Button
 						icon="magnifyingglass"
 						accessibilityLabel={t({
-							id: "mobile.home.searchWorkspaces",
 							message: "Search workspaces",
 						})}
 						onPress={() => {
@@ -619,21 +640,25 @@ export function HomeScreen() {
 						<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
 					}
 					ListEmptyComponent={
-						isReady && cloudReady && hasHydrated && !isLoadingOrganizations ? (
+						contentReady ? (
 							<View className="items-center justify-center py-20">
 								<Text className="text-center text-muted-foreground">
 									{cloudScope
 										? t({
-												id: "mobile.home.emptyCloud",
 												message: "No cloud workspaces yet",
 											})
 										: t({
-												id: "mobile.home.emptyHost",
 												message: "No projects on this host yet",
 											})}
 								</Text>
 							</View>
-						) : null
+						) : (
+							// Timed out with answers outstanding: the list is unknown,
+							// not empty, so neither nothing nor "No projects".
+							<View className="items-center justify-center py-20">
+								<ActivityIndicator />
+							</View>
+						)
 					}
 				/>
 			)}

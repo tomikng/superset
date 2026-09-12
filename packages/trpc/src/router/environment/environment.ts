@@ -1,4 +1,4 @@
-import { db, dbWs } from "@superset/db/client";
+import { db } from "@superset/db/client";
 import { cloudWorkspaces, environments } from "@superset/db/schema";
 import {
 	SANDBOX_IMAGE_NAME,
@@ -8,7 +8,7 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { promoteSandboxToEnvironment } from "../../lib/blaxel";
-import { assertInternal, assertMember } from "../../lib/cloud-guards";
+import { assertCloudAccess, assertMember } from "../../lib/cloud-guards";
 import { jwtProcedure, userError } from "../../trpc";
 import { secretsRouter } from "./secrets";
 
@@ -64,7 +64,7 @@ export const environmentRouter = {
 	list: jwtProcedure
 		.input(z.object({ organizationId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			assertInternal(ctx.email);
+			await assertCloudAccess(ctx);
 			assertMember(ctx.organizationIds, input.organizationId);
 			return db
 				.select()
@@ -84,7 +84,7 @@ export const environmentRouter = {
 	get: jwtProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			assertInternal(ctx.email);
+			await assertCloudAccess(ctx);
 			return loadEnvironment(input.id, ctx.organizationIds);
 		}),
 
@@ -96,9 +96,9 @@ export const environmentRouter = {
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			assertInternal(ctx.email);
+			await assertCloudAccess(ctx);
 			assertMember(ctx.organizationIds, input.organizationId);
-			const [row] = await dbWs
+			const [row] = await db
 				.insert(environments)
 				.values({
 					organizationId: input.organizationId,
@@ -119,7 +119,7 @@ export const environmentRouter = {
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			assertInternal(ctx.email);
+			await assertCloudAccess(ctx);
 			const workspace = await db.query.cloudWorkspaces.findFirst({
 				where: eq(cloudWorkspaces.id, input.cloudWorkspaceId),
 			});
@@ -146,7 +146,7 @@ export const environmentRouter = {
 				goldenName,
 			});
 
-			const [row] = await dbWs
+			const [row] = await db
 				.insert(environments)
 				.values({
 					id: environmentId,
@@ -169,9 +169,9 @@ export const environmentRouter = {
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			assertInternal(ctx.email);
+			await assertCloudAccess(ctx);
 			assertOwned(await loadEnvironment(input.id, ctx.organizationIds));
-			const [row] = await dbWs
+			const [row] = await db
 				.update(environments)
 				.set({
 					...(input.name ? { name: input.name } : {}),
@@ -185,9 +185,9 @@ export const environmentRouter = {
 	archive: jwtProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
-			assertInternal(ctx.email);
+			await assertCloudAccess(ctx);
 			assertOwned(await loadEnvironment(input.id, ctx.organizationIds));
-			await dbWs
+			await db
 				.update(environments)
 				.set({ archivedAt: new Date() })
 				.where(eq(environments.id, input.id));

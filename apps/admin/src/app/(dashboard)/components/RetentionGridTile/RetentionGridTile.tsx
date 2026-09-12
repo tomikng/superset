@@ -1,5 +1,6 @@
 "use client";
 
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import {
 	ADMIN_INSIGHTS,
@@ -34,7 +35,7 @@ function cellState(
 }
 
 export function RetentionGridTile() {
-	const { t } = useLingui();
+	const { t, i18n } = useLingui();
 	const query = useInsightResults("cohortRetention");
 
 	const cohorts = Array.isArray(query.data?.result)
@@ -49,7 +50,7 @@ export function RetentionGridTile() {
 	// week; a week whose contributors are all mid-flight is itself dashed.
 	const meanRow: CohortRow = {
 		key: "mean",
-		label: t({ id: "admin.retentionGrid.meanRow", message: "Mean" }),
+		label: t({ message: "Mean" }),
 		emphasis: true,
 		size: cohorts.length
 			? Math.round(
@@ -99,12 +100,10 @@ export function RetentionGridTile() {
 			title={
 				query.data?.name ??
 				t({
-					id: "admin.retentionGrid.title",
 					message: "Cohort retention",
 				})
 			}
 			description={t({
-				id: "admin.retentionGrid.description",
 				message:
 					"Weekly cohorts by first real workspace; % returning with another workspace each week",
 			})}
@@ -118,7 +117,11 @@ export function RetentionGridTile() {
 		>
 			<CohortGrid
 				columnLabels={Array.from({ length: intervalCount }, (_, week) =>
-					t({ id: "admin.retentionGrid.weekColumn", message: `Week ${week}` }),
+					// A template literal here reads as its hash id ("pKiaRn") in every
+					// column: the React Compiler hoists it out before the Lingui plugin
+					// runs, so the macro never sees the message. A plain string does
+					// survive that ordering.
+					i18n._({ ...msg({ message: "Week {week}" }), values: { week } }),
 				)}
 				rows={rows}
 			/>

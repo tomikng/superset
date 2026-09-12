@@ -1,6 +1,7 @@
 "use client";
 
 import { Trans } from "@lingui/react/macro";
+import { useFormat } from "@superset/i18n/react";
 import { cva } from "class-variance-authority";
 import type { BreadcrumbOptions } from "fumadocs-core/breadcrumb";
 import { getBreadcrumbItemsFromPath } from "fumadocs-core/breadcrumb";
@@ -98,16 +99,18 @@ export function PageArticle(props: HTMLAttributes<HTMLElement>) {
 }
 
 export function LastUpdate(props: { date: Date }) {
+	const { formatDate } = useFormat();
+
 	const [date, setDate] = useState("");
 
 	useEffect(() => {
 		// to the timezone of client
-		setDate(props.date.toLocaleDateString());
-	}, [props.date]);
+		setDate(formatDate(props.date, undefined));
+	}, [props.date, formatDate]);
 
 	return (
 		<p className="text-sm text-fd-muted-foreground">
-			<Trans id="docs.page.lastUpdated">Last updated on {date}</Trans>
+			<Trans>Last updated on {date}</Trans>
 		</p>
 	);
 }
@@ -180,7 +183,7 @@ export function Footer({ items }: FooterProps) {
 					<div className={cn(itemLabel())}>
 						<ChevronLeft className="-ms-1 size-4 shrink-0 rtl:rotate-180" />
 						<p>
-							<Trans id="docs.page.previous">Previous</Trans>
+							<Trans>Previous</Trans>
 						</p>
 					</div>
 					<p className="font-medium md:text-[15px]">{previous.name}</p>
@@ -194,7 +197,7 @@ export function Footer({ items }: FooterProps) {
 					<div className={cn(itemLabel({ className: "flex-row-reverse" }))}>
 						<ChevronRight className="-me-1 size-4 shrink-0 rtl:rotate-180" />
 						<p>
-							<Trans id="docs.page.next">Next</Trans>
+							<Trans>Next</Trans>
 						</p>
 					</div>
 					<p className="font-medium md:text-[15px]">{next.name}</p>

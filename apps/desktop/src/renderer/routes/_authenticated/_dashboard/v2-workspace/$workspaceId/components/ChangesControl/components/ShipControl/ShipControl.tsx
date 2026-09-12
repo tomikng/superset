@@ -21,8 +21,9 @@ import {
 	VscLoading,
 	VscRepoPush,
 } from "react-icons/vsc";
-import { usePullRequestsSplitViewStore } from "renderer/routes/_authenticated/_dashboard/pull-requests/stores/pullRequestsSplitViewStore";
+import { navigateToV2Workspace } from "renderer/routes/_authenticated/_dashboard/utils/workspace-navigation";
 import { useWorkspace } from "renderer/routes/_authenticated/_dashboard/v2-workspace/providers/WorkspaceProvider";
+import { usePullRequestPaneIntent } from "renderer/stores/pull-request-pane-intent";
 import { useWorkspaceGitStatus } from "../../../../providers/WorkspaceGitStatusProvider";
 import type { BranchSyncStatus } from "../../utils/getPRFlowState";
 
@@ -87,7 +88,7 @@ export function ShipControl({
 	// against) — measuring against the repo default gets stacked branches
 	// exactly backwards. Same 10s cadence as the PR/sync queries so
 	// committing (here or in a terminal) enables it promptly; both queries
-	// dedupe with ChangesPanel's identical ones.
+	// dedupe with the sidebar Changes tab's identical ones.
 	const baseBranchQuery = workspaceTrpc.git.getBaseBranch.useQuery(
 		{ workspaceId },
 		{ enabled: canCreatePr, staleTime: Number.POSITIVE_INFINITY },
@@ -111,9 +112,7 @@ export function ShipControl({
 
 	const commitMutation = workspaceTrpc.git.commit.useMutation({
 		onSuccess: () => {
-			toast.success(
-				t({ id: "workspace.shipControl.committed", message: "Committed" }),
-			);
+			toast.success(t({ message: "Committed" }));
 			setView(null);
 			setCommitMessage("");
 			// The 10s poll is too slow here: the face flips to Create PR
@@ -124,7 +123,6 @@ export function ShipControl({
 		onError: (error) => {
 			toast.error(
 				t({
-					id: "workspace.shipControl.commitFailed",
 					message: `Commit failed: ${error.message}`,
 				}),
 			);
@@ -133,15 +131,12 @@ export function ShipControl({
 
 	const pushMutation = workspaceTrpc.git.push.useMutation({
 		onSuccess: () => {
-			toast.success(
-				t({ id: "workspace.shipControl.pushed", message: "Pushed" }),
-			);
+			toast.success(t({ message: "Pushed" }));
 			onRefresh();
 		},
 		onError: (error) => {
 			toast.error(
 				t({
-					id: "workspace.shipControl.pushFailed",
 					message: `Push failed: ${error.message}`,
 				}),
 			);
@@ -208,9 +203,7 @@ export function ShipControl({
 	const handleCreatePr = async () => {
 		const title = prTitle.trim();
 		if (!title || !hasCommitsAhead) return;
-		const toastId = toast.loading(
-			t({ id: "workspace.shipControl.pushing", message: "Pushing..." }),
-		);
+		const toastId = toast.loading(t({ message: "Pushing..." }));
 		// Always push first rather than trusting `needsPush`: the sync
 		// snapshot can be up to 10s stale right after a commit, and skipping
 		// the push then would open the PR at the old remote tip. Pushing an
@@ -220,7 +213,6 @@ export function ShipControl({
 		} catch (error) {
 			toast.error(
 				t({
-					id: "workspace.shipControl.pushFailed",
 					message: `Push failed: ${error instanceof Error ? error.message : String(error)}`,
 				}),
 				{ id: toastId },
@@ -229,7 +221,6 @@ export function ShipControl({
 		}
 		toast.loading(
 			t({
-				id: "workspace.shipControl.creatingPr",
 				message: "Creating PR...",
 			}),
 			{ id: toastId },
@@ -243,7 +234,6 @@ export function ShipControl({
 			});
 			toast.success(
 				t({
-					id: "workspace.shipControl.prCreated",
 					message: `PR #${created.number} created`,
 				}),
 				{
@@ -256,25 +246,23 @@ export function ShipControl({
 							className="underline underline-offset-2 transition-colors hover:text-foreground"
 						>
 							{t({
-								id: "workspace.shipControl.prUrlLink",
 								message: "PR URL",
 							})}
 						</a>
 					),
 					action: {
 						label: t({
-							id: "workspace.shipControl.openPrToastAction",
 							message: "Open",
 						}),
+						// The toast outlives this page: the user may have switched
+						// workspaces by the time they click. A workspace-scoped intent
+						// plus navigation lands the pane in the right store either way.
 						onClick: () => {
-							if (projectId == null) return;
-							// Same pair the PR badge's own click performs.
-							usePullRequestsSplitViewStore.getState().expandDetail();
-							void navigate({
-								to: "/pull-requests/$prNumber",
-								params: { prNumber: String(created.number) },
-								search: { project: projectId },
+							usePullRequestPaneIntent.getState().request({
+								workspaceId,
+								prNumber: created.number,
 							});
+							void navigateToV2Workspace(workspaceId, navigate);
 						},
 					},
 				},
@@ -288,7 +276,6 @@ export function ShipControl({
 		} catch (error) {
 			toast.error(
 				t({
-					id: "workspace.shipControl.createPrFailed",
 					message: `Create PR failed: ${error instanceof Error ? error.message : String(error)}`,
 				}),
 				{ id: toastId },
@@ -300,7 +287,6 @@ export function ShipControl({
 	if (!needsCommit && !showCreatePr && !needsPush) return null;
 
 	const noCommitsTooltip = t({
-		id: "workspace.shipControl.noCommitsTooltip",
 		message: "No commits to open a pull request from",
 	});
 
@@ -313,7 +299,6 @@ export function ShipControl({
 			type="button"
 			className="flex h-full items-center px-1 outline-none transition-colors hover:bg-accent/60"
 			aria-label={t({
-				id: "workspace.shipControl.openShipOptionsAria",
 				message: "Open ship options",
 			})}
 		>
@@ -361,7 +346,7 @@ export function ShipControl({
 										}}
 									>
 										<VscGitCommit className="size-3.5" />
-										<Trans id="workspace.shipControl.commit">Commit</Trans>
+										<Trans>Commit</Trans>
 									</DropdownMenuItem>
 								)}
 								{needsPush && (
@@ -371,7 +356,7 @@ export function ShipControl({
 										onClick={() => pushMutation.mutate({ workspaceId })}
 									>
 										<VscRepoPush className="size-3.5" />
-										<Trans id="workspace.shipControl.push">Push</Trans>
+										<Trans>Push</Trans>
 									</DropdownMenuItem>
 								)}
 								{canCreatePr && (
@@ -395,7 +380,7 @@ export function ShipControl({
 										}}
 									>
 										<VscGitPullRequestCreate className="size-3.5" />
-										<Trans id="workspace.shipControl.createPr">Create PR</Trans>
+										<Trans>Create PR</Trans>
 									</DropdownMenuItem>
 								)}
 							</DropdownMenuContent>
@@ -413,7 +398,7 @@ export function ShipControl({
 									) : (
 										<VscGitCommit className="size-3.5" />
 									)}
-									<Trans id="workspace.shipControl.commit">Commit</Trans>
+									<Trans>Commit</Trans>
 								</button>
 							) : showCreatePr ? (
 								<button
@@ -428,7 +413,7 @@ export function ShipControl({
 									) : (
 										<VscGitPullRequestCreate className="size-3.5" />
 									)}
-									<Trans id="workspace.shipControl.createPr">Create PR</Trans>
+									<Trans>Create PR</Trans>
 								</button>
 							) : (
 								<button
@@ -442,7 +427,7 @@ export function ShipControl({
 									) : (
 										<VscRepoPush className="size-3.5" />
 									)}
-									<Trans id="workspace.shipControl.push">Push</Trans>
+									<Trans>Push</Trans>
 								</button>
 							)}
 							{needsPush && (needsCommit || showCreatePr) && (
@@ -459,7 +444,7 @@ export function ShipControl({
 												onClick={() => pushMutation.mutate({ workspaceId })}
 											>
 												<VscRepoPush className="size-3.5" />
-												<Trans id="workspace.shipControl.push">Push</Trans>
+												<Trans>Push</Trans>
 											</DropdownMenuItem>
 										</DropdownMenuContent>
 									</DropdownMenu>
@@ -498,7 +483,7 @@ export function ShipControl({
 							{commitMutation.isPending && (
 								<VscLoading className="size-3.5 animate-spin" />
 							)}
-							<Trans id="workspace.shipControl.commit">Commit</Trans>
+							<Trans>Commit</Trans>
 						</button>
 					</div>
 				) : (
@@ -511,7 +496,6 @@ export function ShipControl({
 								setPrTitle(e.target.value);
 							}}
 							placeholder={t({
-								id: "workspace.shipControl.prTitlePlaceholder",
 								message: "Pull request title",
 							})}
 							className="h-8 text-xs"
@@ -520,7 +504,6 @@ export function ShipControl({
 							value={prBody}
 							onChange={(e) => setPrBody(e.target.value)}
 							placeholder={t({
-								id: "workspace.shipControl.prBodyPlaceholder",
 								message: "Description (optional)",
 							})}
 							className="min-h-20 text-xs"
@@ -531,7 +514,7 @@ export function ShipControl({
 									checked={prDraft}
 									onCheckedChange={(v) => setPrDraft(v === true)}
 								/>
-								<Trans id="workspace.shipControl.draft">Draft</Trans>
+								<Trans>Draft</Trans>
 							</Label>
 							<button
 								type="button"
@@ -540,9 +523,7 @@ export function ShipControl({
 								className="flex h-7 items-center justify-center gap-1.5 rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
 							>
 								{isShipping && <VscLoading className="size-3.5 animate-spin" />}
-								<Trans id="workspace.shipControl.createPrAction">
-									Create pull request
-								</Trans>
+								<Trans>Create pull request</Trans>
 							</button>
 						</div>
 					</div>

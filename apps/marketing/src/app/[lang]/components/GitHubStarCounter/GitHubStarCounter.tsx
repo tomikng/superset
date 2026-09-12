@@ -1,6 +1,7 @@
-import { i18n } from "@superset/i18n";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { COMPANY } from "@superset/shared/constants";
-import { formatStarCount, getGitHubRepoSlug } from "@/lib/github";
+import { formatStarCount, githubRepoSlug } from "@superset/shared/github-stars";
 
 interface GitHubRepoResponse {
 	stargazers_count: number;
@@ -9,7 +10,7 @@ interface GitHubRepoResponse {
 async function getGitHubStars(): Promise<number | null> {
 	try {
 		const response = await fetch(
-			`https://api.github.com/repos/${getGitHubRepoSlug()}`,
+			`https://api.github.com/repos/${githubRepoSlug()}`,
 			{
 				headers: {
 					Accept: "application/vnd.github.v3+json",
@@ -40,6 +41,7 @@ async function getGitHubStars(): Promise<number | null> {
 }
 
 export async function GitHubStarCounter() {
+	const { i18n } = useLingui();
 	const stars = await getGitHubStars();
 
 	if (stars === null) {
@@ -53,8 +55,9 @@ export async function GitHubStarCounter() {
 			rel="noopener noreferrer"
 			className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors p-1"
 			aria-label={i18n._({
-				id: "marketing.nav.githubStars",
-				message: "{count} GitHub stars",
+				...msg({
+					message: "{count} GitHub stars",
+				}),
 				values: { count: stars },
 			})}
 		>

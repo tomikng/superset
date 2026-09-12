@@ -1,6 +1,6 @@
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { i18n } from "@superset/i18n";
+import { getI18nInstance } from "@superset/i18n/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { localizedAlternates } from "@/app/[lang]/metadata";
@@ -8,15 +8,18 @@ import { initServerI18n } from "@/app/i18n-server";
 
 export async function generateMetadata(): Promise<Metadata> {
 	const lang = await initServerI18n();
+	const i18n = getI18nInstance(lang);
 	return {
-		title: i18n._({
-			id: "marketing.meta.marketplace.title",
-			message: "Marketplace",
-		}),
-		description: i18n._({
-			id: "marketing.meta.marketplace.description",
-			message: "Browse shared themes and future agent configs for Superset.",
-		}),
+		title: i18n._(
+			msg({
+				message: "Marketplace",
+			}),
+		),
+		description: i18n._(
+			msg({
+				message: "Browse shared themes and future agent configs for Superset.",
+			}),
+		),
 		alternates: localizedAlternates(lang, "/marketplace"),
 	};
 }
@@ -24,20 +27,17 @@ export async function generateMetadata(): Promise<Metadata> {
 const marketplaceLinks = [
 	{
 		href: "/marketplace/themes",
-		label: msg({ id: "marketing.marketplace.themes.label", message: "Themes" }),
+		label: msg({ message: "Themes" }),
 		description: msg({
-			id: "marketing.marketplace.themes.description",
 			message: "Shared theme JSON files you can import into Superset.",
 		}),
 	},
 	{
 		href: "/marketplace/agents",
 		label: msg({
-			id: "marketing.marketplace.agents.label",
 			message: "Agent Configs",
 		}),
 		description: msg({
-			id: "marketing.marketplace.agents.description",
 			message: "Future home for reusable agent configs.",
 		}),
 	},
@@ -53,10 +53,10 @@ export default async function MarketplacePage() {
 			<div className="mx-auto max-w-4xl px-6 py-10">
 				<div className="mb-8">
 					<h1 className="text-xl font-semibold text-foreground md:text-2xl">
-						<Trans id="marketing.marketplace.title">Marketplace</Trans>
+						<Trans>Marketplace</Trans>
 					</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						<Trans id="marketing.marketplace.subtitle">Choose a section.</Trans>
+						<Trans>Choose a section.</Trans>
 					</p>
 				</div>
 

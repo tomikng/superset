@@ -1,7 +1,9 @@
 "use server";
 
+import { msg } from "@lingui/core/macro";
 import { EnterpriseInquiryEmail } from "@superset/email/emails/internal/enterprise-inquiry";
-import { i18n } from "@superset/i18n";
+import { isSupportedLocale } from "@superset/i18n/locales";
+import { getI18nInstance, preloadServerLocale } from "@superset/i18n/server";
 import { Resend } from "resend";
 import { z } from "zod";
 import { env } from "@/env";
@@ -20,15 +22,22 @@ const enterpriseFormDataSchema = z.object({
 	honeypot: z.string().optional(),
 });
 
-export async function submitEnterpriseInquiry(data: unknown) {
+export async function submitEnterpriseInquiry(
+	data: unknown,
+	requestedLocale = "en",
+) {
+	const locale = isSupportedLocale(requestedLocale) ? requestedLocale : "en";
+	await preloadServerLocale(locale);
+	const i18n = getI18nInstance(locale);
 	const parsedData = enterpriseFormDataSchema.safeParse(data);
 	if (!parsedData.success) {
 		return {
 			success: false,
-			error: i18n._({
-				id: "marketing.form.error.invalidInput",
-				message: "Invalid input detected.",
-			}),
+			error: i18n._(
+				msg({
+					message: "Invalid input detected.",
+				}),
+			),
 		};
 	}
 
@@ -39,10 +48,11 @@ export async function submitEnterpriseInquiry(data: unknown) {
 	if (honeypot && honeypot.length > 0) {
 		return {
 			success: false,
-			error: i18n._({
-				id: "marketing.form.error.generic",
-				message: "Something went wrong. Please try again.",
-			}),
+			error: i18n._(
+				msg({
+					message: "Something went wrong. Please try again.",
+				}),
+			),
 		};
 	}
 
@@ -50,10 +60,11 @@ export async function submitEnterpriseInquiry(data: unknown) {
 	if (!name || !role || !company || !email) {
 		return {
 			success: false,
-			error: i18n._({
-				id: "marketing.form.error.missingFields",
-				message: "Missing required fields.",
-			}),
+			error: i18n._(
+				msg({
+					message: "Missing required fields.",
+				}),
+			),
 		};
 	}
 
@@ -74,10 +85,11 @@ export async function submitEnterpriseInquiry(data: unknown) {
 	) {
 		return {
 			success: false,
-			error: i18n._({
-				id: "marketing.form.error.invalidInput",
-				message: "Invalid input detected.",
-			}),
+			error: i18n._(
+				msg({
+					message: "Invalid input detected.",
+				}),
+			),
 		};
 	}
 
@@ -85,10 +97,11 @@ export async function submitEnterpriseInquiry(data: unknown) {
 	if (!validateEmail(sanitizedEmail)) {
 		return {
 			success: false,
-			error: i18n._({
-				id: "marketing.form.error.invalidEmail",
-				message: "Invalid email address.",
-			}),
+			error: i18n._(
+				msg({
+					message: "Invalid email address.",
+				}),
+			),
 		};
 	}
 
@@ -96,10 +109,11 @@ export async function submitEnterpriseInquiry(data: unknown) {
 		if (!(await checkEmailFormRateLimit(sanitizedEmail))) {
 			return {
 				success: false,
-				error: i18n._({
-					id: "marketing.form.error.rateLimited",
-					message: "Too many messages. Please try again later.",
-				}),
+				error: i18n._(
+					msg({
+						message: "Too many messages. Please try again later.",
+					}),
+				),
 			};
 		}
 
@@ -124,10 +138,11 @@ export async function submitEnterpriseInquiry(data: unknown) {
 			console.error("Failed to send enterprise inquiry email:", error);
 			return {
 				success: false,
-				error: i18n._({
-					id: "marketing.form.error.generic",
-					message: "Something went wrong. Please try again.",
-				}),
+				error: i18n._(
+					msg({
+						message: "Something went wrong. Please try again.",
+					}),
+				),
 			};
 		}
 
@@ -136,10 +151,11 @@ export async function submitEnterpriseInquiry(data: unknown) {
 		console.error("Failed to send enterprise inquiry email:", error);
 		return {
 			success: false,
-			error: i18n._({
-				id: "marketing.form.error.generic",
-				message: "Something went wrong. Please try again.",
-			}),
+			error: i18n._(
+				msg({
+					message: "Something went wrong. Please try again.",
+				}),
+			),
 		};
 	}
 }
