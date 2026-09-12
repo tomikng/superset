@@ -702,6 +702,69 @@ describe("TerminalAgentStore", () => {
 		});
 	});
 
+	it("treats a mid-turn Detached as a terminal death, not the agent's goodbye", () => {
+		const persisted = new Map<string, TerminalAgentBinding>();
+		const ended: Array<{ terminalId: string; reason: string }> = [];
+		const persistence: TerminalAgentBindingPersistence = {
+			load: () => [],
+			upsert: (binding) => {
+				persisted.set(binding.terminalId, binding);
+			},
+			delete: (terminalId) => {
+				persisted.delete(terminalId);
+			},
+			markEnded: (terminalId, reason) => {
+				const row = persisted.get(terminalId);
+				if (!row) return undefined;
+				ended.push({ terminalId, reason });
+				return { workspaceId: row.workspaceId };
+			},
+		};
+		const store = new TerminalAgentStore(persistence);
+
+		// A crash mid-turn: the agent is working (last event "Start") when its
+		// SessionEnd hook fires. It cannot have quit cleanly, so the session
+		// must stay resumable.
+		store.recordEvent({
+			terminalId: "t1",
+			workspaceId: WORKSPACE,
+			eventType: "Start",
+			agentId: "claude",
+			agentSessionId: "sess-1",
+			occurredAt: 100,
+		});
+		store.recordEvent({
+			terminalId: "t1",
+			workspaceId: WORKSPACE,
+			eventType: "Detached",
+			occurredAt: 200,
+		});
+		expect(ended).toEqual([{ terminalId: "t1", reason: "terminal-exited" }]);
+
+		// An idle detach (turn already finished) is a real quit and stays final.
+		store.recordEvent({
+			terminalId: "t2",
+			workspaceId: WORKSPACE,
+			eventType: "Start",
+			agentId: "claude",
+			agentSessionId: "sess-2",
+			occurredAt: 100,
+		});
+		store.recordEvent({
+			terminalId: "t2",
+			workspaceId: WORKSPACE,
+			eventType: "Stop",
+			occurredAt: 150,
+		});
+		store.recordEvent({
+			terminalId: "t2",
+			workspaceId: WORKSPACE,
+			eventType: "Detached",
+			occurredAt: 200,
+		});
+		expect(ended).toContainEqual({ terminalId: "t2", reason: "detached" });
+	});
+
 	it("drops straggler events that would erase an ended row's resume state", () => {
 		// Each scenario gets a fresh store so the straggler guard (which only
 		// runs when no in-memory binding exists) is actually exercised.
