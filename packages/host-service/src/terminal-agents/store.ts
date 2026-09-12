@@ -52,12 +52,18 @@ export interface TerminalAgentBindingListFilter {
 }
 
 // "Detached" is the agent's own goodbye (SessionEnd hooks, the codex wrapper
-// exit report) — not resumable. "exit"/"error" are terminal-side deaths.
+// exit report) — not resumable, unless it lands mid-turn (see
+// `resolveEndReason`). "exit"/"error" are terminal-side deaths.
 const END_EVENT_REASONS = new Map<string, TerminalAgentEndReason>([
 	["Detached", "detached"],
 	["exit", "terminal-exited"],
 	["error", "terminal-exited"],
 ]);
+
+// The one lifecycle state that means "a turn is in flight". "Stop"/"Failed"
+// both end a turn and "Attached" precedes the first one, so all three leave
+// the agent idle at its input — where a quit is the honest reading.
+const MID_TURN_EVENT_TYPE = "Start";
 
 /**
  * Hook events can straggle in after the terminal died (async notify
@@ -159,7 +165,11 @@ export class TerminalAgentStore extends EventEmitter {
 
 		const endReason = END_EVENT_REASONS.get(eventType);
 		if (endReason) {
-			this.endBinding(terminalId, endReason, occurredAt);
+			this.endBinding(
+				terminalId,
+				this.resolveEndReason(terminalId, endReason),
+				occurredAt,
+			);
 			return;
 		}
 
@@ -498,6 +508,24 @@ export class TerminalAgentStore extends EventEmitter {
 			}
 		}
 		return best;
+	}
+
+	/**
+	 * An agent only quits while it is idle, so a goodbye that lands mid-turn is
+	 * not one — the process died under a shell that outlived it. That shell is
+	 * why the death-gasp upgrade in `markTerminalAgentBindingEnded` cannot
+	 * cover this case: it keys off the pty dying alongside the agent, and here
+	 * the pty is still very much alive. Reclassify as a terminal-side death so
+	 * the session survives as a resume candidate instead of being written off
+	 * as a clean quit.
+	 */
+	private resolveEndReason(
+		terminalId: string,
+		reason: TerminalAgentEndReason,
+	): TerminalAgentEndReason {
+		if (reason !== "detached") return reason;
+		const lastEventType = this.byTerminal.get(terminalId)?.lastEventType;
+		return lastEventType === MID_TURN_EVENT_TYPE ? "terminal-exited" : reason;
 	}
 
 	/**
