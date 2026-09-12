@@ -104,9 +104,7 @@ function SignInPage() {
 						</h1>
 						<p className="text-sm text-muted-foreground">
 							{hasLocalToken ? (
-								<Trans>
-									Restoring your session
-								</Trans>
+								<Trans>Restoring your session</Trans>
 							) : (
 								"Use the credentials your administrator issued"
 							)}

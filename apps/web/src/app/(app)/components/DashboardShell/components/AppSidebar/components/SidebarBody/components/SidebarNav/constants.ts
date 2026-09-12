@@ -1,13 +1,6 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import {
-	Blocks,
-	Bot,
-	Home,
-	type LucideIcon,
-	Trophy,
-	User,
-} from "lucide-react";
+import { Blocks, Bot, Home, type LucideIcon, Trophy, User } from "lucide-react";
 
 export interface NavItem {
 	href: string;

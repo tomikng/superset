@@ -158,19 +158,13 @@ export function LeaderboardBoard() {
 					</TabsList>
 				</Tabs>
 				<span className="font-mono text-xs text-muted-foreground">
-					{range ? (
-						formatDayRange(range)
-					) : (
-						<Trans>All time</Trans>
-					)}
+					{range ? formatDayRange(range) : <Trans>All time</Trans>}
 				</span>
 			</div>
 
 			{standings.isError ? (
 				<p className="text-sm text-destructive">
-					<Trans>
-						Could not load the leaderboard.
-					</Trans>
+					<Trans>Could not load the leaderboard.</Trans>
 				</p>
 			) : (
 				<LeaderboardTable
@@ -188,11 +182,7 @@ export function LeaderboardBoard() {
 						onClick={loadMore}
 						disabled={loadingMore}
 					>
-						{loadingMore ? (
-							<Trans>Loading…</Trans>
-						) : (
-							<Trans>Load more</Trans>
-						)}
+						{loadingMore ? <Trans>Loading…</Trans> : <Trans>Load more</Trans>}
 					</Button>
 					<span className="font-mono text-xs text-muted-foreground">
 						<Trans>

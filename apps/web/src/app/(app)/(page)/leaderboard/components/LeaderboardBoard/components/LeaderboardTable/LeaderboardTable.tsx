@@ -51,9 +51,7 @@ export function LeaderboardTable({
 		return (
 			<div className="rounded-md border p-12 text-center">
 				<p className="text-sm text-muted-foreground">
-					<Trans>
-						Nobody has joined the board yet.
-					</Trans>
+					<Trans>Nobody has joined the board yet.</Trans>
 				</p>
 				<p className="mt-2 text-xs text-muted-foreground">
 					<Trans>
@@ -80,11 +78,7 @@ export function LeaderboardTable({
 							<Trans>Sessions</Trans>
 						</TableHead>
 						<TableHead className="text-right">
-							{metric === "cost" ? (
-								<Trans>Cost</Trans>
-							) : (
-								<Trans>Tokens</Trans>
-							)}
+							{metric === "cost" ? <Trans>Cost</Trans> : <Trans>Tokens</Trans>}
 						</TableHead>
 					</TableRow>
 				</TableHeader>
