@@ -1,6 +1,6 @@
+import { msg } from "@lingui/core/macro";
 import type { Metadata } from "next";
-import { i18n } from "@/lib/i18n-server";
-
+import { initServerI18n } from "@/lib/i18n-server";
 import { ActionsSection } from "./components/ActionsSection";
 import { DataSection } from "./components/DataSection";
 import { DesignPageHeader } from "./components/DesignPageHeader";
@@ -17,70 +17,74 @@ export const metadata: Metadata = {
 	description: "Living reference for every @superset/ui component",
 };
 
-const NAV_ITEMS: ShowcaseNavItem[] = [
-	{
-		id: "actions",
-		index: "01",
-		title: i18n._({ id: "web.design.nav.actions", message: "Actions" }),
-	},
-	{
-		id: "inputs",
-		index: "02",
-		title: i18n._({ id: "web.design.nav.inputs", message: "Inputs" }),
-	},
-	{
-		id: "overlays",
-		index: "03",
-		title: i18n._({ id: "web.design.nav.overlays", message: "Overlays" }),
-	},
-	{
-		id: "menus",
-		index: "04",
-		title: i18n._({ id: "web.design.nav.menus", message: "Menus" }),
-	},
-	{
-		id: "feedback",
-		index: "05",
-		title: i18n._({ id: "web.design.nav.feedback", message: "Feedback" }),
-	},
-	{
-		id: "navigation",
-		index: "06",
-		title: i18n._({ id: "web.design.nav.navigation", message: "Navigation" }),
-	},
-	{
-		id: "data",
-		index: "07",
-		title: i18n._({ id: "web.design.nav.data", message: "Data display" }),
-	},
-	{
-		id: "layout",
-		index: "08",
-		title: i18n._({ id: "web.design.nav.layout", message: "Layout" }),
-	},
-];
+export default async function DesignPage() {
+	const i18n = await initServerI18n();
+	const NAV_ITEMS: ShowcaseNavItem[] = [
+		{
+			id: "actions",
+			index: "01",
+			title: i18n._(msg({ message: "Actions" })),
+		},
+		{
+			id: "inputs",
+			index: "02",
+			title: i18n._(msg({ message: "Inputs" })),
+		},
+		{
+			id: "overlays",
+			index: "03",
+			title: i18n._(msg({ message: "Overlays" })),
+		},
+		{
+			id: "menus",
+			index: "04",
+			title: i18n._(msg({ message: "Menus" })),
+		},
+		{
+			id: "feedback",
+			index: "05",
+			title: i18n._(msg({ message: "Feedback" })),
+		},
+		{
+			id: "navigation",
+			index: "06",
+			title: i18n._(msg({ message: "Navigation" })),
+		},
+		{
+			id: "data",
+			index: "07",
+			title: i18n._(msg({ message: "Data display" })),
+		},
+		{
+			id: "layout",
+			index: "08",
+			title: i18n._(msg({ message: "Layout" })),
+		},
+	];
 
-export default function DesignPage() {
 	return (
 		<div className="min-h-screen bg-background">
 			<DesignPageHeader
 				active="primitives"
-				title={i18n._({
-					id: "web.design.primitives.title",
-					message: "Superset Design System",
-				})}
+				title={i18n._(
+					msg({
+						message: "Superset Design System",
+					}),
+				)}
 				description={
 					<>
-						{i18n._({
-							id: "web.design.primitives.descriptionLead",
-							message: "A living reference of every component exported from",
-						})}{" "}
+						{i18n._(
+							msg({
+								message: "A living reference of every component exported from",
+							}),
+						)}{" "}
 						<code className="font-mono text-foreground">@superset/ui</code>
-						{i18n._({
-							id: "web.design.primitives.descriptionTail",
-							message:
-								". Each card shows the canonical import path — click it to copy. Reach for these before writing anything custom.",
-						})}
+						{i18n._(
+							msg({
+								message:
+									". Each card shows the canonical import path — click it to copy. Reach for these before writing anything custom.",
+							}),
+						)}
 					</>
 				}
 			/>

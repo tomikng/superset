@@ -1,4 +1,5 @@
 import path from "node:path";
+import { SUPPORTED_LOCALES } from "@superset/i18n/locales";
 import { config } from "dotenv";
 import type { ConfigContext } from "expo/config";
 import { withIosAccentColor } from "./config-plugins/withIosAccentColor";
@@ -53,6 +54,9 @@ export default ({ config }: ConfigContext) => ({
 	...config,
 	name: "Superset",
 	slug: "superset",
+	locales: Object.fromEntries(
+		SUPPORTED_LOCALES.map((locale) => [locale, `./locales/${locale}.json`]),
+	),
 	version: "1.0.0",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
@@ -70,11 +74,6 @@ export default ({ config }: ConfigContext) => ({
 		fallbackToCacheTimeout: 0,
 	},
 	runtimeVersion: { policy: "fingerprint" as const },
-	splash: {
-		image: "./assets/splash-icon.png",
-		resizeMode: "contain" as const,
-		backgroundColor: "#09090b",
-	},
 	ios: {
 		supportsTablet: false,
 		// Apple sign-in is off — the self-host only has password accounts.
@@ -106,10 +105,30 @@ export default ({ config }: ConfigContext) => ({
 		bundler: "metro",
 	},
 	plugins: [
-		[withIosAccentColor, { color: "#FFFFFF" }],
+		// Dark, not white: iOS 26 fills a prominent system control with the
+		// accent, so the photo picker's confirm button became a lit white disc
+		// where the rest of that chrome is dark. The composer states its own
+		// tint (`ComposerRootView`) rather than inheriting this.
+		[withIosAccentColor, { color: "#262626" }],
 		"expo-router",
+		[
+			// The mark on the app background, held until Home has content — see
+			// screens/RootLayout. Deliberately the bare mark on transparency:
+			// `icon.png` bakes its own ground and square corners the native
+			// splash cannot round, which seams against the background.
+			"expo-splash-screen",
+			{
+				backgroundColor: "#0a0a0a",
+				image: "./assets/splash-mark.png",
+				imageWidth: 200,
+				resizeMode: "contain",
+			},
+		],
 		...sentryPlugin,
-		"expo-localization",
+		[
+			"expo-localization",
+			{ supportedLocales: { ios: [...SUPPORTED_LOCALES] } },
+		],
 		[
 			"expo-image-picker",
 			{

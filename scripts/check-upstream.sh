@@ -88,7 +88,8 @@ WATCHED_FILES=(
   "packages/db/src/schema/auth.ts:organizations/members shape used by db:seed-teams"
   "packages/db/src/schema/schema.ts:subscriptions shape used by db:seed-teams"
   "packages/auth/src/seed-dev.ts:the script db:seed-teams was derived from"
-  "packages/host-service/src/tunnel/tunnel-client-v2.ts:host side of tunnel v2; any wire change must be mirrored in apps/relay (our relay2 port)"
+  "packages/host-service/src/tunnel/tunnel-client.ts:host side of the tunnel; any wire change must be mirrored in apps/relay (our Bun port of upstream's relay)"
+  "packages/shared/src/tunnel-protocol.ts:the wire protocol both ends import; apps/relay must handle every host→relay message"
   "packages/host-service/src/tunnel/connect.ts:how the host picks a relay/protocol; must still work against our /health {proto: 2}"
   "packages/trpc/src/lib/relay-presence.ts:how the API reads /presence from the relay; our relay must keep answering it"
   "packages/trpc/src/lib/relay-url.ts:which relay the API hands to hosts; the self-host relies on env.RELAY_URL"
@@ -96,9 +97,11 @@ WATCHED_FILES=(
 )
 
 # Upstream directories whose changes must be ported into ours by hand.
-WATCHED_DIRS=(
-  "apps/relay2/:upstream's canonical relay — diff its protocol changes into apps/relay (our Bun port); never replace apps/relay with it"
-)
+# Upstream renamed apps/relay2 to apps/relay (#7158), so its canonical Durable
+# Objects relay now sits at the SAME path as our Bun port: every sync conflicts
+# there. Restore ours wholesale (`git checkout origin/selfhost -- apps/relay`)
+# and port protocol changes by hand from `git diff <base> upstream/main -- apps/relay`.
+WATCHED_DIRS=()
 
 bold=$(tput bold 2>/dev/null || printf '')
 dim=$(tput dim 2>/dev/null || printf '')

@@ -100,13 +100,11 @@ function SignInPage() {
 
 					<div className="text-center mb-8">
 						<h1 className="text-xl font-semibold text-foreground mb-2">
-							<Trans id="auth.signIn.welcomeTitle">Welcome to Superset</Trans>
+							<Trans>Welcome to Superset</Trans>
 						</h1>
 						<p className="text-sm text-muted-foreground">
 							{hasLocalToken ? (
-								<Trans id="auth.signIn.restoringSession">
-									Restoring your session
-								</Trans>
+								<Trans>Restoring your session</Trans>
 							) : (
 								"Use the credentials your administrator issued"
 							)}
@@ -119,7 +117,7 @@ function SignInPage() {
 					>
 						<div className="flex flex-col gap-2">
 							<Label htmlFor="email">
-								<Trans id="settings.account.emailLabel">Email</Trans>
+								<Trans>Email</Trans>
 							</Label>
 							<Input
 								id="email"
@@ -134,7 +132,7 @@ function SignInPage() {
 
 						<div className="flex flex-col gap-2">
 							<Label htmlFor="password">
-								<Trans id="auth.signIn.passwordLabel">Password</Trans>
+								<Trans>Password</Trans>
 							</Label>
 							<Input
 								id="password"
@@ -164,7 +162,7 @@ function SignInPage() {
 					</form>
 
 					<p className="mt-8 text-xs text-muted-foreground/70 text-center max-w-xs">
-						<Trans id="auth.signIn.termsAgreement">
+						<Trans>
 							By signing in, you agree to our{" "}
 							<a
 								href={COMPANY.TERMS_URL}

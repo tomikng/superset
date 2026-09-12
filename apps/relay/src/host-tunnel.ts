@@ -1,9 +1,9 @@
 import {
-	type ControlPing,
 	DIAL_TIMEOUT_MS,
+	type HostControlMessage,
 	RELAY_CLOSE,
 	type StreamDial,
-} from "@superset/shared/tunnel-v2-protocol";
+} from "@superset/shared/tunnel-protocol";
 import {
 	type HttpExchangeRequest,
 	type HttpExchangeResult,
@@ -34,7 +34,11 @@ export const LIVENESS_SWEEP_MS = 45_000;
 // cannot serve dials either, so closing it never severs a usable tunnel.
 export const HOST_STALE_MS = 90_000;
 
-export type PrepareStreamResult = "ready" | "no-host" | "timeout";
+export type PrepareStreamResult =
+	| "ready"
+	| "no-host"
+	| "timeout"
+	| "dial-failed";
 
 export interface PresenceInfo {
 	online: boolean;
@@ -57,7 +61,10 @@ export class HostTunnel {
 	readonly hostId: string;
 	private host: Conn | null = null;
 	private lastHostSeenAt: number | null = null;
-	private readonly pendingDials = new Map<string, (ok: boolean) => void>();
+	private readonly pendingDials = new Map<
+		string,
+		(result: PrepareStreamResult) => void
+	>();
 	private readonly streams = new Map<string, Stream>();
 	private readonly httpExchanges = new HttpExchanges();
 
@@ -92,15 +99,15 @@ export class HostTunnel {
 	): Promise<PrepareStreamResult> {
 		const host = this.liveHost();
 		if (!host) return Promise.resolve("no-host");
-		const arrived = new Promise<boolean>((resolve) => {
+		const arrived = new Promise<PrepareStreamResult>((resolve) => {
 			const timer = setTimeout(() => {
 				this.pendingDials.delete(ticket);
-				resolve(false);
+				resolve("timeout");
 			}, DIAL_TIMEOUT_MS);
-			this.pendingDials.set(ticket, (ok) => {
+			this.pendingDials.set(ticket, (result) => {
 				clearTimeout(timer);
 				this.pendingDials.delete(ticket);
-				resolve(ok);
+				resolve(result);
 			});
 		});
 		this.sendDial(host, {
@@ -110,7 +117,7 @@ export class HostTunnel {
 			path,
 			query,
 		});
-		return arrived.then((ok) => (ok ? "ready" : "timeout"));
+		return arrived;
 	}
 
 	proxyHttp(request: HttpExchangeRequest): Promise<HttpExchangeResult> {
@@ -144,13 +151,17 @@ export class HostTunnel {
 
 	hostMessage(conn: Conn, message: Frame): void {
 		if (typeof message !== "string") return;
-		let ping: ControlPing;
+		let control: HostControlMessage;
 		try {
-			ping = JSON.parse(message) as ControlPing;
+			control = JSON.parse(message) as HostControlMessage;
 		} catch {
 			return;
 		}
-		if (ping.type !== "ping") return;
+		if (control.type === "stream:dial-failed") {
+			this.failDial(control.ticket);
+			return;
+		}
+		if (control.type !== "ping") return;
 		// Only the live host refreshes liveness: a ping in flight from a
 		// just-replaced socket must not extend the stale window.
 		if (this.host === conn) this.lastHostSeenAt = Date.now();
@@ -173,7 +184,7 @@ export class HostTunnel {
 			}
 		}
 		this.streams.clear();
-		for (const resolve of [...this.pendingDials.values()]) resolve(false);
+		for (const resolve of [...this.pendingDials.values()]) resolve("timeout");
 		this.httpExchanges.abortAll();
 		console.log(`[relay] host disconnected: ${this.hostId}`);
 	}
@@ -200,7 +211,7 @@ export class HostTunnel {
 			closeQuietly(conn, RELAY_CLOSE.unknownTicket, "Client never attached");
 		}, UNPAIRED_DIAL_TIMEOUT_MS);
 		this.streams.set(ticket, stream);
-		waiting(true);
+		waiting("ready");
 		return true;
 	}
 
@@ -284,6 +295,18 @@ export class HostTunnel {
 	}
 
 	// ── Internals ─────────────────────────────────────────────────────
+
+	// The host gave up dialing this ticket (its own connect attempts failed or
+	// timed out): answer the waiting client now instead of at the deadline.
+	private failDial(ticket: string): void {
+		const waiting = this.pendingDials.get(ticket);
+		if (waiting) {
+			this.pendingDials.delete(ticket);
+			waiting("dial-failed");
+			return;
+		}
+		this.httpExchanges.fail(ticket);
+	}
 
 	private liveHost(): Conn | null {
 		return this.isConnected() ? this.host : null;

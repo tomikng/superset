@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { cn } from "@superset/ui/utils";
 import { GitCompareArrows } from "lucide-react";
 import { memo, useMemo } from "react";
 import { useWorkspaceGitStatus } from "../../providers/WorkspaceGitStatusProvider";
@@ -9,16 +10,22 @@ import { usePRFlowState } from "./hooks/usePRFlowState";
 
 interface ChangesControlProps {
 	workspaceId: string;
-	onOpenChanges: () => void;
+	/** Whether the active tab shows a Changes pane — the face's toggle state. */
+	isChangesOpen: boolean;
+	/** Close the visible Changes pane, or open/focus one when none shows. */
+	onToggleChanges: () => void;
+	/** Open or focus the pane showing the linked PR's summary. */
+	onOpenPullRequest: (prNumber: number) => void;
 }
 
 /**
  * Top-bar Changes control: one bordered button with a single face covering
  * the branch's whole lifecycle. Before a PR exists the face is the diff
- * stats (opens the Changes pane) with the ship actions
- * (commit → push → create PR) in the chevron — or the ship action itself
- * once the tree is clean; once a PR exists the face is the PR badge alone,
- * with "Open changes" moving into its menu.
+ * stats with the ship actions (commit → push → create PR) in the chevron —
+ * or the ship action itself once the tree is clean; once a PR exists the
+ * face is the PR badge alone. Either face toggles the Changes pane: it
+ * closes the one in view and opens or focuses one otherwise, reading as
+ * pressed while one shows.
  *
  * Segments hide on their own: stats while status is unknown, the tree is
  * clean, or a PR owns the face; the right side while the flow state is
@@ -28,7 +35,9 @@ interface ChangesControlProps {
  */
 export const ChangesControl = memo(function ChangesControl({
 	workspaceId,
-	onOpenChanges,
+	isChangesOpen,
+	onToggleChanges,
+	onOpenPullRequest,
 }: ChangesControlProps) {
 	const { t } = useLingui();
 	const status = useWorkspaceGitStatus();
@@ -38,10 +47,13 @@ export const ChangesControl = memo(function ChangesControl({
 		[status.data],
 	);
 
-	const label = t({
-		id: "workspace.changesPill.openChanges",
-		message: "Open changes",
-	});
+	const label = isChangesOpen
+		? t({
+				message: "Close changes",
+			})
+		: t({
+				message: "Open changes",
+			});
 
 	const hasPr =
 		flowState.kind === "pr-exists" ||
@@ -55,10 +67,14 @@ export const ChangesControl = memo(function ChangesControl({
 			{visibleStats && (
 				<button
 					type="button"
-					onClick={onOpenChanges}
+					onClick={onToggleChanges}
 					aria-label={label}
+					aria-pressed={isChangesOpen}
 					title={label}
-					className="flex items-center gap-1 px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:bg-accent/60 focus-visible:text-foreground"
+					className={cn(
+						"flex items-center gap-1 px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:bg-accent/60 focus-visible:text-foreground",
+						isChangesOpen && "bg-accent/60 text-foreground",
+					)}
 				>
 					<GitCompareArrows className="size-3.5" />
 					<span className="tabular-nums text-emerald-600 [.dark_&]:text-[#34d399]">
@@ -81,7 +97,10 @@ export const ChangesControl = memo(function ChangesControl({
 					state={flowState}
 					workspaceId={workspaceId}
 					onRefresh={onRetry}
-					onOpenChanges={onOpenChanges}
+					isChangesOpen={isChangesOpen}
+					toggleLabel={label}
+					onToggleChanges={onToggleChanges}
+					onOpenPullRequest={onOpenPullRequest}
 				/>
 			)}
 		</div>

@@ -1,4 +1,5 @@
-import { i18n } from "@superset/i18n";
+import { msg } from "@lingui/core/macro";
+import { getI18nInstance } from "@superset/i18n/server";
 import { COMPANY } from "@superset/shared/constants";
 import type { Metadata } from "next";
 import { localizedAlternates } from "@/app/[lang]/metadata";
@@ -13,15 +14,18 @@ import { PRICING_FAQ_ITEMS } from "./constants";
 
 export async function generateMetadata(): Promise<Metadata> {
 	const lang = await initServerI18n();
+	const i18n = getI18nInstance(lang);
 	return {
-		title: i18n._({
-			id: "marketing.meta.pricing.title",
-			message: "Pricing",
-		}),
+		title: i18n._(
+			msg({
+				message: "Pricing",
+			}),
+		),
 		description: i18n._({
-			id: "marketing.meta.pricing.description",
-			message:
-				"Simple pricing for every team. Free for individuals, $15/user/month for teams, custom for enterprise. Run 100+ parallel coding agents with {companyName}.",
+			...msg({
+				message:
+					"Simple pricing for every team. Free for individuals, $15/user/month for teams, custom for enterprise. Run 100+ parallel coding agents with {companyName}.",
+			}),
 			values: { companyName: COMPANY.NAME },
 		}),
 		alternates: localizedAlternates(lang, "/pricing"),
@@ -29,7 +33,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PricingPage() {
-	await initServerI18n();
+	const locale = await initServerI18n();
+	const i18n = getI18nInstance(locale);
 
 	// JSON-LD is machine-facing, so it gets rendered strings rather than the
 	// message descriptors the UI components resolve through Lingui.

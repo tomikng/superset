@@ -1,4 +1,4 @@
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { COMPANY } from "@superset/shared/constants";
 import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
@@ -19,11 +19,13 @@ interface CategoryArticleProps {
 }
 
 export function CategoryArticle({ page }: CategoryArticleProps) {
+	const { i18n } = useLingui();
 	const url = `${COMPANY.MARKETING_URL}${page.url}`;
 	const faqItems = extractComparisonFaqItems(page.content);
 	const formattedDate = formatContentDate(
 		page.lastUpdated ?? page.date,
 		"short",
+		i18n.locale,
 	);
 
 	return (
@@ -51,7 +53,7 @@ export function CategoryArticle({ page }: CategoryArticleProps) {
 
 						<div className="text-center">
 							<span className="text-sm font-mono text-muted-foreground uppercase tracking-wider">
-								<Trans id="marketing.categoryArticle.eyebrow">Guide</Trans>
+								<Trans>Guide</Trans>
 							</span>
 
 							<h1 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight text-foreground mt-4 mb-4">
@@ -66,9 +68,7 @@ export function CategoryArticle({ page }: CategoryArticleProps) {
 
 							<div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
 								<span>
-									<Trans id="marketing.categoryArticle.lastUpdated">
-										Last updated
-									</Trans>
+									<Trans>Last updated</Trans>
 								</span>
 								<span className="text-muted-foreground/50">·</span>
 								<time dateTime={page.lastUpdated ?? page.date}>
@@ -101,17 +101,13 @@ export function CategoryArticle({ page }: CategoryArticleProps) {
 					</div>
 					<div className="max-w-3xl mx-auto px-6 py-10 text-center">
 						<p className="text-muted-foreground mb-4">
-							<Trans id="marketing.categoryArticle.cta.title">
-								Ready to try Superset?
-							</Trans>
+							<Trans>Ready to try Superset?</Trans>
 						</p>
 						<Link
 							href="/"
 							className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-foreground/80 transition-colors border border-border rounded-md px-4 py-2"
 						>
-							<Trans id="marketing.categoryArticle.cta.getStarted">
-								Get started
-							</Trans>
+							<Trans>Get started</Trans>
 						</Link>
 					</div>
 				</footer>

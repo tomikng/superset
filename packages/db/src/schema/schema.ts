@@ -32,6 +32,7 @@ import {
 	integrationProviderValues,
 	pageCommentAnchorKindValues,
 	pageCommentAuthorKindValues,
+	pageCommentIntentValues,
 	pageVisibilityValues,
 	taskPriorityValues,
 	taskStatusEnumValues,
@@ -81,6 +82,11 @@ export const pageCommentAnchorKind = pgEnum(
 export const pageCommentAuthorKind = pgEnum(
 	"page_comment_author_kind",
 	pageCommentAuthorKindValues,
+);
+
+export const pageCommentIntent = pgEnum(
+	"page_comment_intent",
+	pageCommentIntentValues,
 );
 
 export const taskStatuses = pgTable(
@@ -661,10 +667,15 @@ export const v2Hosts = pgTable(
 			.references(() => organizations.id, { onDelete: "cascade" }),
 		machineId: text("machine_id").notNull(),
 		name: text().notNull(),
-		isOnline: boolean("is_online").notNull().default(false),
 		// User-defined command run locally to wake/start this host (e.g. resume a
 		// cloud sandbox, start a VM). Null when the host has no wake command.
 		wakeCommand: text("wake_command"),
+		// Reported by the host-service at registration (`host.ensure`), which
+		// runs once per process, so these describe the build currently serving
+		// the host. Null for hosts that registered before they were reported.
+		version: text(),
+		platform: text(),
+		installSource: text("install_source"),
 		createdByUserId: uuid("created_by_user_id").references(() => users.id, {
 			onDelete: "set null",
 		}),
@@ -1462,6 +1473,7 @@ export const pageCommentThreads = pgTable(
 			.notNull()
 			.references(() => pageVersions.id, { onDelete: "cascade" }),
 		anchorKind: pageCommentAnchorKind("anchor_kind").notNull(),
+		intent: pageCommentIntent("intent"),
 		anchor: jsonb(),
 		anchorText: text("anchor_text"),
 		createdByUserId: uuid("created_by_user_id").references(() => users.id, {

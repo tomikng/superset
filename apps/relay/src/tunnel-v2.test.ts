@@ -1,6 +1,6 @@
 // End-to-end acceptance for the Bun tunnel v2 relay, mirroring
 // apps/relay2/scripts/e2e-probe.ts but hermetic: a fake local host-service
-// (echo WS + JSON HTTP), the REAL TunnelClientV2 from packages/host-service
+// (echo WS + JSON HTTP), the REAL TunnelClient from packages/host-service
 // dialing into this relay, and client probes through the public routes
 // exactly as desktop/web/API would. JWT verification and the host access
 // check are stubbed — everything on the wire is real.
@@ -11,8 +11,8 @@ import {
 	buildHostRoutingKey,
 	parseHostRoutingKey,
 } from "@superset/shared/host-routing";
-import { RELAY_CLOSE } from "@superset/shared/tunnel-v2-protocol";
-import { TunnelClientV2 } from "../../../packages/host-service/src/tunnel/tunnel-client-v2";
+import { RELAY_CLOSE } from "@superset/shared/tunnel-protocol";
+import { TunnelClient } from "../../../packages/host-service/src/tunnel/tunnel-client";
 import { createRelayApp } from "./app";
 import { HOST_STALE_MS, HostTunnel } from "./host-tunnel";
 import { NativeResponse } from "./test-env";
@@ -47,7 +47,7 @@ const relay = createRelayApp({
 let relayPort = 0;
 let server: ReturnType<typeof serve>;
 let local: ReturnType<typeof Bun.serve>;
-let tunnel: TunnelClientV2;
+let tunnel: TunnelClient;
 
 const RELAY = () => `http://127.0.0.1:${relayPort}`;
 const WS_RELAY = () => `ws://127.0.0.1:${relayPort}`;
@@ -151,7 +151,7 @@ beforeAll(async () => {
 	});
 	relay.injectWebSocket(server);
 
-	tunnel = new TunnelClientV2({
+	tunnel = new TunnelClient({
 		relayUrl: RELAY(),
 		hostId: HOST_ID,
 		getAuthToken: async () => GOOD_TOKEN,

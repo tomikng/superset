@@ -4,6 +4,7 @@ import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, TextInput, View } from "react-native";
 import { Text } from "@/components/ui/text";
+import { useTheme } from "@/hooks/useTheme";
 import { posthog } from "@/lib/posthog";
 import { PressableScale } from "@/screens/(authenticated)/components/PressableScale";
 import { useCommentComposerStore } from "../stores/commentComposerStore";
@@ -18,6 +19,7 @@ export function LineCommentSheet() {
 	const addComment = useDraftCommentsStore((state) => state.addComment);
 	const updateComment = useDraftCommentsStore((state) => state.updateComment);
 
+	const theme = useTheme();
 	const [body, setBody] = useState(anchor?.initialBody ?? "");
 	const trimmed = body.trim();
 
@@ -56,15 +58,14 @@ export function LineCommentSheet() {
 			<Stack.Screen
 				options={{
 					title: anchor?.editingDraftId
-						? t({ id: "mobile.lineComment.editTitle", message: "Edit comment" })
-						: t({ id: "mobile.nav.addComment.title", message: "Add comment" }),
+						? t({ message: "Edit comment" })
+						: t({ message: "Add comment" }),
 				}}
 			/>
 			<Stack.Toolbar placement="left">
 				<Stack.Toolbar.Button
 					icon="xmark"
 					accessibilityLabel={t({
-						id: "mobile.common.close",
 						message: "Close",
 					})}
 					onPress={() => {
@@ -99,10 +100,10 @@ export function LineCommentSheet() {
 					multiline
 					onChangeText={setBody}
 					placeholder={t({
-						id: "mobile.lineComment.placeholder",
 						message: "Leave a comment…",
 					})}
 					placeholderTextColor="#6b7280"
+					selectionColor={theme.foreground}
 					value={body}
 				/>
 				<PressableScale
@@ -116,8 +117,8 @@ export function LineCommentSheet() {
 				>
 					<Text className="text-primary-foreground font-semibold text-[15px]">
 						{anchor?.editingDraftId
-							? t({ id: "mobile.common.save", message: "Save" })
-							: t({ id: "mobile.lineComment.submit", message: "Comment" })}
+							? t({ message: "Save" })
+							: t({ message: "Comment" })}
 					</Text>
 				</PressableScale>
 			</ScrollView>

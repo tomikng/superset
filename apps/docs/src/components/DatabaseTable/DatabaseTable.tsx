@@ -1,6 +1,7 @@
-import { i18n } from "@superset/i18n";
+import { msg } from "@lingui/core/macro";
 import { Check, Key, Link, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { initServerI18n } from "@/lib/i18n-server";
 
 interface DatabaseField {
 	name: string;
@@ -23,11 +24,13 @@ interface DatabaseTableProps {
 	tableName?: string;
 }
 
-export function DatabaseTable({
+export async function DatabaseTable({
 	fields,
 	className,
 	tableName,
 }: DatabaseTableProps) {
+	const i18n = await initServerI18n();
+
 	return (
 		<div className={cn("my-6 overflow-hidden rounded-lg border", className)}>
 			{tableName && (
@@ -40,22 +43,24 @@ export function DatabaseTable({
 					<thead>
 						<tr className="border-b bg-muted/30">
 							<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								{i18n._({ id: "docs.databaseTable.field", message: "Field" })}
+								{i18n._(msg({ message: "Field" }))}
 							</th>
 							<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								{i18n._({ id: "docs.databaseTable.type", message: "Type" })}
+								{i18n._(msg({ message: "Type" }))}
 							</th>
 							<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								{i18n._({
-									id: "docs.databaseTable.constraints",
-									message: "Constraints",
-								})}
+								{i18n._(
+									msg({
+										message: "Constraints",
+									}),
+								)}
 							</th>
 							<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								{i18n._({
-									id: "docs.databaseTable.description",
-									message: "Description",
-								})}
+								{i18n._(
+									msg({
+										message: "Description",
+									}),
+								)}
 							</th>
 						</tr>
 					</thead>
@@ -75,31 +80,35 @@ export function DatabaseTable({
 											{field.isPrimaryKey && (
 												<span
 													className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-													title={i18n._({
-														id: "docs.databaseTable.primaryKey",
-														message: "Primary Key",
-													})}
+													title={i18n._(
+														msg({
+															message: "Primary Key",
+														}),
+													)}
 												>
 													<Key className="h-3 w-3" />
-													{i18n._({
-														id: "docs.databaseTable.primaryKeyAbbr",
-														message: "PK",
-													})}
+													{i18n._(
+														msg({
+															message: "PK",
+														}),
+													)}
 												</span>
 											)}
 											{field.isForeignKey && (
 												<span
 													className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400"
-													title={i18n._({
-														id: "docs.databaseTable.foreignKey",
-														message: "Foreign Key",
-													})}
+													title={i18n._(
+														msg({
+															message: "Foreign Key",
+														}),
+													)}
 												>
 													<Link className="h-3 w-3" />
-													{i18n._({
-														id: "docs.databaseTable.foreignKeyAbbr",
-														message: "FK",
-													})}
+													{i18n._(
+														msg({
+															message: "FK",
+														}),
+													)}
 												</span>
 											)}
 										</div>
@@ -114,44 +123,50 @@ export function DatabaseTable({
 											{isRequired ? (
 												<span
 													className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive"
-													title={i18n._({
-														id: "docs.databaseTable.required",
-														message: "Required",
-													})}
+													title={i18n._(
+														msg({
+															message: "Required",
+														}),
+													)}
 												>
 													<Check className="h-3 w-3" />
-													{i18n._({
-														id: "docs.databaseTable.required",
-														message: "Required",
-													})}
+													{i18n._(
+														msg({
+															message: "Required",
+														}),
+													)}
 												</span>
 											) : (
 												<span
 													className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-													title={i18n._({
-														id: "docs.databaseTable.optional",
-														message: "Optional",
-													})}
+													title={i18n._(
+														msg({
+															message: "Optional",
+														}),
+													)}
 												>
 													<X className="h-3 w-3" />
-													{i18n._({
-														id: "docs.databaseTable.optional",
-														message: "Optional",
-													})}
+													{i18n._(
+														msg({
+															message: "Optional",
+														}),
+													)}
 												</span>
 											)}
 											{field.isUnique && (
 												<span
 													className="inline-flex items-center rounded-md bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground"
-													title={i18n._({
-														id: "docs.databaseTable.unique",
-														message: "Unique",
-													})}
+													title={i18n._(
+														msg({
+															message: "Unique",
+														}),
+													)}
 												>
-													{i18n._({
-														id: "docs.databaseTable.unique",
-														message: "Unique",
-													})}
+													{i18n._(
+														msg({
+															message: "Unique",
+														}),
+													)}
 												</span>
 											)}
 										</div>
@@ -164,10 +179,11 @@ export function DatabaseTable({
 											{field.references && (
 												<p className="text-xs text-muted-foreground/70">
 													→{" "}
-													{i18n._({
-														id: "docs.databaseTable.references",
-														message: "References",
-													})}{" "}
+													{i18n._(
+														msg({
+															message: "References",
+														}),
+													)}{" "}
 													<code className="rounded bg-muted px-1 py-0.5 font-mono">
 														{field.references.model}.{field.references.field}
 													</code>

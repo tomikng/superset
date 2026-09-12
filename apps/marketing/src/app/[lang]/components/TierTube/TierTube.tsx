@@ -1,4 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import { formatDate } from "@superset/i18n/format";
 import { TIER_NAMES, TIER_RGB } from "@/app/[lang]/components/TierBadge";
 import { TierIcon } from "@/app/[lang]/components/TierIcon";
 
@@ -9,7 +10,11 @@ const railLeft = (position: number) =>
 
 const MONTHS_PER_TIER = 7;
 
-function forecastLabel(tier: number, position: number): string | null {
+function forecastLabel(
+	tier: number,
+	position: number,
+	locale: string,
+): string | null {
 	if (position <= 0) return null;
 	if (tier <= Math.floor(position)) return null;
 
@@ -17,11 +22,15 @@ function forecastLabel(tier: number, position: number): string | null {
 	const when = new Date();
 	when.setUTCDate(1);
 	when.setUTCMonth(when.getUTCMonth() + months);
-	return when.toLocaleDateString("en-US", {
-		month: "short",
-		year: "numeric",
-		timeZone: "UTC",
-	});
+	return formatDate(
+		when,
+		{
+			month: "short",
+			year: "numeric",
+			timeZone: "UTC",
+		},
+		locale,
+	);
 }
 
 function PaceTooltip({
@@ -41,21 +50,13 @@ function PaceTooltip({
 		>
 			<div className="border border-border bg-background px-3 py-2 text-center">
 				<div className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground/70">
-					{reached ? (
-						<Trans id="marketing.tiers.tube.reached">Reached</Trans>
-					) : (
-						<Trans id="marketing.tiers.tube.onThisPace">On this pace</Trans>
-					)}
+					{reached ? <Trans>Reached</Trans> : <Trans>On this pace</Trans>}
 				</div>
 				<div
 					className="font-mono text-[0.72rem] mt-1"
 					style={{ color: `rgb(${rgb})` }}
 				>
-					{reached ? (
-						<Trans id="marketing.tiers.tube.now">Now</Trans>
-					) : (
-						(forecast ?? "—")
-					)}
+					{reached ? <Trans>Now</Trans> : (forecast ?? "—")}
 				</div>
 			</div>
 		</div>
@@ -67,6 +68,7 @@ interface TierTubeProps {
 	counts?: number[];
 	subject?: "fleet" | "you";
 	pixelClassName?: string;
+	footer?: React.ReactNode;
 }
 
 export function TierTube({
@@ -74,8 +76,9 @@ export function TierTube({
 	counts,
 	subject = "you",
 	pixelClassName = "",
+	footer,
 }: TierTubeProps) {
-	const { t } = useLingui();
+	const { t, i18n } = useLingui();
 	const activeTier = Math.min(4, Math.max(0, Math.floor(position)));
 	const active = ZONES.find((zone) => zone.tier === activeTier);
 	const travelled = railLeft(position);
@@ -116,7 +119,7 @@ export function TierTube({
 							{showPace && (
 								<PaceTooltip
 									reached={reached}
-									forecast={forecastLabel(tier, position)}
+									forecast={forecastLabel(tier, position, i18n.locale)}
 									rgb={rgb}
 									className="left-1/2 -translate-x-1/2 whitespace-nowrap"
 								/>
@@ -149,7 +152,7 @@ export function TierTube({
 							? String(counts[tier] ?? 0)
 							: "—"
 						: isActive
-							? t({ id: "marketing.tiers.tube.you", message: "YOU" })
+							? t({ message: "YOU" })
 							: "—";
 					return (
 						<div
@@ -159,7 +162,7 @@ export function TierTube({
 							{showPace && (
 								<PaceTooltip
 									reached={reached}
-									forecast={forecastLabel(tier, position)}
+									forecast={forecastLabel(tier, position, i18n.locale)}
 									rgb={rgb}
 									className="inset-x-2"
 								/>
@@ -184,15 +187,15 @@ export function TierTube({
 							</div>
 							{isFleet && counts && isActive && (
 								<div className="text-[0.65rem] text-muted-foreground/70 mt-1">
-									<Trans id="marketing.tiers.tube.mostDevelopers">
-										most developers
-									</Trans>
+									<Trans>most developers</Trans>
 								</div>
 							)}
 						</div>
 					);
 				})}
 			</div>
+
+			{footer && <div className="border-t border-border">{footer}</div>}
 		</div>
 	);
 }

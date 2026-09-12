@@ -1,5 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { formatNumber } from "@superset/i18n/format";
+import { useFormat } from "@superset/i18n/react";
 import { COMPANY } from "@superset/shared/constants";
 import { formatTokens } from "@superset/shared/format-tokens";
 import type { RouterOutputs } from "@superset/trpc";
@@ -26,6 +26,8 @@ export function LeaderboardRank({
 	onToggleCollapsed,
 	onManage,
 }: LeaderboardRankProps) {
+	const { formatNumber } = useFormat();
+
 	const { t } = useLingui();
 	const { handle, rank, total, tokens } = membership;
 	const ranked = tokens > 0;
@@ -41,7 +43,7 @@ export function LeaderboardRank({
 			title={
 				ranked ? (
 					<span className="inline-flex items-center gap-2">
-						<Trans id="settings.usage.leaderboardRank.rankHeadline">
+						<Trans>
 							<span className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
 								#{formatNumber(rank)}
 							</span>{" "}
@@ -50,9 +52,7 @@ export function LeaderboardRank({
 						{tier !== null && <TierBadge tier={tier} />}
 					</span>
 				) : (
-					<Trans id="settings.usage.leaderboardRank.unrankedTitle">
-						You're on the leaderboard, but not ranked yet
-					</Trans>
+					<Trans>You're on the leaderboard, but not ranked yet</Trans>
 				)
 			}
 			actions={
@@ -63,9 +63,7 @@ export function LeaderboardRank({
 							target="_blank"
 							rel="noopener noreferrer"
 						>
-							<Trans id="settings.usage.leaderboardRank.open">
-								Open leaderboard
-							</Trans>
+							<Trans>Open leaderboard</Trans>
 							<ExternalLinkIcon className="size-3.5" />
 						</a>
 					</Button>
@@ -74,7 +72,6 @@ export function LeaderboardRank({
 						variant="ghost"
 						className="size-7 p-0"
 						aria-label={t({
-							id: "settings.usage.leaderboardRank.manage",
 							message: "Leaderboard settings",
 						})}
 						onClick={onManage}
@@ -86,7 +83,7 @@ export function LeaderboardRank({
 		>
 			<p className="mt-1 pl-7 text-xs text-muted-foreground">
 				{ranked ? (
-					<Trans id="settings.usage.leaderboardRank.bodyPublishing">
+					<Trans>
 						{formatTokens(tokens)} tokens in the last 30 days. Publishing as{" "}
 						<a
 							href={profileUrl}
@@ -99,7 +96,7 @@ export function LeaderboardRank({
 						.
 					</Trans>
 				) : (
-					<Trans id="settings.usage.leaderboardRank.unrankedBody">
+					<Trans>
 						Nothing published in the last 30 days yet. Your rank appears once
 						usage from this machine syncs, publishing as{" "}
 						<a

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLingui } from "@lingui/react/macro";
-import { formatDateTime } from "@superset/i18n/format";
+import { useFormat } from "@superset/i18n/react";
 import {
 	type ChartConfig,
 	ChartContainer,
@@ -67,11 +67,13 @@ function bucketPoints(all: MrrDatum[], range: RangeKey): MrrDatum[] {
 }
 
 export function MrrTile() {
+	const { formatDateTime, formatNumber } = useFormat();
+
 	const { t } = useLingui();
 	const trpc = useTRPC();
 	const chartConfig = {
 		mrrUsd: {
-			label: t({ id: "admin.mrr.label", message: "MRR" }),
+			label: t({ message: "MRR" }),
 			color: "var(--chart-1)",
 		},
 	} satisfies ChartConfig;
@@ -134,13 +136,13 @@ export function MrrTile() {
 
 	return (
 		<InsightTileFrame
-			title={t({ id: "admin.mrr.title", message: "MRR — daily (Stripe)" })}
+			title={t({ message: "MRR — daily (Stripe)" })}
 			description={t({
-				id: "admin.mrr.description",
 				message:
 					"Stripe's own Sigma MRR report, computed on demand via the Query Run API",
 			})}
 			lastRefresh={series?.dataLoadTime ?? null}
+			fill
 			isLoading={query.isLoading}
 			onRefresh={() => refresh.mutate()}
 			isRefreshing={refresh.isPending || isComputing}
@@ -149,12 +151,10 @@ export function MrrTile() {
 			emptyLabel={
 				isComputing
 					? t({
-							id: "admin.mrr.computing",
 							message: "Computing in Stripe — up to a minute on first load",
 						})
 					: unavailableReason
 						? t({
-								id: "admin.tile.unavailableReason",
 								message: `Unavailable: ${unavailableReason}`,
 							})
 						: undefined
@@ -174,12 +174,15 @@ export function MrrTile() {
 				</Select>
 			}
 		>
-			<div className="space-y-4">
+			{/* A column with a definite height: the chart's h-full has nothing to
+			    resolve against inside an auto-height wrapper, and recharts renders
+			    no svg at all when it measures zero. */}
+			<div className="flex h-full flex-col gap-4">
 				{latest ? (
-					<div>
+					<div className="shrink-0">
 						<div className="flex items-baseline gap-2">
 							<span className="text-3xl font-bold">
-								${latest.mrrUsd.toLocaleString()}
+								${formatNumber(latest.mrrUsd, undefined)}
 							</span>
 							{changePct !== null ? (
 								<span
@@ -196,8 +199,7 @@ export function MrrTile() {
 						{latest?.prevUsd !== null && latest?.prevUsd !== undefined ? (
 							<p className="text-muted-foreground text-sm">
 								{t({
-									id: "admin.mrr.previousPeriod",
-									message: `$${latest.prevUsd.toLocaleString()} previous period (${latest.prevDate})`,
+									message: `$${formatNumber(latest.prevUsd, undefined)} previous period (${latest.prevDate})`,
 								})}
 							</p>
 						) : null}
@@ -207,14 +209,16 @@ export function MrrTile() {
 							// data actually ends, or a correct number reads as a stale one.
 							<p className="text-muted-foreground text-xs">
 								{t({
-									id: "admin.mrr.dataThrough",
 									message: `Stripe data through ${formatDateTime(new Date(series.dataThrough), TIMESTAMP_FORMAT)}`,
 								})}
 							</p>
 						) : null}
 					</div>
 				) : null}
-				<ChartContainer config={chartConfig} className="h-[200px] w-full">
+				<ChartContainer
+					config={chartConfig}
+					className="aspect-auto w-full flex-1 min-h-[160px]"
+				>
 					<AreaChart data={points}>
 						<XAxis
 							dataKey="date"
@@ -229,7 +233,7 @@ export function MrrTile() {
 							axisLine={false}
 							width={56}
 							domain={["auto", "auto"]}
-							tickFormatter={(v: number) => `$${v.toLocaleString()}`}
+							tickFormatter={(v: number) => `$${formatNumber(v, undefined)}`}
 						/>
 						<ChartTooltip content={<MrrTooltip />} />
 						<Area

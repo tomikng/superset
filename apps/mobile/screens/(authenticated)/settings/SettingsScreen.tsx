@@ -15,6 +15,7 @@ import { useSignOut } from "@/hooks/useSignOut";
 import { useTheme } from "@/hooks/useTheme";
 import { useSession } from "@/lib/auth/client";
 import { openUrl } from "@/lib/open-url";
+import { billingSettingsUrl } from "@/lib/web-links";
 import { ListRow } from "@/screens/(authenticated)/components/ListRow";
 import { ListRowValue } from "@/screens/(authenticated)/components/ListRowValue";
 import { OrganizationAvatar } from "@/screens/(authenticated)/components/OrganizationAvatar";
@@ -51,70 +52,65 @@ export function SettingsScreen() {
 	const joined = formatJoined(user?.createdAt);
 
 	const handleSignOut = () => {
-		Alert.alert(
-			t({ id: "mobile.settings.logOut.title", message: "Log out?" }),
-			undefined,
-			[
-				{
-					style: "cancel",
-					text: t({ id: "common.cancel", message: "Cancel" }),
-				},
-				{
-					onPress: () => void signOut(),
-					style: "destructive",
-					text: t({ id: "mobile.settings.logOut.confirm", message: "Log out" }),
-				},
-			],
-		);
+		Alert.alert(t({ message: "Log out?" }), undefined, [
+			{
+				style: "cancel",
+				text: t({ message: "Cancel" }),
+			},
+			{
+				onPress: () => void signOut(),
+				style: "destructive",
+				text: t({ message: "Log out" }),
+			},
+		]);
 	};
 
-	// Informational only. Outside the US storefront, App Store guideline 3.1.1
-	// rejects in-app links to an external purchase page, so the plan row says
-	// where billing lives and stops there.
 	const handleManagePlan = () => {
 		Alert.alert(
 			t({
-				id: "mobile.settings.managePlan.title",
-				message: "Plan is managed on the web",
+				message: "Manage plan on the web",
 			}),
 			t({
-				id: "mobile.settings.managePlan.message",
-				message: `Your organization's plan is managed by its owner at ${COMPANY.DOMAIN}.`,
+				message: `You can't change this subscription in the app. Your organization's plan is managed by its owner at ${COMPANY.DOMAIN}.`,
 			}),
-			[{ text: t({ id: "mobile.common.ok", message: "OK" }) }],
+			[
+				{
+					style: "cancel",
+					text: t({ message: "Dismiss" }),
+				},
+				{
+					onPress: () => openUrl(billingSettingsUrl()),
+					text: t({ message: `Manage on ${COMPANY.DOMAIN}` }),
+				},
+			],
 		);
 	};
 
 	const handleDeleteAccount = () => {
 		Alert.alert(
 			t({
-				id: "mobile.settings.deleteAccount.title",
 				message: "Delete account?",
 			}),
 			t({
-				id: "mobile.settings.deleteAccount.message",
 				message: `All of your data will be permanently deleted after ${ACCOUNT_DELETION_GRACE_DAYS} days. Sign back in before then to restore your account.`,
 			}),
 			[
 				{
 					style: "cancel",
-					text: t({ id: "common.cancel", message: "Cancel" }),
+					text: t({ message: "Cancel" }),
 				},
 				{
 					style: "destructive",
 					text: t({
-						id: "mobile.settings.deleteAccount.confirm",
 						message: "Delete account",
 					}),
 					onPress: () => {
 						deleteAccount().catch(() => {
 							Alert.alert(
 								t({
-									id: "mobile.settings.deleteAccount.failedTitle",
 									message: "Could not delete account",
 								}),
 								t({
-									id: "mobile.settings.deleteAccount.failedMessage",
 									message:
 										"Something went wrong. Try again, or contact support@superset.sh.",
 								}),
@@ -153,7 +149,6 @@ export function SettingsScreen() {
 				<Text className="text-sm" style={{ color: theme.mutedForeground }}>
 					{joined
 						? t({
-								id: "mobile.settings.planAndJoined",
 								message: `${planLabel} · Joined ${joined}`,
 							})
 						: planLabel}
@@ -162,7 +157,6 @@ export function SettingsScreen() {
 
 			<SettingsSection
 				label={t({
-					id: "mobile.settings.section.organization",
 					message: "Organization",
 				})}
 			>
@@ -175,7 +169,6 @@ export function SettingsScreen() {
 						/>
 					}
 					label={t({
-						id: "mobile.settings.row.organization",
 						message: "Organization",
 					})}
 					trailing={
@@ -202,7 +195,7 @@ export function SettingsScreen() {
 							color={theme.mutedForeground}
 						/>
 					}
-					label={t({ id: "mobile.settings.row.hosts", message: "Hosts" })}
+					label={t({ message: "Hosts" })}
 					trailing={
 						<Ionicons
 							name="chevron-forward"
@@ -215,9 +208,7 @@ export function SettingsScreen() {
 				/>
 			</SettingsSection>
 
-			<SettingsSection
-				label={t({ id: "mobile.settings.section.plan", message: "Plan" })}
-			>
+			<SettingsSection label={t({ message: "Plan", context: "billing" })}>
 				<ListRow
 					icon={
 						<Ionicons
@@ -227,7 +218,6 @@ export function SettingsScreen() {
 						/>
 					}
 					label={t({
-						id: "mobile.settings.row.managePlan",
 						message: "Manage Plan",
 					})}
 					trailing={<ListRowValue value={planLabel} />}
@@ -236,9 +226,7 @@ export function SettingsScreen() {
 				/>
 			</SettingsSection>
 
-			<SettingsSection
-				label={t({ id: "mobile.settings.section.support", message: "Support" })}
-			>
+			<SettingsSection label={t({ message: "Support" })}>
 				<ListRow
 					icon={
 						<Ionicons
@@ -248,7 +236,6 @@ export function SettingsScreen() {
 						/>
 					}
 					label={t({
-						id: "mobile.settings.row.helpAndDocs",
 						message: "Help & Docs",
 					})}
 					trailing={<ExternalIcon color={theme.mutedForeground} />}
@@ -263,7 +250,6 @@ export function SettingsScreen() {
 						/>
 					}
 					label={t({
-						id: "mobile.settings.row.community",
 						message: "Community",
 					})}
 					trailing={<ExternalIcon color={theme.mutedForeground} />}
@@ -278,7 +264,6 @@ export function SettingsScreen() {
 						/>
 					}
 					label={t({
-						id: "mobile.settings.row.contactSupport",
 						message: "Contact Support",
 					})}
 					trailing={<ExternalIcon color={theme.mutedForeground} />}
@@ -293,7 +278,6 @@ export function SettingsScreen() {
 						/>
 					}
 					label={t({
-						id: "mobile.settings.row.rateSuperset",
 						message: "Rate Superset",
 					})}
 					trailing={<ExternalIcon color={theme.mutedForeground} />}
@@ -302,9 +286,7 @@ export function SettingsScreen() {
 				/>
 			</SettingsSection>
 
-			<SettingsSection
-				label={t({ id: "mobile.settings.section.more", message: "More" })}
-			>
+			<SettingsSection label={t({ message: "More" })}>
 				<ListRow
 					icon={
 						<Ionicons
@@ -313,7 +295,7 @@ export function SettingsScreen() {
 							color={theme.mutedForeground}
 						/>
 					}
-					label={t({ id: "mobile.settings.row.signOut", message: "Sign out" })}
+					label={t({ message: "Sign out" })}
 					onPress={isSigningOut ? undefined : handleSignOut}
 					isLast
 				/>
@@ -321,7 +303,6 @@ export function SettingsScreen() {
 
 			<SettingsSection
 				label={t({
-					id: "mobile.settings.section.dangerZone",
 					message: "Danger Zone",
 				})}
 			>
@@ -334,7 +315,6 @@ export function SettingsScreen() {
 						/>
 					}
 					label={t({
-						id: "mobile.settings.row.deleteAccount",
 						message: "Delete Account",
 					})}
 					destructive

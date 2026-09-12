@@ -1,7 +1,7 @@
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { i18n } from "@superset/i18n";
-import { formatNumber } from "@superset/i18n/format";
+import { useFormat } from "@superset/i18n/react";
 import { formatTokens } from "@superset/shared/format-tokens";
 import { cn } from "@superset/ui/utils";
 
@@ -21,35 +21,27 @@ interface RankNeighborsProps {
 // between renders.
 const ALIASES = [
 	msg({
-		id: "settings.usage.leaderboardRank.alias.0",
 		message: "Anonymous Assembler",
 	}),
 	msg({
-		id: "settings.usage.leaderboardRank.alias.1",
 		message: "Mystery Machinist",
 	}),
 	msg({
-		id: "settings.usage.leaderboardRank.alias.2",
 		message: "Nameless Foreman",
 	}),
 	msg({
-		id: "settings.usage.leaderboardRank.alias.3",
 		message: "Incognito Operator",
 	}),
 	msg({
-		id: "settings.usage.leaderboardRank.alias.4",
 		message: "Redacted Riveter",
 	}),
 	msg({
-		id: "settings.usage.leaderboardRank.alias.5",
 		message: "Phantom Forklift",
 	}),
 	msg({
-		id: "settings.usage.leaderboardRank.alias.6",
 		message: "Unknown Welder",
 	}),
 	msg({
-		id: "settings.usage.leaderboardRank.alias.7",
 		message: "Secret Shift Lead",
 	}),
 ];
@@ -62,6 +54,8 @@ function aliasFor(rank: number): string {
 // CDN-cached, so right after a publish the user's own row can lag; it is
 // synthesized from the membership so the strip never drops "you".
 export function RankNeighbors({ me, rows }: RankNeighborsProps) {
+	const { formatNumber } = useFormat();
+
 	const above = rows.find((row) => row.rank === me.rank - 1) ?? null;
 	const below = rows.find((row) => row.rank === me.rank + 1) ?? null;
 	if (!above && !below) return null;
@@ -77,10 +71,10 @@ export function RankNeighbors({ me, rows }: RankNeighborsProps) {
 		{
 			rank: me.rank,
 			tokens: me.tokens,
-			label: <Trans id="settings.usage.leaderboardRank.you">You</Trans>,
+			label: <Trans>You</Trans>,
 			detail: above ? (
-				<Trans id="settings.usage.leaderboardRank.toPass">
-					{formatTokens(above.tokens - me.tokens)} to pass #
+				<Trans>
+					{formatTokens(Math.max(0, above.tokens - me.tokens))} to pass #
 					{formatNumber(above.rank)}
 				</Trans>
 			) : null,
@@ -91,8 +85,10 @@ export function RankNeighbors({ me, rows }: RankNeighborsProps) {
 			tokens: below.tokens,
 			label: aliasFor(below.rank),
 			detail: (
-				<Trans id="settings.usage.leaderboardRank.behindYou">
-					{formatTokens(me.tokens - below.tokens)} behind you
+				// Clamped: standings are CDN-cached, so right after a publish
+				// the live "me" total can already have overtaken a stale neighbor.
+				<Trans>
+					{formatTokens(Math.max(0, me.tokens - below.tokens))} behind you
 				</Trans>
 			),
 			isMe: false,

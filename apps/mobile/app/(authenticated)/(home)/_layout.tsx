@@ -16,7 +16,7 @@ export default function HomeLayout() {
 				name="search"
 				options={{
 					presentation: "formSheet",
-					title: t({ id: "mobile.nav.search.title", message: "Search" }),
+					title: t({ message: "Search" }),
 					sheetAllowedDetents: [1.0],
 					sheetGrabberVisible: true,
 				}}
@@ -31,13 +31,23 @@ export default function HomeLayout() {
 				}}
 			/>
 			<Stack.Screen
-				name="organizations"
+				name="organizations/index"
 				options={{
 					presentation: "formSheet",
 					sheetAllowedDetents: [0.5],
 					sheetGrabberVisible: true,
 					title: t({
-						id: "mobile.nav.organizations.title",
+						message: "Organization",
+					}),
+				}}
+			/>
+			<Stack.Screen
+				name="organizations/switch"
+				options={{
+					presentation: "formSheet",
+					sheetAllowedDetents: [0.5],
+					sheetGrabberVisible: true,
+					title: t({
 						message: "Organizations",
 					}),
 				}}

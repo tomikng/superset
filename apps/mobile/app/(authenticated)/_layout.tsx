@@ -4,10 +4,14 @@ import { Redirect, Stack, usePathname } from "expo-router";
 import { usePrimeRelayUrl } from "@/hooks/usePrimeRelayUrl";
 import { useSession } from "@/lib/auth/client";
 
-const settingsScreenOptions = (title: string) => ({
+const pageScreenOptions = {
 	headerShown: true,
 	headerBackButtonDisplayMode: "minimal" as const,
 	headerShadowVisible: false,
+};
+
+const settingsScreenOptions = (title: string) => ({
+	...pageScreenOptions,
 	title,
 });
 
@@ -39,7 +43,7 @@ export default function AuthenticatedLayout() {
 	if (
 		unpaid &&
 		pathname !== "/" &&
-		pathname !== "/organizations" &&
+		!pathname.startsWith("/organizations") &&
 		!pathname.startsWith("/settings")
 	) {
 		return <Redirect href="/(authenticated)/(home)" />;
@@ -50,27 +54,100 @@ export default function AuthenticatedLayout() {
 			{/* Root headers are hidden — `title` here only names routes in
 			    back-button long-press menus (otherwise raw route names leak,
 			    e.g. "(home)"). */}
+			<Stack.Screen name="(home)" options={{ title: t({ message: "Home" }) }} />
 			<Stack.Screen
-				name="(home)"
-				options={{ title: t({ id: "mobile.nav.home.title", message: "Home" }) }}
+				name="pages/index"
+				options={{ ...pageScreenOptions, title: t({ message: "Pages" }) }}
+			/>
+			<Stack.Screen
+				name="pages/filter"
+				options={{
+					presentation: "formSheet",
+					title: t({ message: "Filter" }),
+					sheetAllowedDetents: [0.4],
+					sheetGrabberVisible: true,
+					...glassHeaderOptions,
+				}}
+			/>
+			<Stack.Screen
+				name="pages/[slug]/index"
+				options={{
+					...pageScreenOptions,
+					title: "",
+					headerBackTitle: t({ message: "Pages" }),
+				}}
+			/>
+			<Stack.Screen
+				name="pages/[slug]/preview"
+				options={{
+					presentation: "formSheet",
+					title: "",
+					sheetAllowedDetents: [0.6, 1.0],
+					sheetGrabberVisible: true,
+					...glassHeaderOptions,
+				}}
+			/>
+			<Stack.Screen
+				name="pages/[slug]/compose"
+				options={{
+					presentation: "formSheet",
+					title: t({ message: "Write a comment" }),
+					sheetAllowedDetents: [0.5],
+					sheetGrabberVisible: true,
+					...glassHeaderOptions,
+				}}
+			/>
+			<Stack.Screen
+				name="pages/[slug]/quick"
+				options={{
+					presentation: "formSheet",
+					title: t({ message: "Quick feedback" }),
+					sheetAllowedDetents: [0.6],
+					sheetGrabberVisible: true,
+					...glassHeaderOptions,
+				}}
+			/>
+			<Stack.Screen
+				name="pages/[slug]/thread"
+				options={{
+					presentation: "formSheet",
+					title: t({ message: "Comment" }),
+					sheetAllowedDetents: [0.7],
+					sheetGrabberVisible: true,
+					...glassHeaderOptions,
+				}}
+			/>
+			<Stack.Screen
+				name="pages/[slug]/comments"
+				options={{
+					presentation: "formSheet",
+					title: t({ message: "All comments" }),
+					sheetAllowedDetents: [1.0],
+					sheetGrabberVisible: true,
+					...glassHeaderOptions,
+				}}
+			/>
+			<Stack.Screen
+				name="pages/[slug]/share"
+				options={{
+					presentation: "formSheet",
+					title: t({ message: "Share page" }),
+					sheetAllowedDetents: [0.75],
+					sheetGrabberVisible: true,
+					...glassHeaderOptions,
+				}}
 			/>
 			<Stack.Screen
 				name="settings/index"
-				options={settingsScreenOptions(
-					t({ id: "mobile.nav.settings.title", message: "Settings" }),
-				)}
+				options={settingsScreenOptions(t({ message: "Settings" }))}
 			/>
 			<Stack.Screen
 				name="settings/organization"
-				options={settingsScreenOptions(
-					t({ id: "mobile.nav.organization.title", message: "Organization" }),
-				)}
+				options={settingsScreenOptions(t({ message: "Organization" }))}
 			/>
 			<Stack.Screen
 				name="settings/hosts"
-				options={settingsScreenOptions(
-					t({ id: "mobile.nav.hosts.title", message: "Hosts" }),
-				)}
+				options={settingsScreenOptions(t({ message: "Hosts" }))}
 			/>
 			<Stack.Screen
 				name="workspace/[id]/index"
@@ -78,7 +155,7 @@ export default function AuthenticatedLayout() {
 					headerShown: true,
 					headerBackButtonDisplayMode: "minimal",
 					headerShadowVisible: false,
-					title: t({ id: "mobile.nav.workspace.title", message: "Workspace" }),
+					title: t({ message: "Workspace" }),
 				}}
 			/>
 			<Stack.Screen
@@ -88,7 +165,6 @@ export default function AuthenticatedLayout() {
 					headerBackButtonDisplayMode: "minimal",
 					headerShadowVisible: false,
 					title: t({
-						id: "mobile.nav.filesChanged.title",
 						message: "Files changed",
 					}),
 					// The one screen that has to keep this. Its code panes scroll
@@ -111,7 +187,7 @@ export default function AuthenticatedLayout() {
 					sheetAllowedDetents: [0.75],
 					sheetGrabberVisible: true,
 					...glassHeaderOptions,
-					title: t({ id: "mobile.nav.commits.title", message: "Commits" }),
+					title: t({ message: "Commits" }),
 				}}
 			/>
 			<Stack.Screen
@@ -122,7 +198,6 @@ export default function AuthenticatedLayout() {
 					sheetGrabberVisible: true,
 					...glassHeaderOptions,
 					title: t({
-						id: "mobile.nav.addComment.title",
 						message: "Add comment",
 					}),
 				}}
@@ -135,7 +210,6 @@ export default function AuthenticatedLayout() {
 					sheetGrabberVisible: true,
 					...glassHeaderOptions,
 					title: t({
-						id: "mobile.nav.finishReview.title",
 						message: "Finish review",
 					}),
 				}}
@@ -159,7 +233,7 @@ export default function AuthenticatedLayout() {
 					sheetAllowedDetents: [0.5],
 					sheetGrabberVisible: true,
 					...glassHeaderOptions,
-					title: t({ id: "mobile.nav.sessions.title", message: "Sessions" }),
+					title: t({ message: "Sessions" }),
 				}}
 			/>
 			<Stack.Screen
@@ -170,7 +244,6 @@ export default function AuthenticatedLayout() {
 					sheetGrabberVisible: true,
 					...glassHeaderOptions,
 					title: t({
-						id: "mobile.nav.newSession.title",
 						message: "New session",
 					}),
 				}}
@@ -189,7 +262,6 @@ export default function AuthenticatedLayout() {
 				options={{
 					...glassHeaderOptions,
 					title: t({
-						id: "mobile.nav.pullRequest.title",
 						message: "Pull request",
 					}),
 				}}
@@ -229,7 +301,6 @@ export default function AuthenticatedLayout() {
 					sheetGrabberVisible: true,
 					...glassHeaderOptions,
 					title: t({
-						id: "mobile.nav.jumpToFile.title",
 						message: "Jump to file",
 					}),
 				}}

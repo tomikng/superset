@@ -1,7 +1,8 @@
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import type {
 	CodeViewItem,
 	DiffLineAnnotation,
+	FileDiffLoadedFiles,
 	FileDiffMetadata,
 	LineAnnotation,
 	FileContents as PierreFileContents,
@@ -16,11 +17,10 @@ import { errorMessage } from "@superset/i18n/errors";
 
 import type { RendererContext } from "@superset/panes";
 import { alert } from "@superset/ui/atoms/Alert";
-import { Button } from "@superset/ui/button";
 import { toast } from "@superset/ui/sonner";
 import { useWorkspaceClient, workspaceTrpc } from "@superset/workspace-client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuFileCode } from "react-icons/lu";
+import { useWorkspaceEvent } from "renderer/hooks/host-service/useWorkspaceEvent";
 import {
 	createPaneScrollStateKey,
 	getPaneScrollState,
@@ -29,7 +29,6 @@ import {
 import { DiffFileCollapseButton } from "renderer/screens/main/components/DiffFileCollapseButton";
 import { DiffFileHeaderName } from "renderer/screens/main/components/DiffFileHeaderName";
 import { DiffViewToolbar } from "renderer/screens/main/components/DiffViewToolbar";
-import { ResizablePanel } from "renderer/screens/main/components/ResizablePanel";
 import { MarkdownSearch } from "renderer/screens/main/components/WorkspaceView/ContentView/TabsContent/TabView/FileViewerPane/components/MarkdownSearch";
 import { toAbsoluteWorkspacePath } from "shared/absolute-paths";
 import type { DiffPaneData, PaneViewerData } from "../../../../types";
@@ -42,11 +41,11 @@ import { useOpenInExternalEditor } from "../../../useOpenInExternalEditor";
 import { useSidebarDiffRef } from "../../../useSidebarDiffRef";
 import { useViewedFiles } from "../../../useViewedFiles";
 import { AgentCommentComposer } from "../AgentCommentComposer";
-import { ChangesPanel } from "./components/ChangesPanel";
+import { BinaryDiffPreview } from "./components/BinaryDiffPreview";
 import { CommentThread } from "./components/CommentThread";
 import { DeferredDiffPlaceholder } from "./components/DeferredDiffPlaceholder";
 import { DiffHeaderMetadata } from "./components/DiffHeaderMetadata";
-import { DiffSectionBar } from "./components/DiffSectionBar";
+import { DiffSectionLabel } from "./components/DiffSectionLabel";
 import { useDiffActiveSection } from "./hooks/useDiffActiveSection";
 import {
 	type DiffAnnotationMetadata,
@@ -59,17 +58,11 @@ import { useDiffCommentComposer } from "./hooks/useDiffCommentComposer";
 import { useDiffCommentNavigation } from "./hooks/useDiffCommentNavigation";
 import { useDiffPaneSearch } from "./hooks/useDiffPaneSearch";
 import { createGetDiffInput } from "./utils/createGetDiffInput";
-import { isDiffContentTooLarge } from "./utils/diffLoadingGuards";
+import {
+	isDiffContentStale,
+	isDiffContentTooLarge,
+} from "./utils/diffLoadingGuards";
 import { getCharacterOffsetAtClientX } from "./utils/getCharacterOffsetAtClientX";
-
-// Panel sizing tracks the old workspace sidebar's (240–640, the range the
-// changes header/toolbar were designed for) rather than the PR Code tab's
-// slimmer tree. Below the hide threshold even a min-width panel leaves too
-// little diff, so it auto-hides and the toolbar's Files pill brings it back.
-const DEFAULT_TREE_WIDTH = 320;
-const MIN_TREE_WIDTH = 240;
-const MAX_TREE_WIDTH = 640;
-const HIDE_TREE_PANE_WIDTH_THRESHOLD = 820;
 
 interface CreateNewAgentSessionInput {
 	configId: string;
@@ -81,8 +74,6 @@ interface DiffPaneProps {
 	context: RendererContext<PaneViewerData>;
 	workspaceId: string;
 	onOpenFile: (path: string, openInNewTab?: boolean) => void;
-	/** ⇧-click / "Open Diff in New Tab" from the changes panel. */
-	onOpenDiffInNewTab?: (path: string, changeKey?: string) => void;
 	onCreateNewAgentSession?: (
 		input: CreateNewAgentSessionInput,
 	) => Promise<{ terminalId: string } | null>;
@@ -103,34 +94,12 @@ export function DiffPane({
 	context,
 	workspaceId,
 	onOpenFile,
-	onOpenDiffInNewTab,
 	onCreateNewAgentSession,
 }: DiffPaneProps) {
 	const { t } = useLingui();
 	const data = context.pane.data as DiffPaneData;
 	const codeViewRef = useRef<CodeViewHandle<DiffAnnotationMetadata>>(null);
 	const searchContainerRef = useRef<HTMLDivElement>(null);
-	const rootRef = useRef<HTMLDivElement>(null);
-	const [containerWidth, setContainerWidth] = useState<number | null>(null);
-	// null = no explicit user choice yet; auto collapse/expand follows the
-	// pane width until the first manual toggle, which then sticks.
-	const [manualTreeCollapsed, setManualTreeCollapsed] = useState<
-		boolean | null
-	>(null);
-	const [treeWidth, setTreeWidth] = useState(DEFAULT_TREE_WIDTH);
-	const [isResizingTree, setIsResizingTree] = useState(false);
-	// Same-kind panes render through one unkeyed component instance, so a
-	// recreated Changes pane would otherwise inherit the previous pane's
-	// manual tree choice/width (verified live: a closed pane's "show tree"
-	// override kept the tree open in a fresh 330px pane). Render-phase reset
-	// (React's documented state-reset-on-prop-change pattern) instead of an
-	// effect so the stale choice never paints.
-	const lastPaneIdRef = useRef(context.pane.id);
-	if (lastPaneIdRef.current !== context.pane.id) {
-		lastPaneIdRef.current = context.pane.id;
-		setManualTreeCollapsed(null);
-		setTreeWidth(DEFAULT_TREE_WIDTH);
-	}
 
 	const ref = useSidebarDiffRef(workspaceId);
 	const scrollStateKey = useMemo(
@@ -154,9 +123,29 @@ export function DiffPane({
 	const workspaceQuery = workspaceTrpc.workspace.get.useQuery({
 		id: workspaceId,
 	});
+	const worktreePath = workspaceQuery.data?.worktreePath;
 	const writeFile = workspaceTrpc.filesystem.writeFile.useMutation();
 	const utils = workspaceTrpc.useUtils();
 	const { trpcClient } = useWorkspaceClient();
+	// Binary previews of the index or HEAD side don't change their query key
+	// when git state moves, so refetch them on git events. Scope to the
+	// reported paths when we have them so an unrelated edit doesn't refetch
+	// every preview on screen. The working-tree side follows the shared
+	// document store's fs watch and needs nothing here.
+	useWorkspaceEvent(
+		"git:changed",
+		workspaceId,
+		({ paths }) => {
+			if (!paths) {
+				void utils.git.readDiffSideFile.invalidate({ workspaceId });
+				return;
+			}
+			for (const path of paths) {
+				void utils.git.readDiffSideFile.invalidate({ workspaceId, path });
+			}
+		},
+		!!worktreePath,
+	);
 	const [editingSet, setEditingSet] = useState<ReadonlySet<string>>(new Set());
 	const [dirtyItemIds, setDirtyItemIds] = useState<ReadonlySet<string>>(
 		new Set(),
@@ -256,12 +245,10 @@ export function DiffPane({
 			if (!file || !worktreePath) {
 				toast.error(
 					t({
-						id: "workspace.diffPane.saveEditsFailedToast",
 						message: "Couldn't save edits",
 					}),
 					{
 						description: t({
-							id: "workspace.diffPane.saveEditsNotReadyBody",
 							message: "The workspace is not ready yet. Try again.",
 						}),
 					},
@@ -278,19 +265,16 @@ export function DiffPane({
 				if (!result.ok) {
 					toast.error(
 						t({
-							id: "workspace.diffPane.saveEditsRejectedToast",
 							message: "Couldn't save edits",
 						}),
 						{
 							description:
 								result.reason === "conflict"
 									? t({
-											id: "workspace.diffPane.saveEditsConflictBody",
 											message:
 												"The file changed on disk. Review it before saving again.",
 										})
 									: t({
-											id: "workspace.diffPane.saveEditsWriteFailedBody",
 											message: "The file could not be written.",
 										}),
 						},
@@ -308,7 +292,6 @@ export function DiffPane({
 			} catch (error) {
 				toast.error(
 					t({
-						id: "workspace.diffPane.saveEditsErrorToast",
 						message: "Couldn't save edits",
 					}),
 					{
@@ -363,21 +346,18 @@ export function DiffPane({
 			const name =
 				file?.path.split("/").pop() ??
 				t({
-					id: "workspace.diffPane.thisFileFallback",
 					message: "this file",
 				});
 			alert({
 				title: t({
-					id: "workspace.diffPane.saveChangesTitle",
 					message: `Do you want to save the changes you made to ${name}?`,
 				}),
 				description: t({
-					id: "workspace.diffPane.saveChangesBody",
 					message: "Your changes will be lost if you don't save them.",
 				}),
 				actions: [
 					{
-						label: t({ id: "workspace.diffPane.save", message: "Save" }),
+						label: t({ message: "Save" }),
 						onClick: () => {
 							void saveEditedItem(itemId).then((saved) => {
 								if (saved) exitEditing(itemId);
@@ -386,14 +366,13 @@ export function DiffPane({
 					},
 					{
 						label: t({
-							id: "workspace.diffPane.dontSave",
 							message: "Don't Save",
 						}),
 						variant: "secondary",
 						onClick: () => discardEditing(itemId),
 					},
 					{
-						label: t({ id: "workspace.diffPane.cancel", message: "Cancel" }),
+						label: t({ message: "Cancel" }),
 						variant: "ghost",
 						onClick: () => {},
 					},
@@ -440,29 +419,6 @@ export function DiffPane({
 		setCollapsed,
 	});
 
-	// Tracks the pane's own rendered width (panes are split/resized well below
-	// window width). The shell always renders now — loading/empty live in the
-	// diff column — so rootRef is mounted for the pane's whole lifetime.
-	useEffect(() => {
-		const el = rootRef.current;
-		if (!el) return;
-		const update = () => setContainerWidth(el.getBoundingClientRect().width);
-		update();
-		const observer = new ResizeObserver(update);
-		observer.observe(el);
-		return () => observer.disconnect();
-	}, []);
-	const isTreeCollapsed =
-		manualTreeCollapsed ??
-		(containerWidth != null && containerWidth < HIDE_TREE_PANE_WIDTH_THRESHOLD);
-
-	// The tree shows each path once even when it appears in two sections
-	// (staged + unstaged), so the Files count matches the tree's row count,
-	// not the section item count.
-	const uniqueFileCount = useMemo(
-		() => new Set(files.map((f) => f.path)).size,
-		[files],
-	);
 	const areAllFilesCollapsed =
 		files.length > 0 &&
 		files.every((f) => collapsedSet.has(getChangesetFileKey(f)));
@@ -477,54 +433,9 @@ export function DiffPane({
 		clearTargetAndCollapse(files.map((f) => getChangesetFileKey(f)));
 	}, [updateData, areAllFilesCollapsed, files, clearTargetAndCollapse]);
 
-	// Mirrors openDiffPane's pane-data write: useDiffCodeViewScroll owns the
-	// scroll, sticky re-assert, and auto-expand for the target file, and the
-	// panel's selection echo follows the same data.
-	const handleSelectTreeFile = useCallback(
-		(target: { path: string; changeKey?: string }) => {
-			const current = dataRef.current;
-			updateData({
-				...current,
-				path: target.path,
-				changeKey: target.changeKey,
-				// Only the navigated file's key can be pruned; without a change
-				// key we can't identify it, so leave the set intact.
-				collapsedFiles: target.changeKey
-					? (current.collapsedFiles ?? []).filter(
-							(key) => key !== target.changeKey,
-						)
-					: (current.collapsedFiles ?? []),
-				focusLine: undefined,
-				focusSide: undefined,
-				focusTick: Date.now(),
-			} as PaneViewerData);
-		},
-		[updateData],
-	);
-
-	// The panel's click policy funnels here: plain/meta-plain clicks navigate
-	// this pane; ⇧-tier clicks open a separate diff tab via the page-level
-	// opener (openDiffPane targets the first diff pane in tab order, which
-	// would be wrong for in-pane navigation but right for a new tab).
-	const handlePanelSelectFile = useCallback(
-		(path: string, openInNewTab?: boolean, changeKey?: string) => {
-			if (openInNewTab) {
-				onOpenDiffInNewTab?.(path, changeKey);
-				return;
-			}
-			handleSelectTreeFile({ path, changeKey });
-		},
-		[onOpenDiffInNewTab, handleSelectTreeFile],
-	);
-	const worktreePath = workspaceQuery.data?.worktreePath;
-	const selectedAbsolutePath =
-		data.path && worktreePath
-			? toAbsoluteWorkspacePath(worktreePath, data.path)
-			: undefined;
-
-	// The section bar lives outside the scroller: Pierre pins one header at a
-	// time within its own box, so a body-less in-flow section item couldn't stay
-	// pinned across its group.
+	// The section label lives in the toolbar, outside the scroller: Pierre pins
+	// one header at a time within its own box, so a body-less in-flow section
+	// item couldn't stay pinned across its group.
 	const { currentSection, onScroll } = useDiffActiveSection({
 		codeViewRef,
 		items,
@@ -559,9 +470,19 @@ export function DiffPane({
 				// hunks we already have.
 				throw new Error(`${file.path} is too large to expand`);
 			}
-			return fileDiff.type === "rename-pure"
-				? { oldFile: null, newFile }
-				: { oldFile, newFile };
+			const loaded: FileDiffLoadedFiles =
+				fileDiff.type === "rename-pure"
+					? { oldFile: null, newFile }
+					: { oldFile, newFile };
+			if (isDiffContentStale(fileDiff, loaded)) {
+				// The file moved on after its patch was cached, so these lines
+				// don't line up with the hunks they'd be hydrated into.
+				// Staying partial keeps the patch's hunks on screen instead of
+				// tearing the pane down; the `git:changed` that follows the
+				// write refetches the patch, and expanding works again.
+				throw new Error(`${file.path} changed since its diff was loaded`);
+			}
+			return loaded;
 		},
 		[files, trpcClient, workspaceId],
 	);
@@ -785,7 +706,14 @@ export function DiffPane({
 				if (item.type !== "file") return null;
 				const file = fileByItemId.get(item.id);
 				if (!file) return null;
-				return <BinaryDiffPlaceholder file={file} onOpenFile={onOpenFile} />;
+				return (
+					<BinaryDiffPreview
+						file={file}
+						workspaceId={workspaceId}
+						worktreePath={worktreePath}
+						onOpenFile={onOpenFile}
+					/>
+				);
 			}
 			if (m.kind === "deferred-placeholder") {
 				if (item.type !== "file") return null;
@@ -804,16 +732,13 @@ export function DiffPane({
 						contextLabel={
 							m.startLine === m.endLine
 								? t({
-										id: "workspace.diffPane.composerLine",
 										message: `Line ${m.startLine}`,
 									})
 								: t({
-										id: "workspace.diffPane.composerLines",
 										message: `Lines ${m.startLine}–${m.endLine}`,
 									})
 						}
 						placeholder={t({
-							id: "workspace.diffPane.composerPlaceholder",
 							message: "Ask the AI about these lines…",
 						})}
 						onCancel={clearComposer}
@@ -838,6 +763,7 @@ export function DiffPane({
 					isOutdated={m.isOutdated}
 					url={m.url}
 					comments={m.comments}
+					replyToCommentId={m.replyToCommentId}
 					focusTick={
 						focused
 							? data.focusTick
@@ -862,129 +788,74 @@ export function DiffPane({
 			commentNav.isNavFocused,
 			commentNav.navFocusTick,
 			t,
+			worktreePath,
 		],
 	);
 
 	return (
-		<div ref={rootRef} className="flex h-full w-full">
-			{!isTreeCollapsed && (
-				<ResizablePanel
-					width={treeWidth}
-					onWidthChange={setTreeWidth}
-					isResizing={isResizingTree}
-					onResizingChange={setIsResizingTree}
-					minWidth={MIN_TREE_WIDTH}
-					maxWidth={MAX_TREE_WIDTH}
-					handleSide="right"
-					onDoubleClickHandle={() => setTreeWidth(DEFAULT_TREE_WIDTH)}
-					className="flex min-h-0 flex-col border-border/20 border-r"
-				>
-					<ChangesPanel
-						workspaceId={workspaceId}
-						selectedFilePath={selectedAbsolutePath}
-						selectedChangeKey={data.changeKey}
-						onSelectFile={handlePanelSelectFile}
-						onOpenFile={onOpenFile}
-					/>
-				</ResizablePanel>
-			)}
-			<div className="flex min-h-0 min-w-0 flex-1 flex-col">
-				<DiffViewToolbar
-					fileCount={uniqueFileCount}
-					isTreeCollapsed={isTreeCollapsed}
-					onToggleTree={() => setManualTreeCollapsed(!isTreeCollapsed)}
-					areAllFilesCollapsed={areAllFilesCollapsed}
-					onToggleCollapseAll={handleToggleCollapseAll}
-					commentNav={{
-						focusedIndex: commentNav.focusedThreadIndex,
-						total: commentNav.orderedThreads.length,
-						onPrev: commentNav.goToPrevComment,
-						onNext: commentNav.goToNextComment,
-					}}
-				/>
+		<div className="flex h-full min-h-0 w-full min-w-0 flex-col">
+			<DiffViewToolbar
+				areAllFilesCollapsed={areAllFilesCollapsed}
+				onToggleCollapseAll={handleToggleCollapseAll}
+				commentNav={{
+					focusedIndex: commentNav.focusedThreadIndex,
+					total: commentNav.orderedThreads.length,
+					onPrev: commentNav.goToPrevComment,
+					onNext: commentNav.goToNextComment,
+				}}
+			>
 				{currentSection ? (
-					<DiffSectionBar
+					<DiffSectionLabel
 						kind={currentSection.kind}
 						count={currentSection.count}
 					/>
 				) : null}
-				{files.length === 0 ? (
-					// The panel stays up so the filter/branch controls remain
-					// reachable exactly when the current filter yields nothing.
-					<div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-						{isLoading
-							? t({ id: "workspace.diffPane.loading", message: "Loading…" })
-							: t({
-									id: "workspace.diffPane.noChanges",
-									message: "No changes",
-								})}
-					</div>
-				) : (
-					<div
-						ref={searchContainerRef}
-						className="relative min-h-0 w-full flex-1"
-						onKeyDownCapture={handleEditorKeyDownCapture}
-					>
-						<MarkdownSearch
-							isOpen={search.isSearchOpen}
-							query={search.query}
-							caseSensitive={search.caseSensitive}
-							matchCount={search.matchCount}
-							activeMatchIndex={search.activeMatchIndex}
-							onQueryChange={search.setQuery}
-							onCaseSensitiveChange={search.setCaseSensitive}
-							onFindNext={search.findNext}
-							onFindPrevious={search.findPrevious}
-							onClose={search.closeSearch}
-						/>
-						<EditProvider<DiffAnnotationMetadata> createEditor={createEditor}>
-							<CodeView<DiffAnnotationMetadata>
-								ref={codeViewRef}
-								className="h-full w-full overflow-y-auto overflow-x-clip overscroll-contain px-3 [overflow-anchor:none]"
-								style={style}
-								items={items}
-								options={codeViewOptions}
-								onScroll={handleScroll}
-								renderHeaderPrefix={renderHeaderPrefix}
-								renderHeaderFilenameSuffix={renderHeaderFilenameSuffix}
-								renderHeaderMetadata={renderHeaderMetadata}
-								renderAnnotation={renderAnnotation}
-								onItemEditChange={handleItemEditChange}
-							/>
-						</EditProvider>
-					</div>
-				)}
-			</div>
-		</div>
-	);
-}
-
-function BinaryDiffPlaceholder({
-	file,
-	onOpenFile,
-}: {
-	file: ChangesetFile;
-	onOpenFile: (path: string, openInNewTab?: boolean) => void;
-}) {
-	const canOpen = file.status !== "deleted";
-
-	return (
-		<div className="flex flex-col items-center justify-center gap-3 bg-muted/30 py-8 text-muted-foreground">
-			<LuFileCode className="size-8" />
-			<p className="cursor-text select-text text-sm">
-				<Trans id="workspace.diffPane.binaryFileHidden">
-					Binary file hidden
-				</Trans>
-			</p>
-			{canOpen ? (
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => onOpenFile(file.path)}
+			</DiffViewToolbar>
+			{files.length === 0 ? (
+				// The toolbar stays up while the current filter yields nothing;
+				// the sidebar's Changes tab holds the filter/branch controls.
+				<div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+					{isLoading
+						? t({ message: "Loading…" })
+						: t({
+								message: "No changes",
+							})}
+				</div>
+			) : (
+				<div
+					ref={searchContainerRef}
+					className="relative min-h-0 w-full flex-1"
+					onKeyDownCapture={handleEditorKeyDownCapture}
 				>
-					<Trans id="workspace.diffPane.openFile">Open file</Trans>
-				</Button>
-			) : null}
+					<MarkdownSearch
+						isOpen={search.isSearchOpen}
+						query={search.query}
+						caseSensitive={search.caseSensitive}
+						matchCount={search.matchCount}
+						activeMatchIndex={search.activeMatchIndex}
+						onQueryChange={search.setQuery}
+						onCaseSensitiveChange={search.setCaseSensitive}
+						onFindNext={search.findNext}
+						onFindPrevious={search.findPrevious}
+						onClose={search.closeSearch}
+					/>
+					<EditProvider<DiffAnnotationMetadata> createEditor={createEditor}>
+						<CodeView<DiffAnnotationMetadata>
+							ref={codeViewRef}
+							className="h-full w-full overflow-y-auto overflow-x-clip overscroll-contain px-3 [overflow-anchor:none]"
+							style={style}
+							items={items}
+							options={codeViewOptions}
+							onScroll={handleScroll}
+							renderHeaderPrefix={renderHeaderPrefix}
+							renderHeaderFilenameSuffix={renderHeaderFilenameSuffix}
+							renderHeaderMetadata={renderHeaderMetadata}
+							renderAnnotation={renderAnnotation}
+							onItemEditChange={handleItemEditChange}
+						/>
+					</EditProvider>
+				</div>
+			)}
 		</div>
 	);
 }
