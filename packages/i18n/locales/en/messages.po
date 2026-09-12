@@ -396,6 +396,10 @@ msgstr "{0} of {1} checks failed"
 msgid "{0} of {1} checks running"
 msgstr "{0} of {1} checks running"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0} of {total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "Agent session started"
 msgid "agent settings"
 msgstr "agent settings"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+
 msgid "Agents"
 msgstr "Agents"
 
@@ -2690,11 +2697,6 @@ msgstr "By authorizing, you allow this application to access your data according
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 
@@ -3799,21 +3801,11 @@ msgstr "Continue or fork session"
 msgid "Continue update"
 msgstr "Continue update"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "Continue with {0}"
-
 msgid "Continue with another agent"
 msgstr "Continue with another agent"
 
 msgid "Continue with another agent…"
 msgstr "Continue with another agent…"
-
-msgid "Continue with GitHub"
-msgstr "Continue with GitHub"
-
-msgid "Continue with Google"
-msgstr "Continue with Google"
 
 msgid "Contributions"
 msgstr "Contributions"
@@ -4084,6 +4076,9 @@ msgstr "Could not load plugins. Check your connection and try again."
 
 msgid "Could not load presets from the host"
 msgstr "Could not load presets from the host"
+
+msgid "Could not load the leaderboard."
+msgstr "Could not load the leaderboard."
 
 msgid "Could not load this diff"
 msgstr "Could not load this diff"
@@ -4982,9 +4977,6 @@ msgstr "Dev"
 msgid "Dev sign in"
 msgstr "Dev sign in"
 
-msgid "Dev sign-in failed"
-msgstr "Dev sign-in failed"
-
 msgid "Developer"
 msgstr "Developer"
 
@@ -5198,9 +5190,6 @@ msgstr "Don't ask again"
 
 msgid "Don't ask me again"
 msgstr "Don't ask me again"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "Don't have an account? <0>Sign up</0>"
 
 msgid "Don't Save"
 msgstr "Don't Save"
@@ -6194,9 +6183,6 @@ msgstr "Failed to set icon"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "Failed to set password: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "Failed to sign in. Please try again."
 
 msgid "Failed to sign up. Please try again."
 msgstr "Failed to sign up. Please try again."
@@ -7818,9 +7804,6 @@ msgstr "Last updated on {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "Last updated: {lastUpdated}"
-
-msgid "Last used"
-msgstr "Last used"
 
 msgid "Late 2026"
 msgstr "Late 2026"
@@ -10265,6 +10248,9 @@ msgstr "Operator"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Opt in from Superset under Settings → Account."
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Opt in from the Superset desktop app under Settings → Account."
+
 msgid "Opt-out"
 msgstr "Opt-out"
 
@@ -10548,6 +10534,9 @@ msgstr "Partial"
 
 msgid "Passed"
 msgstr "Passed"
+
+msgid "Password"
+msgstr "Password"
 
 msgid "Password for {email}"
 msgstr "Password for {email}"
@@ -13201,23 +13190,8 @@ msgstr "Sign in as Local Admin (dev)"
 msgid "Sign in to {0}"
 msgstr "Sign in to {0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "Sign in to continue to Superset"
-
-msgid "Sign in to get started"
-msgstr "Sign in to get started"
-
-msgid "Sign in with email"
-msgstr "Sign in with email"
-
 msgid "Sign in with email (dev)"
 msgstr "Sign in with email (dev)"
-
-msgid "Sign in with GitHub"
-msgstr "Sign in with GitHub"
-
-msgid "Sign in with Google"
-msgstr "Sign in with Google"
 
 msgid "Sign out"
 msgstr "Sign out"
@@ -15988,9 +15962,6 @@ msgstr "Weekly site visitors (PostHog sessions), people who clicked download, ac
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
-
-msgid "Welcome back"
-msgstr "Welcome back"
 
 msgid "Welcome to Superset"
 msgstr "Welcome to Superset"

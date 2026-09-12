@@ -396,6 +396,10 @@ msgstr "{0} trong {1} check thất bại"
 msgid "{0} of {1} checks running"
 msgstr "{0} trong {1} check đang chạy"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0} trong {total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "Phiên agent đã bắt đầu"
 msgid "agent settings"
 msgstr "cài đặt agent"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "Sử dụng tác nhân, xếp hạng. Chỉ số lượng token và tên mô hình, được xuất bản bởi những người chọn tham gia."
+
 msgid "Agents"
 msgstr "Agent"
 
@@ -2690,11 +2697,6 @@ msgstr "Khi cấp quyền, bạn cho phép ứng dụng này truy cập dữ li�
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Khi nhấn tiếp tục, bạn đồng ý với <0>Điều khoản dịch vụ</0> và <1>Chính sách quyền riêng tư</1> của chúng tôi."
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "Khi đăng nhập, bạn đồng ý với\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "Khi đăng nhập, bạn đồng ý với <0>Điều khoản dịch vụ</0> và <1>Chính sách quyền riêng tư</1> của chúng tôi"
 
@@ -3799,21 +3801,11 @@ msgstr "Tiếp tục hoặc fork phiên"
 msgid "Continue update"
 msgstr "Tiếp tục cập nhật"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "Tiếp tục với {0}"
-
 msgid "Continue with another agent"
 msgstr "Tiếp tục với agent khác"
 
 msgid "Continue with another agent…"
 msgstr "Tiếp tục với agent khác…"
-
-msgid "Continue with GitHub"
-msgstr "Tiếp tục với GitHub"
-
-msgid "Continue with Google"
-msgstr "Tiếp tục với Google"
 
 msgid "Contributions"
 msgstr "Đóng góp"
@@ -4084,6 +4076,9 @@ msgstr "Không tải được plugin. Hãy kiểm tra kết nối và thử lạ
 
 msgid "Could not load presets from the host"
 msgstr "Không thể tải preset từ host"
+
+msgid "Could not load the leaderboard."
+msgstr "Không thể tải bảng xếp hạng."
 
 msgid "Could not load this diff"
 msgstr "Không thể tải diff này"
@@ -4982,9 +4977,6 @@ msgstr "Dev"
 msgid "Dev sign in"
 msgstr "Đăng nhập dev"
 
-msgid "Dev sign-in failed"
-msgstr "Đăng nhập dev thất bại"
-
 msgid "Developer"
 msgstr "Lập trình viên"
 
@@ -5198,9 +5190,6 @@ msgstr "Đừng hỏi lại"
 
 msgid "Don't ask me again"
 msgstr "Đừng hỏi lại"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "Chưa có tài khoản? <0>Đăng ký</0>"
 
 msgid "Don't Save"
 msgstr "Không lưu"
@@ -6194,9 +6183,6 @@ msgstr "Không thể đặt biểu tượng"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "Không thể đặt mật khẩu: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "Không thể đăng nhập. Vui lòng thử lại."
 
 msgid "Failed to sign up. Please try again."
 msgstr "Không thể đăng ký. Vui lòng thử lại."
@@ -7818,9 +7804,6 @@ msgstr "Cập nhật lần cuối vào {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "Cập nhật lần cuối: {lastUpdated}"
-
-msgid "Last used"
-msgstr "Dùng lần cuối"
 
 msgid "Late 2026"
 msgstr "Cuối 2026"
@@ -10265,6 +10248,9 @@ msgstr "Người vận hành"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Tham gia từ Superset trong Cài đặt → Tài khoản."
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Chọn tham gia từ ứng dụng Superset trên máy tính ở Cài đặt → Tài khoản."
+
 msgid "Opt-out"
 msgstr "Từ chối"
 
@@ -10548,6 +10534,9 @@ msgstr "Một phần"
 
 msgid "Passed"
 msgstr "Đã qua"
+
+msgid "Password"
+msgstr "Mật khẩu"
 
 msgid "Password for {email}"
 msgstr "Mật khẩu cho {email}"
@@ -13201,23 +13190,8 @@ msgstr "Đăng nhập với quyền Local Admin (dev)"
 msgid "Sign in to {0}"
 msgstr "Đăng nhập vào {0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "Đăng nhập để tiếp tục vào Superset"
-
-msgid "Sign in to get started"
-msgstr "Đăng nhập để bắt đầu"
-
-msgid "Sign in with email"
-msgstr "Đăng nhập bằng email"
-
 msgid "Sign in with email (dev)"
 msgstr "Đăng nhập bằng email (dev)"
-
-msgid "Sign in with GitHub"
-msgstr "Đăng nhập bằng GitHub"
-
-msgid "Sign in with Google"
-msgstr "Đăng nhập bằng Google"
 
 msgid "Sign out"
 msgstr "Đăng xuất"
@@ -15988,9 +15962,6 @@ msgstr "Khách truy cập trang hằng tuần (phiên PostHog), người nhấp 
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "Khách truy cập hằng tuần đến từ trang kết quả tìm kiếm. Search Console bên dưới cho biết họ đã gõ truy vấn nào."
-
-msgid "Welcome back"
-msgstr "Chào mừng trở lại"
 
 msgid "Welcome to Superset"
 msgstr "Chào mừng đến với Superset"

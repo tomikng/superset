@@ -396,6 +396,10 @@ msgstr "{1}项检查中有{0}项失败"
 msgid "{0} of {1} checks running"
 msgstr "{1}项检查中有{0}项在运行"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0}/{total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "智能体会话已开始"
 msgid "agent settings"
 msgstr "智能体设置"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "代理使用情况排名。仅限令牌计数和模型名称，由已选择加入的人发布。"
+
 msgid "Agents"
 msgstr "智能体"
 
@@ -2690,11 +2697,6 @@ msgstr "授权即表示你允许该应用按照其服务条款和隐私政策访
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "点击继续即表示你同意我们的<0>服务条款</0>和<1>隐私政策</1>。"
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "登录即表示你同意我们的\n"
-"<0>服务条款</0>和<1>隐私政策</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "登录即表示你同意我们的<0>服务条款</0>和<1>隐私政策</1>"
 
@@ -3799,21 +3801,11 @@ msgstr "继续或分叉会话"
 msgid "Continue update"
 msgstr "继续更新"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "使用{0}继续"
-
 msgid "Continue with another agent"
 msgstr "换一个智能体继续"
 
 msgid "Continue with another agent…"
 msgstr "换一个智能体继续…"
-
-msgid "Continue with GitHub"
-msgstr "使用GitHub继续"
-
-msgid "Continue with Google"
-msgstr "使用Google继续"
 
 msgid "Contributions"
 msgstr "贡献"
@@ -4084,6 +4076,9 @@ msgstr "无法加载插件。请检查网络连接后重试。"
 
 msgid "Could not load presets from the host"
 msgstr "无法从主机加载预设"
+
+msgid "Could not load the leaderboard."
+msgstr "无法加载排行榜。"
 
 msgid "Could not load this diff"
 msgstr "无法加载这个差异"
@@ -4982,9 +4977,6 @@ msgstr "开发"
 msgid "Dev sign in"
 msgstr "开发登录"
 
-msgid "Dev sign-in failed"
-msgstr "开发登录失败"
-
 msgid "Developer"
 msgstr "开发者"
 
@@ -5198,9 +5190,6 @@ msgstr "不再询问"
 
 msgid "Don't ask me again"
 msgstr "不再询问"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "还没有账户？<0>注册</0>"
 
 msgid "Don't Save"
 msgstr "不保存"
@@ -6194,9 +6183,6 @@ msgstr "设置图标失败"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "设置密码失败：{0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "登录失败。请重试。"
 
 msgid "Failed to sign up. Please try again."
 msgstr "注册失败。请重试。"
@@ -7818,9 +7804,6 @@ msgstr "最后更新于{date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "最后更新：{lastUpdated}"
-
-msgid "Last used"
-msgstr "上次使用"
 
 msgid "Late 2026"
 msgstr "2026年末"
@@ -10265,6 +10248,9 @@ msgstr "操作员"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "在Superset的“设置 → 账户”中选择加入。"
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "从 Superset 桌面应用的 设置 → 账户 中选择加入。"
+
 msgid "Opt-out"
 msgstr "拒绝"
 
@@ -10548,6 +10534,9 @@ msgstr "部分开启"
 
 msgid "Passed"
 msgstr "通过"
+
+msgid "Password"
+msgstr "密码"
 
 msgid "Password for {email}"
 msgstr "{email}的密码"
@@ -13201,23 +13190,8 @@ msgstr "以本地管理员身份登录（开发）"
 msgid "Sign in to {0}"
 msgstr "登录{0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "登录以继续使用Superset"
-
-msgid "Sign in to get started"
-msgstr "登录即可开始"
-
-msgid "Sign in with email"
-msgstr "使用邮箱登录"
-
 msgid "Sign in with email (dev)"
 msgstr "使用邮箱登录（开发）"
-
-msgid "Sign in with GitHub"
-msgstr "使用GitHub登录"
-
-msgid "Sign in with Google"
-msgstr "使用Google登录"
 
 msgid "Sign out"
 msgstr "退出登录"
@@ -15988,9 +15962,6 @@ msgstr "每周站点访客（PostHog 会话）、点击下载的人、创建的�
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "每周从搜索结果页到达的访客。他们输入的查询词见下方 Search Console。"
-
-msgid "Welcome back"
-msgstr "欢迎回来"
 
 msgid "Welcome to Superset"
 msgstr "欢迎使用Superset"

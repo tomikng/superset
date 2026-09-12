@@ -396,6 +396,10 @@ msgstr "{1}項檢查中有{0}項失敗"
 msgid "{0} of {1} checks running"
 msgstr "{1}項檢查中有{0}項在執行"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0}/{total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "代理程式會話已開始"
 msgid "agent settings"
 msgstr "代理程式設定"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "代理使用情況排名。僅限令牌計數和模型名稱，由已選擇加入的人發布。"
+
 msgid "Agents"
 msgstr "代理程式"
 
@@ -2690,11 +2697,6 @@ msgstr "授權即表示你允許該應用程式按照其服務條款和隱私政
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "點選繼續即表示你同意我們的<0>服務條款</0>和<1>隱私政策</1>。"
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "登入即表示你同意我們的\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "登入即表示你同意我們的<0>服務條款</0>和<1>隱私政策</1>"
 
@@ -3799,21 +3801,11 @@ msgstr "繼續或分支會話"
 msgid "Continue update"
 msgstr "繼續更新"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "使用{0}繼續"
-
 msgid "Continue with another agent"
 msgstr "換一個代理程式繼續"
 
 msgid "Continue with another agent…"
 msgstr "換一個代理程式繼續…"
-
-msgid "Continue with GitHub"
-msgstr "使用GitHub繼續"
-
-msgid "Continue with Google"
-msgstr "使用Google繼續"
 
 msgid "Contributions"
 msgstr "貢獻"
@@ -4084,6 +4076,9 @@ msgstr "無法載入外掛。請檢查連線後再試一次。"
 
 msgid "Could not load presets from the host"
 msgstr "無法從主機載入預設"
+
+msgid "Could not load the leaderboard."
+msgstr "無法載入排行榜。"
 
 msgid "Could not load this diff"
 msgstr "無法載入這個差異"
@@ -4982,9 +4977,6 @@ msgstr "開發"
 msgid "Dev sign in"
 msgstr "開發登入"
 
-msgid "Dev sign-in failed"
-msgstr "開發登入失敗"
-
 msgid "Developer"
 msgstr "開發者"
 
@@ -5198,9 +5190,6 @@ msgstr "不再詢問"
 
 msgid "Don't ask me again"
 msgstr "不再詢問"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "還沒有帳戶？<0>註冊</0>"
 
 msgid "Don't Save"
 msgstr "不儲存"
@@ -6194,9 +6183,6 @@ msgstr "設定圖示失敗"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "設定密碼失敗：{0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "登入失敗。請重試。"
 
 msgid "Failed to sign up. Please try again."
 msgstr "註冊失敗。請重試。"
@@ -7818,9 +7804,6 @@ msgstr "最後更新於{date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "最後更新：{lastUpdated}"
-
-msgid "Last used"
-msgstr "上次使用"
 
 msgid "Late 2026"
 msgstr "2026年末"
@@ -10265,6 +10248,9 @@ msgstr "操作員"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "在Superset的「設定 → 帳戶」中選擇加入。"
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "從 Superset 桌面應用的 設定 → 帳戶 中選擇加入。"
+
 msgid "Opt-out"
 msgstr "拒絕"
 
@@ -10548,6 +10534,9 @@ msgstr "部分開啟"
 
 msgid "Passed"
 msgstr "通過"
+
+msgid "Password"
+msgstr "密碼"
 
 msgid "Password for {email}"
 msgstr "{email}的密碼"
@@ -13201,23 +13190,8 @@ msgstr "以本地管理員身份登入（開發）"
 msgid "Sign in to {0}"
 msgstr "登入{0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "登入以繼續使用Superset"
-
-msgid "Sign in to get started"
-msgstr "登入即可開始"
-
-msgid "Sign in with email"
-msgstr "使用電子郵件登入"
-
 msgid "Sign in with email (dev)"
 msgstr "使用電子郵件登入（開發）"
-
-msgid "Sign in with GitHub"
-msgstr "使用GitHub登入"
-
-msgid "Sign in with Google"
-msgstr "使用Google登入"
 
 msgid "Sign out"
 msgstr "登出"
@@ -15988,9 +15962,6 @@ msgstr "每週網站訪客（PostHog 工作階段）、點擊下載的人、建�
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "每週從搜尋結果頁到達的訪客。他們輸入的查詢字詞見下方 Search Console。"
-
-msgid "Welcome back"
-msgstr "歡迎回來"
 
 msgid "Welcome to Superset"
 msgstr "歡迎使用Superset"

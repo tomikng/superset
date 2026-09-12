@@ -396,6 +396,10 @@ msgstr "Fallaron {0} de {1} comprobaciones"
 msgid "{0} of {1} checks running"
 msgstr "{0} de {1} comprobaciones en ejecución"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0} de {total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "Sesión de agente iniciada"
 msgid "agent settings"
 msgstr "configuración del agente"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "Uso del agente, clasificado. Solo recuentos de tokens y nombres de modelos, publicados por personas que optaron por participar."
+
 msgid "Agents"
 msgstr "Agentes"
 
@@ -2690,11 +2697,6 @@ msgstr "Al autorizar, permites que esta aplicación acceda a tus datos según su
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Al hacer clic en continuar, aceptas nuestras <0>Condiciones del servicio</0> y nuestra <1>Política de privacidad</1>."
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "Al iniciar sesión, aceptas nuestros\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "Al iniciar sesión, se aceptan los <0>Términos del servicio</0> y la <1>Política de privacidad</1>"
 
@@ -3799,21 +3801,11 @@ msgstr "Continuar o bifurcar la sesión"
 msgid "Continue update"
 msgstr "Continuar con la actualización"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "Continuar con {0}"
-
 msgid "Continue with another agent"
 msgstr "Continuar con otro agente"
 
 msgid "Continue with another agent…"
 msgstr "Continuar con otro agente…"
-
-msgid "Continue with GitHub"
-msgstr "Continuar con GitHub"
-
-msgid "Continue with Google"
-msgstr "Continuar con Google"
 
 msgid "Contributions"
 msgstr "Contribuciones"
@@ -4084,6 +4076,9 @@ msgstr "No se pudieron cargar los plugins. Comprueba tu conexión e inténtalo d
 
 msgid "Could not load presets from the host"
 msgstr "No se pudieron cargar los preajustes del host"
+
+msgid "Could not load the leaderboard."
+msgstr "No se pudo cargar la tabla de clasificación."
 
 msgid "Could not load this diff"
 msgstr "No se pudo cargar este diff"
@@ -4982,9 +4977,6 @@ msgstr "Dev"
 msgid "Dev sign in"
 msgstr "Inicio de sesión de desarrollo"
 
-msgid "Dev sign-in failed"
-msgstr "Error en el inicio de sesión de desarrollo"
-
 msgid "Developer"
 msgstr "Desarrollador"
 
@@ -5198,9 +5190,6 @@ msgstr "No volver a preguntar"
 
 msgid "Don't ask me again"
 msgstr "No volver a preguntarme"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "¿No tienes cuenta? <0>Regístrate</0>"
 
 msgid "Don't Save"
 msgstr "No guardar"
@@ -6194,9 +6183,6 @@ msgstr "No se pudo establecer el icono"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "No se pudo establecer la contraseña: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "No se pudo iniciar sesión. Inténtalo de nuevo."
 
 msgid "Failed to sign up. Please try again."
 msgstr "No se pudo completar el registro. Inténtalo de nuevo."
@@ -7818,9 +7804,6 @@ msgstr "Última actualización: {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "Última actualización: {lastUpdated}"
-
-msgid "Last used"
-msgstr "Último uso"
 
 msgid "Late 2026"
 msgstr "Finales de 2026"
@@ -10265,6 +10248,9 @@ msgstr "Operario"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Actívalo en Superset, en Configuración → Cuenta."
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Acepte en la aplicación de escritorio Superset en Configuración → Cuenta."
+
 msgid "Opt-out"
 msgstr "Rechazar"
 
@@ -10548,6 +10534,9 @@ msgstr "Parcial"
 
 msgid "Passed"
 msgstr "Superada"
+
+msgid "Password"
+msgstr "Contraseña"
 
 msgid "Password for {email}"
 msgstr "Contraseña de {email}"
@@ -13201,23 +13190,8 @@ msgstr "Iniciar sesión como Local Admin (dev)"
 msgid "Sign in to {0}"
 msgstr "Inicia sesión en {0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "Inicia sesión para continuar en Superset"
-
-msgid "Sign in to get started"
-msgstr "Iniciar sesión para empezar"
-
-msgid "Sign in with email"
-msgstr "Iniciar sesión con correo electrónico"
-
 msgid "Sign in with email (dev)"
 msgstr "Iniciar sesión con correo (dev)"
-
-msgid "Sign in with GitHub"
-msgstr "Iniciar sesión con GitHub"
-
-msgid "Sign in with Google"
-msgstr "Iniciar sesión con Google"
 
 msgid "Sign out"
 msgstr "Cerrar sesión"
@@ -15988,9 +15962,6 @@ msgstr "Visitantes semanales del sitio (sesiones de PostHog), personas que hicie
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "Visitantes semanales que llegan desde una página de resultados de búsqueda. Search Console, más abajo, indica qué consultas escribieron."
-
-msgid "Welcome back"
-msgstr "Hola de nuevo"
 
 msgid "Welcome to Superset"
 msgstr "Te damos la bienvenida a Superset"

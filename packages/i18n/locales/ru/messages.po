@@ -396,6 +396,10 @@ msgstr "{0} из {1} проверок с ошибкой"
 msgid "{0} of {1} checks running"
 msgstr "{0} из {1} проверок выполняется"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0} из {total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "Сессия агента запущена"
 msgid "agent settings"
 msgstr "настройки агента"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "Использование агента, рейтинг. Только количество токенов и имена моделей, опубликовано людьми, которые согласились."
+
 msgid "Agents"
 msgstr "Агенты"
 
@@ -2690,11 +2697,6 @@ msgstr "Авторизуя, вы разрешаете этому приложе�
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Нажимая «Продолжить», вы соглашаетесь с <0>Условиями использования</0> и <1>Политикой конфиденциальности</1>."
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "Выполняя вход, вы соглашаетесь с\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "Выполняя вход, вы соглашаетесь с <0>Условиями использования</0> и <1>Политикой конфиденциальности</1>"
 
@@ -3799,21 +3801,11 @@ msgstr "Продолжить или форкнуть сессию"
 msgid "Continue update"
 msgstr "Продолжить обновление"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "Продолжить с {0}"
-
 msgid "Continue with another agent"
 msgstr "Продолжить с другим агентом"
 
 msgid "Continue with another agent…"
 msgstr "Продолжить с другим агентом…"
-
-msgid "Continue with GitHub"
-msgstr "Продолжить с GitHub"
-
-msgid "Continue with Google"
-msgstr "Продолжить с Google"
 
 msgid "Contributions"
 msgstr "Вклад"
@@ -4084,6 +4076,9 @@ msgstr "Не удалось загрузить плагины. Проверьт�
 
 msgid "Could not load presets from the host"
 msgstr "Не удалось загрузить пресеты с хоста"
+
+msgid "Could not load the leaderboard."
+msgstr "Не удалось загрузить таблицу лидеров."
 
 msgid "Could not load this diff"
 msgstr "Не удалось загрузить этот diff"
@@ -4982,9 +4977,6 @@ msgstr "Dev"
 msgid "Dev sign in"
 msgstr "Dev-вход"
 
-msgid "Dev sign-in failed"
-msgstr "Не удалось выполнить dev-вход"
-
 msgid "Developer"
 msgstr "Разработчик"
 
@@ -5198,9 +5190,6 @@ msgstr "Больше не спрашивать"
 
 msgid "Don't ask me again"
 msgstr "Больше не спрашивать"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "Нет аккаунта? <0>Зарегистрируйтесь</0>"
 
 msgid "Don't Save"
 msgstr "Не сохранять"
@@ -6194,9 +6183,6 @@ msgstr "Не удалось установить иконку"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "Не удалось установить пароль: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "Не удалось войти. Попробуйте ещё раз."
 
 msgid "Failed to sign up. Please try again."
 msgstr "Не удалось зарегистрироваться. Попробуйте ещё раз."
@@ -7818,9 +7804,6 @@ msgstr "Обновлено {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "Обновлено: {lastUpdated}"
-
-msgid "Last used"
-msgstr "Использовался последним"
 
 msgid "Late 2026"
 msgstr "Конец 2026"
@@ -10265,6 +10248,9 @@ msgstr "Оператор"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Подключитесь в Superset: Настройки → Аккаунт."
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Согласитесь в приложении Superset (рабочий стол) в разделе Параметры → Учетная запись."
+
 msgid "Opt-out"
 msgstr "Отказаться"
 
@@ -10548,6 +10534,9 @@ msgstr "Частично"
 
 msgid "Passed"
 msgstr "Пройдена"
+
+msgid "Password"
+msgstr "Пароль"
 
 msgid "Password for {email}"
 msgstr "Пароль для {email}"
@@ -13201,23 +13190,8 @@ msgstr "Войти как локальный админ (dev)"
 msgid "Sign in to {0}"
 msgstr "Войдите в {0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "Войдите, чтобы продолжить в Superset"
-
-msgid "Sign in to get started"
-msgstr "Войдите, чтобы начать"
-
-msgid "Sign in with email"
-msgstr "Войти по email"
-
 msgid "Sign in with email (dev)"
 msgstr "Войти по email (dev)"
-
-msgid "Sign in with GitHub"
-msgstr "Войти через GitHub"
-
-msgid "Sign in with Google"
-msgstr "Войти через Google"
 
 msgid "Sign out"
 msgstr "Выйти"
@@ -15988,9 +15962,6 @@ msgstr "Еженедельные посетители сайта (сессии P
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "Еженедельные посетители со страницы результатов поиска. Search Console ниже показывает, какие запросы они вводили."
-
-msgid "Welcome back"
-msgstr "С возвращением"
 
 msgid "Welcome to Superset"
 msgstr "Добро пожаловать в Superset"

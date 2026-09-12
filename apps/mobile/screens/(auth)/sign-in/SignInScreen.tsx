@@ -1,4 +1,4 @@
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { Image, KeyboardAvoidingView, Platform, View } from "react-native";
 
@@ -17,6 +17,7 @@ import { DevSignInOptions } from "./components/DevSignInOptions";
  * shows would all fail against this server.
  */
 export function SignInScreen() {
+	const { t } = useLingui();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export function SignInScreen() {
 				<Input
 					value={email}
 					onChangeText={setEmail}
-					placeholder="Email"
+					placeholder={t({ message: "Email" })}
 					autoCapitalize="none"
 					autoCorrect={false}
 					autoComplete="email"
@@ -75,7 +76,7 @@ export function SignInScreen() {
 				<Input
 					value={password}
 					onChangeText={setPassword}
-					placeholder="Password"
+					placeholder={t({ message: "Password" })}
 					secureTextEntry
 					autoCapitalize="none"
 					autoCorrect={false}

@@ -396,6 +396,10 @@ msgstr "{0} van {1} checks mislukt"
 msgid "{0} of {1} checks running"
 msgstr "{0} van {1} checks bezig"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0} van {total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "Agentsessie gestart"
 msgid "agent settings"
 msgstr "agentinstellingen"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "Agentgebruik, geclassificeerd. Alleen tokencounts en modelnamen, gepubliceerd door personen die zich hebben aangemeld."
+
 msgid "Agents"
 msgstr "Agents"
 
@@ -2690,11 +2697,6 @@ msgstr "Door te autoriseren geef je deze applicatie toegang tot je gegevens volg
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Door op doorgaan te klikken ga je akkoord met onze <0>servicevoorwaarden</0> en het <1>privacybeleid</1>."
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "Door in te loggen ga je akkoord met onze\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "Door in te loggen ga je akkoord met onze <0>servicevoorwaarden</0> en het <1>privacybeleid</1>"
 
@@ -3799,21 +3801,11 @@ msgstr "Sessie voortzetten of forken"
 msgid "Continue update"
 msgstr "Doorgaan met update"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "Doorgaan met {0}"
-
 msgid "Continue with another agent"
 msgstr "Doorgaan met een andere agent"
 
 msgid "Continue with another agent…"
 msgstr "Doorgaan met een andere agent…"
-
-msgid "Continue with GitHub"
-msgstr "Doorgaan met GitHub"
-
-msgid "Continue with Google"
-msgstr "Doorgaan met Google"
 
 msgid "Contributions"
 msgstr "Bijdragen"
@@ -4084,6 +4076,9 @@ msgstr "Plugins konden niet worden geladen. Controleer je verbinding en probeer 
 
 msgid "Could not load presets from the host"
 msgstr "Kan presets van de host niet laden"
+
+msgid "Could not load the leaderboard."
+msgstr "Kon het scorebord niet laden."
 
 msgid "Could not load this diff"
 msgstr "Kan deze diff niet laden"
@@ -4982,9 +4977,6 @@ msgstr "Dev"
 msgid "Dev sign in"
 msgstr "Dev-login"
 
-msgid "Dev sign-in failed"
-msgstr "Dev-login mislukt"
-
 msgid "Developer"
 msgstr "Ontwikkelaar"
 
@@ -5198,9 +5190,6 @@ msgstr "Niet meer vragen"
 
 msgid "Don't ask me again"
 msgstr "Vraag dit niet meer"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "Nog geen account? <0>Registreren</0>"
 
 msgid "Don't Save"
 msgstr "Niet opslaan"
@@ -6194,9 +6183,6 @@ msgstr "Instellen van icoon mislukt"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "Wachtwoord instellen mislukt: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "Inloggen mislukt. Probeer het opnieuw."
 
 msgid "Failed to sign up. Please try again."
 msgstr "Registreren mislukt. Probeer het opnieuw."
@@ -7818,9 +7804,6 @@ msgstr "Laatst bijgewerkt op {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "Laatst bijgewerkt: {lastUpdated}"
-
-msgid "Last used"
-msgstr "Laatst gebruikt"
 
 msgid "Late 2026"
 msgstr "Eind 2026"
@@ -10265,6 +10248,9 @@ msgstr "Operator"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Doe mee vanuit Superset bij Instellingen → Account."
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Meld je aan in de Superset-desktopapp onder Instellingen → Account."
+
 msgid "Opt-out"
 msgstr "Weigeren"
 
@@ -10548,6 +10534,9 @@ msgstr "Gedeeltelijk"
 
 msgid "Passed"
 msgstr "Geslaagd"
+
+msgid "Password"
+msgstr "Wachtwoord"
 
 msgid "Password for {email}"
 msgstr "Wachtwoord voor {email}"
@@ -13201,23 +13190,8 @@ msgstr "Inloggen als lokale beheerder (dev)"
 msgid "Sign in to {0}"
 msgstr "Log in bij {0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "Log in om verder te gaan naar Superset"
-
-msgid "Sign in to get started"
-msgstr "Log in om te beginnen"
-
-msgid "Sign in with email"
-msgstr "Inloggen met e-mail"
-
 msgid "Sign in with email (dev)"
 msgstr "Inloggen met e-mail (dev)"
-
-msgid "Sign in with GitHub"
-msgstr "Inloggen met GitHub"
-
-msgid "Sign in with Google"
-msgstr "Inloggen met Google"
 
 msgid "Sign out"
 msgstr "Uitloggen"
@@ -15988,9 +15962,6 @@ msgstr "Wekelijkse sitebezoekers (PostHog-sessies), mensen die op downloaden kli
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "Wekelijkse bezoekers vanaf een zoekresultatenpagina. Search Console hieronder laat zien welke zoekopdrachten ze typten."
-
-msgid "Welcome back"
-msgstr "Welkom terug"
 
 msgid "Welcome to Superset"
 msgstr "Welkom bij Superset"

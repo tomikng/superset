@@ -396,6 +396,10 @@ msgstr "{0} dari {1} check gagal"
 msgid "{0} of {1} checks running"
 msgstr "{0} dari {1} check berjalan"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0} dari {total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "Sesi agen dimulai"
 msgid "agent settings"
 msgstr "pengaturan agen"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "Penggunaan agen, peringkat. Hanya jumlah token dan nama model, dipublikasikan oleh orang-orang yang memilih untuk ikut serta."
+
 msgid "Agents"
 msgstr "Agen"
 
@@ -2690,11 +2697,6 @@ msgstr "Dengan memberi otorisasi, Anda mengizinkan aplikasi ini mengakses data A
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Dengan mengklik lanjutkan, Anda menyetujui <0>Ketentuan Layanan</0> dan <1>Kebijakan Privasi</1> kami."
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "Dengan masuk, Anda menyetujui\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "Dengan masuk, Anda menyetujui <0>Ketentuan Layanan</0> dan <1>Kebijakan Privasi</1> kami"
 
@@ -3799,21 +3801,11 @@ msgstr "Lanjutkan atau fork sesi"
 msgid "Continue update"
 msgstr "Lanjutkan pembaruan"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "Lanjutkan dengan {0}"
-
 msgid "Continue with another agent"
 msgstr "Lanjutkan dengan agen lain"
 
 msgid "Continue with another agent…"
 msgstr "Lanjutkan dengan agen lain…"
-
-msgid "Continue with GitHub"
-msgstr "Lanjutkan dengan GitHub"
-
-msgid "Continue with Google"
-msgstr "Lanjutkan dengan Google"
 
 msgid "Contributions"
 msgstr "Kontribusi"
@@ -4084,6 +4076,9 @@ msgstr "Tidak dapat memuat plugin. Periksa koneksi Anda dan coba lagi."
 
 msgid "Could not load presets from the host"
 msgstr "Tidak bisa memuat preset dari host"
+
+msgid "Could not load the leaderboard."
+msgstr "Tidak dapat memuat papan peringkat."
 
 msgid "Could not load this diff"
 msgstr "Tidak bisa memuat diff ini"
@@ -4982,9 +4977,6 @@ msgstr "Dev"
 msgid "Dev sign in"
 msgstr "Masuk dev"
 
-msgid "Dev sign-in failed"
-msgstr "Masuk dev gagal"
-
 msgid "Developer"
 msgstr "Developer"
 
@@ -5198,9 +5190,6 @@ msgstr "Jangan tanya lagi"
 
 msgid "Don't ask me again"
 msgstr "Jangan tanya lagi"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "Belum punya akun? <0>Daftar</0>"
 
 msgid "Don't Save"
 msgstr "Jangan Simpan"
@@ -6194,9 +6183,6 @@ msgstr "Gagal menyetel ikon"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "Gagal menyetel kata sandi: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "Gagal masuk. Silakan coba lagi."
 
 msgid "Failed to sign up. Please try again."
 msgstr "Gagal mendaftar. Silakan coba lagi."
@@ -7818,9 +7804,6 @@ msgstr "Terakhir diperbarui pada {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "Terakhir diperbarui: {lastUpdated}"
-
-msgid "Last used"
-msgstr "Terakhir digunakan"
 
 msgid "Late 2026"
 msgstr "Akhir 2026"
@@ -10265,6 +10248,9 @@ msgstr "Operator"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Ikut serta dari Superset di Pengaturan → Akun."
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Pilih dari aplikasi desktop Superset di Pengaturan → Akun."
+
 msgid "Opt-out"
 msgstr "Tolak"
 
@@ -10548,6 +10534,9 @@ msgstr "Sebagian"
 
 msgid "Passed"
 msgstr "Lulus"
+
+msgid "Password"
+msgstr "Kata sandi"
 
 msgid "Password for {email}"
 msgstr "Kata sandi untuk {email}"
@@ -13201,23 +13190,8 @@ msgstr "Masuk sebagai Local Admin (dev)"
 msgid "Sign in to {0}"
 msgstr "Masuk ke {0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "Masuk untuk melanjutkan ke Superset"
-
-msgid "Sign in to get started"
-msgstr "Masuk untuk memulai"
-
-msgid "Sign in with email"
-msgstr "Masuk dengan email"
-
 msgid "Sign in with email (dev)"
 msgstr "Masuk dengan email (dev)"
-
-msgid "Sign in with GitHub"
-msgstr "Masuk dengan GitHub"
-
-msgid "Sign in with Google"
-msgstr "Masuk dengan Google"
 
 msgid "Sign out"
 msgstr "Keluar"
@@ -15988,9 +15962,6 @@ msgstr "Pengunjung situs mingguan (sesi PostHog), orang yang mengeklik unduh, ak
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "Pengunjung mingguan yang datang dari halaman hasil pencarian. Search Console di bawah menunjukkan kueri yang mereka ketik."
-
-msgid "Welcome back"
-msgstr "Selamat datang kembali"
 
 msgid "Welcome to Superset"
 msgstr "Selamat datang di Superset"

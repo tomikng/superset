@@ -396,6 +396,10 @@ msgstr "{1} kontrolden {0} tanesi başarısız oldu"
 msgid "{0} of {1} checks running"
 msgstr "{1} kontrolden {0} tanesi çalışıyor"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{total} içinden {0}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "Ajan oturumu başladı"
 msgid "agent settings"
 msgstr "ajan ayarları"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "Ajan kullanımı, sıralı. Sadece token sayıları ve model adları, katılmayı tercih eden kişiler tarafından yayınlandı."
+
 msgid "Agents"
 msgstr "Ajanlar"
 
@@ -2690,11 +2697,6 @@ msgstr "Yetkilendirerek, bu uygulamanın hizmet şartlarına ve gizlilik politik
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Devam'a tıklayarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1> belgelerimizi kabul edersiniz."
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "Oturum açarak şunları kabul edersiniz:\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1> belgelerimizi kabul etmiş olursunuz"
 
@@ -3799,21 +3801,11 @@ msgstr "Oturumu sürdür veya forkla"
 msgid "Continue update"
 msgstr "Güncellemeye devam et"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "{0} ile devam et"
-
 msgid "Continue with another agent"
 msgstr "Başka bir ajanla devam et"
 
 msgid "Continue with another agent…"
 msgstr "Başka bir ajanla devam et…"
-
-msgid "Continue with GitHub"
-msgstr "GitHub ile devam et"
-
-msgid "Continue with Google"
-msgstr "Google ile devam et"
 
 msgid "Contributions"
 msgstr "Katkılar"
@@ -4084,6 +4076,9 @@ msgstr "Eklentiler yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin."
 
 msgid "Could not load presets from the host"
 msgstr "Host'tan hazır ayarlar yüklenemedi"
+
+msgid "Could not load the leaderboard."
+msgstr "Lider tablosu yüklenemedi."
 
 msgid "Could not load this diff"
 msgstr "Bu fark yüklenemedi"
@@ -4982,9 +4977,6 @@ msgstr "Geliştirme"
 msgid "Dev sign in"
 msgstr "Dev oturum açma"
 
-msgid "Dev sign-in failed"
-msgstr "Dev oturum açma başarısız"
-
 msgid "Developer"
 msgstr "Geliştirici"
 
@@ -5198,9 +5190,6 @@ msgstr "Bir daha sorma"
 
 msgid "Don't ask me again"
 msgstr "Bir daha sorma"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "Hesabınız yok mu? <0>Kaydolun</0>"
 
 msgid "Don't Save"
 msgstr "Kaydetme"
@@ -6194,9 +6183,6 @@ msgstr "Simge ayarlanamadı"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "Parola belirlenemedi: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "Oturum açılamadı. Lütfen yeniden deneyin."
 
 msgid "Failed to sign up. Please try again."
 msgstr "Kaydolunamadı. Lütfen yeniden deneyin."
@@ -7818,9 +7804,6 @@ msgstr "Son güncelleme: {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "Son güncelleme: {lastUpdated}"
-
-msgid "Last used"
-msgstr "Son kullanılan"
 
 msgid "Late 2026"
 msgstr "2026 sonu"
@@ -10265,6 +10248,9 @@ msgstr "Operatör"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Superset'te Ayarlar → Hesap bölümünden katılın."
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Superset masaüstü uygulamasında Ayarlar → Hesap altında katılmayı tercih edin."
+
 msgid "Opt-out"
 msgstr "Vazgeç"
 
@@ -10548,6 +10534,9 @@ msgstr "Kısmi"
 
 msgid "Passed"
 msgstr "Geçti"
+
+msgid "Password"
+msgstr "Parola"
 
 msgid "Password for {email}"
 msgstr "{email} için parola"
@@ -13201,23 +13190,8 @@ msgstr "Yerel yönetici olarak oturum aç (dev)"
 msgid "Sign in to {0}"
 msgstr "{0} kuruluşunda oturum açın"
 
-msgid "Sign in to continue to Superset"
-msgstr "Superset'e devam etmek için oturum açın"
-
-msgid "Sign in to get started"
-msgstr "Başlamak için oturum açın"
-
-msgid "Sign in with email"
-msgstr "E-posta ile oturum aç"
-
 msgid "Sign in with email (dev)"
 msgstr "E-posta ile oturum aç (dev)"
-
-msgid "Sign in with GitHub"
-msgstr "GitHub ile oturum aç"
-
-msgid "Sign in with Google"
-msgstr "Google ile oturum aç"
 
 msgid "Sign out"
 msgstr "Oturumu kapat"
@@ -15988,9 +15962,6 @@ msgstr "Haftalık site ziyaretçileri (PostHog oturumları), indir'e tıklayanla
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "Bir arama sonuçları sayfasından gelen haftalık ziyaretçiler. Aşağıdaki Search Console hangi sorguları yazdıklarını gösterir."
-
-msgid "Welcome back"
-msgstr "Tekrar hoş geldiniz"
 
 msgid "Welcome to Superset"
 msgstr "Superset'e hoş geldiniz"

@@ -396,6 +396,10 @@ msgstr "{1}件中{0}件のチェックが失敗しました"
 msgid "{0} of {1} checks running"
 msgstr "{1}件中{0}件のチェックが実行中です"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{total}件中{0}件"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "エージェントセッションを開始しました"
 msgid "agent settings"
 msgstr "エージェント設定"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "エージェント使用状況、ランク付け。トークン数とモデル名のみ、オプトインした人が公開。"
+
 msgid "Agents"
 msgstr "エージェント"
 
@@ -2690,11 +2697,6 @@ msgstr "許可すると、このアプリケーションはその利用規約と
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "続行をクリックすると、<0>利用規約</0>と<1>プライバシーポリシー</1>に同意したことになります。"
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "サインインすると、以下に同意したことになります\n"
-"<0>利用規約</0>と<1>プライバシーポリシー</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "サインインすると、<0>利用規約</0>と<1>プライバシーポリシー</1>に同意したことになります"
 
@@ -3799,21 +3801,11 @@ msgstr "セッションを続行またはフォーク"
 msgid "Continue update"
 msgstr "更新を続行"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "{0}で続行"
-
 msgid "Continue with another agent"
 msgstr "別のエージェントで続ける"
 
 msgid "Continue with another agent…"
 msgstr "別のエージェントで続ける…"
-
-msgid "Continue with GitHub"
-msgstr "GitHubで続行"
-
-msgid "Continue with Google"
-msgstr "Googleで続行"
 
 msgid "Contributions"
 msgstr "コントリビューション"
@@ -4084,6 +4076,9 @@ msgstr "プラグインを読み込めませんでした。接続を確認して
 
 msgid "Could not load presets from the host"
 msgstr "ホストからプリセットを読み込めませんでした"
+
+msgid "Could not load the leaderboard."
+msgstr "リーダーボードを読み込めませんでした。"
 
 msgid "Could not load this diff"
 msgstr "この差分を読み込めませんでした"
@@ -4982,9 +4977,6 @@ msgstr "開発"
 msgid "Dev sign in"
 msgstr "開発用サインイン"
 
-msgid "Dev sign-in failed"
-msgstr "開発用サインインに失敗しました"
-
 msgid "Developer"
 msgstr "開発者"
 
@@ -5198,9 +5190,6 @@ msgstr "今後確認しない"
 
 msgid "Don't ask me again"
 msgstr "今後は確認しない"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "アカウントをお持ちでない場合は<0>サインアップ</0>"
 
 msgid "Don't Save"
 msgstr "保存しない"
@@ -6194,9 +6183,6 @@ msgstr "アイコンの設定に失敗しました"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "パスワードを設定できませんでした: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "サインインに失敗しました。もう一度お試しください。"
 
 msgid "Failed to sign up. Please try again."
 msgstr "サインアップに失敗しました。もう一度お試しください。"
@@ -7818,9 +7804,6 @@ msgstr "最終更新: {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "最終更新: {lastUpdated}"
-
-msgid "Last used"
-msgstr "前回使用"
 
 msgid "Late 2026"
 msgstr "2026年後半"
@@ -10265,6 +10248,9 @@ msgstr "オペレーター"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Supersetの設定 → アカウントから参加できます。"
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Superset デスクトップアプリの 設定 → アカウント からオプトインしてください。"
+
 msgid "Opt-out"
 msgstr "オプトアウト"
 
@@ -10548,6 +10534,9 @@ msgstr "一部通過"
 
 msgid "Passed"
 msgstr "成功"
+
+msgid "Password"
+msgstr "パスワード"
 
 msgid "Password for {email}"
 msgstr "{email}のパスワード"
@@ -13201,23 +13190,8 @@ msgstr "ローカル管理者としてサインイン(開発用)"
 msgid "Sign in to {0}"
 msgstr "{0}にサインイン"
 
-msgid "Sign in to continue to Superset"
-msgstr "サインインしてSupersetに進む"
-
-msgid "Sign in to get started"
-msgstr "サインインして始めましょう"
-
-msgid "Sign in with email"
-msgstr "メールでサインイン"
-
 msgid "Sign in with email (dev)"
 msgstr "メールでサインイン(開発用)"
-
-msgid "Sign in with GitHub"
-msgstr "GitHubでサインイン"
-
-msgid "Sign in with Google"
-msgstr "Googleでサインイン"
 
 msgid "Sign out"
 msgstr "サインアウト"
@@ -15988,9 +15962,6 @@ msgstr "週ごとのサイト訪問者（PostHog セッション）、ダウン�
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "検索結果ページから到達した週ごとの訪問者。入力されたクエリは下の Search Console を参照。"
-
-msgid "Welcome back"
-msgstr "おかえりなさい"
 
 msgid "Welcome to Superset"
 msgstr "Supersetへようこそ"

@@ -396,6 +396,10 @@ msgstr "Selhalo {0} z {1} kontrol"
 msgid "{0} of {1} checks running"
 msgstr "Běží {0} z {1} kontrol"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0} z {total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "Relace agenta spuštěna"
 msgid "agent settings"
 msgstr "nastavení agenta"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "Použití agenta, seřazeno. Pouze počty tokenů a názvy modelů, publikováno osobami, které se přihlásily."
+
 msgid "Agents"
 msgstr "Agenti"
 
@@ -2690,11 +2697,6 @@ msgstr "Autorizací umožníte této aplikaci přístup k vašim datům podle je
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Kliknutím na Pokračovat souhlasíte s <0>podmínkami služby</0> a <1>zásadami ochrany soukromí</1>."
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "Přihlášením souhlasíte s\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "Přihlášením souhlasíte s <0>podmínkami služby</0> a <1>zásadami ochrany soukromí</1>"
 
@@ -3799,21 +3801,11 @@ msgstr "Pokračovat nebo forkovat relaci"
 msgid "Continue update"
 msgstr "Pokračovat v aktualizaci"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "Pokračovat přes {0}"
-
 msgid "Continue with another agent"
 msgstr "Pokračovat s jiným agentem"
 
 msgid "Continue with another agent…"
 msgstr "Pokračovat s jiným agentem…"
-
-msgid "Continue with GitHub"
-msgstr "Pokračovat přes GitHub"
-
-msgid "Continue with Google"
-msgstr "Pokračovat přes Google"
 
 msgid "Contributions"
 msgstr "Příspěvky"
@@ -4084,6 +4076,9 @@ msgstr "Pluginy se nepodařilo načíst. Zkontrolujte připojení a zkuste to zn
 
 msgid "Could not load presets from the host"
 msgstr "Nepodařilo se načíst přednastavení z hosta"
+
+msgid "Could not load the leaderboard."
+msgstr "Nepodařilo se načíst leaderboard."
 
 msgid "Could not load this diff"
 msgstr "Tento rozdíl se nepodařilo načíst"
@@ -4982,9 +4977,6 @@ msgstr "Vývoj"
 msgid "Dev sign in"
 msgstr "Vývojářské přihlášení"
 
-msgid "Dev sign-in failed"
-msgstr "Dev přihlášení selhalo"
-
 msgid "Developer"
 msgstr "Vývojář"
 
@@ -5198,9 +5190,6 @@ msgstr "Příště se neptat"
 
 msgid "Don't ask me again"
 msgstr "Příště se neptat"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "Nemáte účet? <0>Zaregistrujte se</0>"
 
 msgid "Don't Save"
 msgstr "Neukládat"
@@ -6194,9 +6183,6 @@ msgstr "Nepodařilo se nastavit ikonu"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "Nepodařilo se nastavit heslo: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "Přihlášení se nezdařilo. Zkuste to prosím znovu."
 
 msgid "Failed to sign up. Please try again."
 msgstr "Registrace se nezdařila. Zkuste to prosím znovu."
@@ -7818,9 +7804,6 @@ msgstr "Naposledy aktualizováno {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "Naposledy aktualizováno: {lastUpdated}"
-
-msgid "Last used"
-msgstr "Naposledy použito"
 
 msgid "Late 2026"
 msgstr "Konec 2026"
@@ -10265,6 +10248,9 @@ msgstr "Operátor"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Zapněte to v Superset v Nastavení → Účet."
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Přihlaste se v aplikaci Superset na ploše v sekci Nastavení → Účet."
+
 msgid "Opt-out"
 msgstr "Odmítnout"
 
@@ -10548,6 +10534,9 @@ msgstr "Částečně"
 
 msgid "Passed"
 msgstr "Prošlo"
+
+msgid "Password"
+msgstr "Heslo"
 
 msgid "Password for {email}"
 msgstr "Heslo pro {email}"
@@ -13201,23 +13190,8 @@ msgstr "Přihlásit se jako Local Admin (dev)"
 msgid "Sign in to {0}"
 msgstr "Přihlaste se do {0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "Přihlaste se a pokračujte do Superset"
-
-msgid "Sign in to get started"
-msgstr "Přihlaste se a můžete začít"
-
-msgid "Sign in with email"
-msgstr "Přihlásit se e-mailem"
-
 msgid "Sign in with email (dev)"
 msgstr "Přihlásit se e-mailem (dev)"
-
-msgid "Sign in with GitHub"
-msgstr "Přihlásit se přes GitHub"
-
-msgid "Sign in with Google"
-msgstr "Přihlásit se přes Google"
 
 msgid "Sign out"
 msgstr "Odhlásit se"
@@ -15988,9 +15962,6 @@ msgstr "Týdenní návštěvníci webu (relace PostHog), lidé, kteří klikli n
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "Týdenní návštěvníci ze stránky s výsledky vyhledávání. Search Console níže ukazuje, jaké dotazy zadali."
-
-msgid "Welcome back"
-msgstr "Vítejte zpět"
 
 msgid "Welcome to Superset"
 msgstr "Vítejte v Superset"

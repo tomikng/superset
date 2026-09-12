@@ -396,6 +396,10 @@ msgstr "{0} z {1} kontroli nie przeszło"
 msgid "{0} of {1} checks running"
 msgstr "{0} z {1} kontroli w toku"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {total}"
+msgstr "{0} z {total}"
+
 #. placeholder {0}: issues.length
 #. placeholder {0}: pullRequests.length
 msgid "{0} of {totalCount}"
@@ -1571,6 +1575,9 @@ msgstr "Sesja agenta uruchomiona"
 msgid "agent settings"
 msgstr "ustawienia agenta"
 
+msgid "Agent usage, ranked. Token counts and model names only, published by people who opted in."
+msgstr "Użycie agenta, rankingowe. Tylko liczby tokenów i nazwy modeli, opublikowane przez osoby, które wyraziły zgodę."
+
 msgid "Agents"
 msgstr "Agenci"
 
@@ -2690,11 +2697,6 @@ msgstr "Autoryzując, zezwalasz tej aplikacji na dostęp do Twoich danych zgodni
 msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Klikając „kontynuuj”, akceptujesz <0>Warunki korzystania z usługi</0> i <1>Politykę prywatności</1>."
 
-msgid "By signing in, you agree to our\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-msgstr "Logując się, akceptujesz nasze\n"
-"<0>Terms of Service</0> and <1>Privacy Policy</1>"
-
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>"
 msgstr "Logując się, akceptujesz <0>Warunki korzystania z usługi</0> i <1>Politykę prywatności</1>"
 
@@ -3799,21 +3801,11 @@ msgstr "Kontynuuj lub forkuj sesję"
 msgid "Continue update"
 msgstr "Kontynuuj aktualizację"
 
-#. placeholder {0}: PROVIDER_NAME[provider]
-msgid "Continue with {0}"
-msgstr "Kontynuuj z {0}"
-
 msgid "Continue with another agent"
 msgstr "Kontynuuj z innym agentem"
 
 msgid "Continue with another agent…"
 msgstr "Kontynuuj z innym agentem…"
-
-msgid "Continue with GitHub"
-msgstr "Kontynuuj z GitHub"
-
-msgid "Continue with Google"
-msgstr "Kontynuuj z Google"
 
 msgid "Contributions"
 msgstr "Wkład"
@@ -4084,6 +4076,9 @@ msgstr "Nie udało się wczytać wtyczek. Sprawdź połączenie i spróbuj ponow
 
 msgid "Could not load presets from the host"
 msgstr "Nie udało się wczytać presetów z hosta"
+
+msgid "Could not load the leaderboard."
+msgstr "Nie udało się załadować tabeli liderów."
 
 msgid "Could not load this diff"
 msgstr "Nie udało się wczytać tych różnic"
@@ -4982,9 +4977,6 @@ msgstr "Dev"
 msgid "Dev sign in"
 msgstr "Logowanie deweloperskie"
 
-msgid "Dev sign-in failed"
-msgstr "Logowanie deweloperskie nie powiodło się"
-
 msgid "Developer"
 msgstr "Programista"
 
@@ -5198,9 +5190,6 @@ msgstr "Nie pytaj ponownie"
 
 msgid "Don't ask me again"
 msgstr "Nie pytaj mnie ponownie"
-
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "Nie masz konta? <0>Zarejestruj się</0>"
 
 msgid "Don't Save"
 msgstr "Nie zapisuj"
@@ -6194,9 +6183,6 @@ msgstr "Nie udało się ustawić ikony"
 #. placeholder {0}: error.message
 msgid "Failed to set password: {0}"
 msgstr "Nie udało się ustawić hasła: {0}"
-
-msgid "Failed to sign in. Please try again."
-msgstr "Nie udało się zalogować. Spróbuj ponownie."
 
 msgid "Failed to sign up. Please try again."
 msgstr "Nie udało się zarejestrować. Spróbuj ponownie."
@@ -7818,9 +7804,6 @@ msgstr "Ostatnia aktualizacja {date}"
 
 msgid "Last updated: {lastUpdated}"
 msgstr "Ostatnia aktualizacja: {lastUpdated}"
-
-msgid "Last used"
-msgstr "Ostatnio używane"
 
 msgid "Late 2026"
 msgstr "Koniec 2026"
@@ -10265,6 +10248,9 @@ msgstr "Operator"
 msgid "Opt in from Superset under Settings → Account."
 msgstr "Dołącz z Superset w Ustawienia → Konto."
 
+msgid "Opt in from the Superset desktop app under Settings → Account."
+msgstr "Wyrazić zgodę w aplikacji Superset na pulpicie w sekcji Ustawienia → Konto."
+
 msgid "Opt-out"
 msgstr "Rezygnuję"
 
@@ -10548,6 +10534,9 @@ msgstr "Częściowa"
 
 msgid "Passed"
 msgstr "Zaliczona"
+
+msgid "Password"
+msgstr "Hasło"
 
 msgid "Password for {email}"
 msgstr "Hasło dla {email}"
@@ -13201,23 +13190,8 @@ msgstr "Zaloguj się jako Local Admin (dev)"
 msgid "Sign in to {0}"
 msgstr "Zaloguj się do {0}"
 
-msgid "Sign in to continue to Superset"
-msgstr "Zaloguj się, aby przejść do Superset"
-
-msgid "Sign in to get started"
-msgstr "Zaloguj się, aby zacząć"
-
-msgid "Sign in with email"
-msgstr "Zaloguj się e-mailem"
-
 msgid "Sign in with email (dev)"
 msgstr "Zaloguj się e-mailem (dev)"
-
-msgid "Sign in with GitHub"
-msgstr "Zaloguj się przez GitHub"
-
-msgid "Sign in with Google"
-msgstr "Zaloguj się przez Google"
 
 msgid "Sign out"
 msgstr "Wyloguj się"
@@ -15988,9 +15962,6 @@ msgstr "Tygodniowi odwiedzający stronę (sesje PostHog), osoby, które kliknę�
 
 msgid "Weekly visitors arriving from a search results page. Search Console below says which queries they typed."
 msgstr "Tygodniowi odwiedzający ze strony wyników wyszukiwania. Search Console poniżej pokazuje, jakie zapytania wpisali."
-
-msgid "Welcome back"
-msgstr "Witamy ponownie"
 
 msgid "Welcome to Superset"
 msgstr "Witamy w Superset"
