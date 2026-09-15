@@ -8,13 +8,12 @@ import {
 	JwtApiAuthProvider,
 } from "./providers/auth";
 import { LocalGitCredentialProvider } from "./providers/git";
-import {
-	EdgeGuardedHostAuthProvider,
-	PskHostAuthProvider,
-} from "./providers/host-auth";
+import { PskHostAuthProvider } from "./providers/host-auth";
 import { provisionAgentIntegrations } from "./runtime/agent-provisioning";
+import { processStartedAt, recordBootStamp } from "./runtime/boot-stamps";
 import { resolveBrowserBridgeFromEnv } from "./runtime/browser-bridge/env";
 import { applyLoginShellEnvToProcess } from "./runtime/login-shell-env";
+import { startSandboxCredentialRefresh } from "./runtime/sandbox-credential-refresh";
 import { detachFromLaunchDirectory } from "./runtime/working-directory";
 import { installProcessSafetyNet, installUpgradeSocketGuard } from "./safety";
 import { configureSelfUpdater } from "./self-update";
@@ -25,6 +24,7 @@ import { connectRelay, type TunnelClient } from "./tunnel";
 
 async function main(): Promise<void> {
 	installConsoleTimestamps();
+	recordBootStamp("host.process.start", processStartedAt());
 	initSentry({ organizationId: env.ORGANIZATION_ID });
 
 	// Before anything spawns a worker thread or a child process: a host
@@ -82,15 +82,15 @@ async function main(): Promise<void> {
 			dbPath: env.HOST_DB_PATH,
 			cloudApiUrl: env.SUPERSET_API_URL,
 			migrationsFolder: env.HOST_MIGRATIONS_FOLDER,
-			allowedOrigins: env.CORS_ORIGINS ?? [],
+			allowedOrigins:
+				env.SUPERSET_HOST_RUN_MODE === "sandbox"
+					? "*"
+					: (env.CORS_ORIGINS ?? []),
 			browserBridge: resolveBrowserBridgeFromEnv(env),
 		},
 		providers: {
 			auth: authProvider,
-			hostAuth:
-				env.SUPERSET_HOST_RUN_MODE === "sandbox"
-					? new EdgeGuardedHostAuthProvider()
-					: new PskHostAuthProvider(env.HOST_SERVICE_SECRET),
+			hostAuth: new PskHostAuthProvider(env.HOST_SERVICE_SECRET),
 			credentials: new LocalGitCredentialProvider(),
 		},
 	});
@@ -136,12 +136,21 @@ async function main(): Promise<void> {
 			? `[${info.address}]`
 			: info.address;
 		console.log(`[host-service] listening on http://${address}:${info.port}`);
+		recordBootStamp("host.listening");
 
 		startTerminalReaper(db);
 		// A cloud workspace created with an agent starts it now: the pty daemon
 		// and event bus are up, and a person opening the workspace sees the
 		// agent's terminal the way they would on their own machine.
 		void launchSandboxAgent();
+		const sandboxWorkspaceId = process.env.SUPERSET_SANDBOX_WORKSPACE_ID;
+		if (env.SUPERSET_HOST_RUN_MODE === "sandbox" && sandboxWorkspaceId) {
+			startSandboxCredentialRefresh({
+				apiUrl: env.SUPERSET_API_URL,
+				workspaceId: sandboxWorkspaceId,
+				hostSecret: env.HOST_SERVICE_SECRET,
+			});
+		}
 
 		if (env.RELAY_URL && env.SUPERSET_HOST_RUN_MODE !== "sandbox") {
 			tunnelPromise = connectRelay({

@@ -1,10 +1,12 @@
 import { LegendList } from "@legendapp/list/react-native";
 import { useLingui } from "@lingui/react/macro";
 import { i18n } from "@superset/i18n";
+import { FEATURE_FLAGS } from "@superset/shared/constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { isAfter } from "date-fns";
 import * as Haptics from "expo-haptics";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
+import { useFeatureFlag } from "posthog-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
 	ActivityIndicator,
@@ -23,7 +25,7 @@ import {
 	type HostWorkspaceItem,
 	useHostWorkspaces,
 } from "@/hooks/useHostWorkspaces";
-import { useOrgHostsQuery } from "@/hooks/useOrgHosts";
+import { useOrgHosts } from "@/hooks/useOrgHosts";
 import { useSelectedHost } from "@/screens/(authenticated)/(home)/hooks/useSelectedHost";
 import { useWorkspaceScope } from "@/screens/(authenticated)/(home)/hooks/useWorkspaceScope";
 import { HeaderNotice } from "@/screens/(authenticated)/components/HeaderNotice";
@@ -42,7 +44,8 @@ import { OrganizationHeaderButton } from "./components/OrganizationHeaderButton"
 import { ProjectSectionHeader } from "./components/ProjectSectionHeader";
 import { ScopeBar } from "./components/ScopeBar";
 import { WorkspaceRow } from "./components/WorkspaceRow";
-import { useCloudRepoPrefix } from "./hooks/useCloudRepoPrefixes";
+import { useAgentLiveActivity } from "./hooks/useAgentLiveActivity";
+import { useCloudRepoPrefixes } from "./hooks/useCloudRepoPrefixes";
 import { useFirstPaint } from "./hooks/useFirstPaint";
 import {
 	type TerminalsHost,
@@ -163,8 +166,22 @@ export function HomeScreen() {
 
 	// Projects are fully local — served by the selected host, not the cloud.
 	const { projects, isReady: projectsReady } = useHostProjects(selectedHost);
+
+	// Mirrors the rows above onto the Lock Screen and Dynamic Island while the
+	// app is open. Foreground-only for now: nothing server-side knows an agent
+	// needs attention yet, so the card goes stale (and says so) once the app
+	// closes. ActivityKit push updates are the follow-up that fixes that.
+	const liveActivityEnabled = Boolean(
+		useFeatureFlag(FEATURE_FLAGS.MOBILE_LIVE_ACTIVITY),
+	);
+	useAgentLiveActivity({
+		terminalsByWorkspace,
+		workspaces,
+		projects,
+		enabled: liveActivityEnabled,
+	});
 	const pullRequests = usePullRequests();
-	const hostsQuery = useOrgHostsQuery();
+	const { query: hostsQuery } = useOrgHosts();
 
 	// An answer, not rows: an offline host and a host with no workspaces both
 	// settle. Decoration is not waited on. With no active organization the
@@ -447,7 +464,7 @@ export function HomeScreen() {
 	// Projects are fully local: PR rows are matched by repo coordinates
 	// parsed from the PR URL (cloud repo UUIDs aren't known host-side).
 	// Cloud rows' projects come from the API instead.
-	const cloudRepoPrefix = useCloudRepoPrefix();
+	const cloudRepoPrefixes = useCloudRepoPrefixes();
 	const repoPrefixesByProject = useMemo(
 		() =>
 			new Map<string, string | null>([
@@ -499,7 +516,7 @@ export function HomeScreen() {
 			}
 			const { workspace, cloudStatus } = item;
 			const repoPrefix = cloudStatus
-				? cloudRepoPrefix
+				? (cloudRepoPrefixes.get(workspace.id) ?? null)
 				: workspace.projectId
 					? repoPrefixesByProject.get(workspace.projectId)
 					: undefined;
@@ -524,7 +541,7 @@ export function HomeScreen() {
 		},
 		[
 			pullRequestsByRepoBranch,
-			cloudRepoPrefix,
+			cloudRepoPrefixes,
 			repoPrefixesByProject,
 			diffStats,
 			cache,
@@ -570,7 +587,7 @@ export function HomeScreen() {
 				logo={activeOrganization?.logo}
 				onPress={() => {
 					void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-					router.push("/(authenticated)/(home)/organizations");
+					router.push("/(authenticated)/settings");
 				}}
 			/>
 			{/* Search opens as a sheet rather than a search bar in this header: on

@@ -104,7 +104,7 @@ function writeHookManifest(home: string, orgId: string, endpoint: string) {
 
 describe("getNotifyScriptContent", () => {
 	it("bumps the notify hook marker when hook semantics change", () => {
-		expect(NOTIFY_SCRIPT_MARKER).toBe("# Superset agent notification hook v15");
+		expect(NOTIFY_SCRIPT_MARKER).toBe("# Superset agent notification hook v19");
 	});
 
 	it("forwards hooks fired inside a subagent (agent_id present) to the host roster only", async () => {
@@ -259,7 +259,7 @@ describe("getNotifyScriptContent", () => {
 			"HOOK_SESSION_ID=$(json_field session_id sessionId)",
 		);
 		expect(script).toContain(
-			'dispatch_to_host "{\\"json\\":{\\"terminalId\\":\\"$(json_escape "$SUPERSET_TERMINAL_ID")\\",\\"eventType\\":\\"$(json_escape "$EVENT_TYPE")\\",\\"agent\\":{\\"agentId\\":\\"$(json_escape "$AGENT_ID")\\",\\"sessionId\\":\\"$(json_escape "$SESSION_ID")\\"}}}"',
+			'dispatch_to_host "{\\"json\\":{\\"terminalId\\":\\"$(json_escape "$SUPERSET_TERMINAL_ID")\\",\\"eventType\\":\\"$(json_escape "$EVENT_TYPE")\\",\\"agent\\":{\\"agentId\\":\\"$(json_escape "$AGENT_ID")\\",\\"sessionId\\":\\"$(json_escape "$SESSION_ID")\\"}$PREVIEW_FIELD$ACCOUNT_FIELD$LAUNCH_FIELD$ATTRIBUTION_FIELD}}"',
 		);
 		// One dispatcher serves both the agent and subagent payloads.
 		expect(script.split('dispatch_to_host "').length - 1).toBe(2);
@@ -713,5 +713,165 @@ describe("cursor-hook.template.sh identity", () => {
 		// The approval must still reach cursor-agent or the tool call hangs.
 		expect(nested.stdout).toBe('{"continue":true}\n');
 		expect(nested.requests).toEqual([]);
+	});
+});
+
+describe("notification content previews", () => {
+	for (const key of [
+		"last_assistant_message",
+		"last-assistant-message",
+		"message",
+	]) {
+		it(`forwards ${key} with JSON escaping intact`, async () => {
+			const host = fakeHostService(false);
+			try {
+				const preview = 'Finished "B".\nPath: C:\\repo\nUnicode: 日本語';
+				const result = await runNotifyHookAsync(
+					{ hook_event_name: "Stop", [key]: preview },
+					{ SUPERSET_HOST_AGENT_HOOK_URL: host.url },
+				);
+				expect(result.exitCode).toBe(0);
+				expect(host.requests[0]?.json.preview).toBe(preview);
+			} finally {
+				host.stop();
+			}
+		});
+	}
+	it("does not forward prompt text on Start", async () => {
+		const host = fakeHostService(false);
+		try {
+			await runNotifyHookAsync(
+				{ hook_event_name: "Start", message: "user prompt" },
+				{ SUPERSET_HOST_AGENT_HOOK_URL: host.url },
+			);
+			expect(host.requests[0]?.json.preview).toBeUndefined();
+		} finally {
+			host.stop();
+		}
+	});
+});
+
+it("prefers the current permission message over assistant output", async () => {
+	const host = fakeHostService(false);
+	try {
+		await runNotifyHookAsync(
+			{
+				hook_event_name: "PermissionRequest",
+				message: "Allow this command?",
+				last_assistant_message: "Earlier summary",
+			},
+			{ SUPERSET_HOST_AGENT_HOOK_URL: host.url },
+		);
+		expect(host.requests[0]?.json.preview).toBe("Allow this command?");
+	} finally {
+		host.stop();
+	}
+});
+
+it.each([
+	"Stop",
+	"stop",
+	"Interrupt",
+	"AfterAgent",
+	"post_agent",
+	"post_agent_turn",
+	"task_complete",
+])("forwards completion preview for %s", async (eventType) => {
+	const host = fakeHostService(false);
+	try {
+		await runNotifyHookAsync(
+			{
+				hook_event_name: eventType,
+				last_assistant_message: "Finished checking the workspace.",
+			},
+			{ SUPERSET_HOST_AGENT_HOOK_URL: host.url },
+		);
+		expect(host.requests[0]?.json.preview).toBe(
+			"Finished checking the workspace.",
+		);
+	} finally {
+		host.stop();
+	}
+});
+
+it.each([
+	"StopFailure",
+	"stop_failure",
+	"Failed",
+	"failed",
+])("forwards the error preview for %s", async (eventType) => {
+	const host = fakeHostService(false);
+	try {
+		await runNotifyHookAsync(
+			{
+				hook_event_name: eventType,
+				error_details: "The provider rejected the request.",
+				last_assistant_message: "Earlier successful turn.",
+			},
+			{ SUPERSET_HOST_AGENT_HOOK_URL: host.url },
+		);
+		expect(host.requests[0]?.json.preview).toBe(
+			"The provider rejected the request.",
+		);
+	} finally {
+		host.stop();
+	}
+});
+
+describe("session login metadata", () => {
+	it("reports the launch profile and identifier without sending an API key", async () => {
+		const host = fakeHostService(false);
+		try {
+			await runNotifyHookAsync(
+				{ hook_event_name: "SessionStart" },
+				{
+					SUPERSET_AGENT_ID: "claude",
+					SUPERSET_AGENT_LAUNCH_ID: "123-start",
+					SUPERSET_ACCOUNT_ATTRIBUTION_TOKEN: "terminal-scoped-token",
+					SUPERSET_HOST_AGENT_HOOK_URL: host.url,
+					CLAUDE_CONFIG_DIR: '/profile/with "quotes"',
+					ANTHROPIC_API_KEY: "secret-must-stay-local",
+					ANTHROPIC_AUTH_TOKEN: "",
+					ANTHROPIC_BASE_URL: "",
+					CLAUDE_CODE_USE_BEDROCK: "",
+					CLAUDE_CODE_USE_VERTEX: "",
+					CLAUDE_CODE_USE_FOUNDRY: "",
+				},
+			);
+			expect(host.requests[0]?.json).toMatchObject({
+				launchId: "123-start",
+				attributionToken: "terminal-scoped-token",
+				accountProfile: '/profile/with "quotes"',
+				apiKey: true,
+			});
+			expect(JSON.stringify(host.requests)).not.toContain(
+				"secret-must-stay-local",
+			);
+		} finally {
+			host.stop();
+		}
+	});
+	it("does not attribute custom provider traffic to a subscription login", async () => {
+		const host = fakeHostService(false);
+		try {
+			await runNotifyHookAsync(
+				{ hook_event_name: "SessionStart" },
+				{
+					SUPERSET_AGENT_ID: "codex",
+					SUPERSET_HOST_AGENT_HOOK_URL: host.url,
+					OPENAI_BASE_URL: "https://custom.example",
+					OPENAI_API_KEY: "secret-must-stay-local",
+				},
+			);
+			expect(host.requests[0]?.json).toMatchObject({
+				accountProfile: "__unverified__",
+				apiKey: false,
+			});
+			expect(JSON.stringify(host.requests)).not.toContain(
+				"secret-must-stay-local",
+			);
+		} finally {
+			host.stop();
+		}
 	});
 });

@@ -35,8 +35,8 @@ export const COMPANY = {
 	LINKEDIN_URL: "https://www.linkedin.com/company/superset-sh",
 	YOUTUBE_URL: "https://www.youtube.com/@superset-sh",
 	MAIL_TO: `mailto:support@${ROOT_DOMAIN}`,
-	FOUNDERS_EMAIL: `founders@${ROOT_DOMAIN}`,
-	FOUNDERS_MAIL_TO: `mailto:founders@${ROOT_DOMAIN}`,
+	TEAM_EMAIL: `team@${ROOT_DOMAIN}`,
+	TEAM_MAIL_TO: `mailto:team@${ROOT_DOMAIN}`,
 	REPORT_ISSUE_URL: "https://github.com/superset-sh/superset/issues/new",
 	DISCORD_URL: "https://discord.gg/cZeD9WYcV7",
 	APP_STORE_URL: "https://apps.apple.com/app/id6788926383",
@@ -188,6 +188,12 @@ export const FEATURE_FLAGS = {
 	 */
 	PLUGINS: "plugins",
 	PAGES: "pages",
+	/**
+	 * Lock Screen / Dynamic Island agent card on iOS. Off by default while the
+	 * card is still being worked on; the flag's release conditions decide who
+	 * sees it, so a new build ships with it dark and no release widens it.
+	 */
+	MOBILE_LIVE_ACTIVITY: "mobile-live-activity",
 } as const;
 
 /**
@@ -227,28 +233,16 @@ export const SANDBOX_CREDENTIAL_PLACEHOLDER =
  */
 export const SANDBOX_WORKSPACE_PATH = "/workspace";
 
-/**
- * host.db inside a sandbox. Separate from the checkout so a persistent volume
- * can mount over it without touching the workspace, and so the image can ship
- * a pre-migrated template alongside it.
- */
-export const SANDBOX_HOST_DB_PATH = "/data/host.db";
-
 export const SANDBOX_IMAGE_NAME = "superset-hostsvc";
+
+/** The one transaction the API traces: the cloud workspace provision job. */
+export const CLOUD_WORKSPACE_PROVISION_TRANSACTION =
+	"cloud-workspace.provision";
 
 export const SHARED_ENVIRONMENT_ORGANIZATION_ID =
 	"00000000-0000-0000-0000-000000000000";
 
 export const SHARED_ENVIRONMENT_NAME = "Default";
-
-/**
- * Every cloud workspace clones this. Environments cannot carry repositories yet,
- * so there is nothing per-workspace to resolve and no project to pick.
- */
-export const CLOUD_WORKSPACE_REPO = {
-	owner: "superset-sh",
-	name: "superset",
-} as const;
 
 // Terminal identity presented to shell programs via TERM_PROGRAM. kitty:
 // agent TUIs (claude-code especially) tune wheel-scroll compensation per

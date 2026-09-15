@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
 	filterPages,
 	isPageScope,
+	matchesAuthor,
 	matchesScope,
 	matchesSearch,
 	sortPinnedFirst,
@@ -12,16 +13,18 @@ const page = (
 	title: string,
 	visibility: string,
 	description: string | null = null,
+	createdByUserId: string | null = null,
 ) => ({
 	id,
 	title,
 	slug: title.toLowerCase().replace(/ /g, "-"),
 	visibility,
 	description,
+	createdByUserId,
 });
 
-const team = page("1", "Q3 Metrics", "org");
-const mine = page("2", "Ingest Runbook", "just_me", "hookdeck notes");
+const team = page("1", "Q3 Metrics", "org", null, "user-a");
+const mine = page("2", "Ingest Runbook", "just_me", "hookdeck notes", "user-b");
 const other = page("3", "Warning Tokens", "org");
 
 describe("isPageScope", () => {
@@ -68,6 +71,22 @@ describe("matchesScope", () => {
 	});
 });
 
+describe("matchesAuthor", () => {
+	it("passes everything through when no author is selected", () => {
+		expect(matchesAuthor(team, null)).toBe(true);
+		expect(matchesAuthor(other, null)).toBe(true);
+	});
+
+	it("matches only the selected author's pages", () => {
+		expect(matchesAuthor(team, "user-a")).toBe(true);
+		expect(matchesAuthor(mine, "user-a")).toBe(false);
+	});
+
+	it("excludes pages without a creator when an author is selected", () => {
+		expect(matchesAuthor(other, "user-a")).toBe(false);
+	});
+});
+
 describe("filterPages", () => {
 	it("applies search and scope together", () => {
 		const result = filterPages([team, mine, other], {
@@ -86,6 +105,16 @@ describe("filterPages", () => {
 				pinnedPageIds: new Set(),
 			}),
 		).toEqual([]);
+	});
+
+	it("applies the author filter alongside search and scope", () => {
+		const result = filterPages([team, mine, other], {
+			search: "",
+			scope: "all",
+			pinnedPageIds: new Set(),
+			authorId: "user-a",
+		});
+		expect(result.map((p) => p.id)).toEqual(["1"]);
 	});
 });
 

@@ -269,6 +269,7 @@ export const pageRouter = {
 					updatedAt: pages.updatedAt,
 					createdByUserId: pages.createdByUserId,
 					ownerName: users.name,
+					ownerImage: users.image,
 					latestVersion: latest.version,
 					contentType: latest.contentType,
 					sizeBytes: latest.sizeBytes,

@@ -136,6 +136,10 @@ function serializeCancellationDetails(
 export const auth = betterAuth({
 	baseURL: env.NEXT_PUBLIC_API_URL,
 	secret: env.BETTER_AUTH_SECRET,
+	onAPIError: {
+		// Without this, production better-auth sends OAuth failures to the API root, a 404.
+		errorURL: `${env.NEXT_PUBLIC_WEB_URL}/sign-in`,
+	},
 	disabledPaths: [],
 	database: drizzleAdapter(db, {
 		provider: "pg",
@@ -251,6 +255,7 @@ export const auth = betterAuth({
 		google: {
 			clientId: env.GOOGLE_CLIENT_ID,
 			clientSecret: env.GOOGLE_CLIENT_SECRET,
+			prompt: "select_account",
 		},
 		apple: {
 			clientId: env.APPLE_CLIENT_ID,
@@ -325,7 +330,7 @@ export const auth = betterAuth({
 					try {
 						const { error } = await resend.emails.send({
 							from: "Superset <noreply@superset.sh>",
-							replyTo: "founders@superset.sh",
+							replyTo: "support@superset.sh",
 							to: user.email,
 							subject: "Welcome to Superset",
 							react: WelcomeEmail({
@@ -1266,6 +1271,30 @@ export const auth = betterAuth({
 					const dueToPaymentFailure =
 						(cancellationDetails ?? stripeSubscription.cancellation_details)
 							?.reason === "payment_failed";
+
+					if (
+						subscription.plan === "pro" &&
+						!dueToPaymentFailure &&
+						stripeSubscription.canceled_at
+					) {
+						try {
+							await qstash.publishJSON({
+								url: `${env.NEXT_PUBLIC_API_URL}/api/integrations/stripe/jobs/cancellation-feedback`,
+								body: {
+									stripeSubscriptionId: stripeSubscription.id,
+									canceledAt: stripeSubscription.canceled_at,
+								},
+								delay: 2700,
+								retries: 3,
+								deduplicationId: `pro-cancellation-feedback-${stripeSubscription.id}-${stripeSubscription.canceled_at}`,
+							});
+						} catch (error) {
+							console.error(
+								"[stripe/cancellation-feedback] Failed to queue feedback:",
+								error,
+							);
+						}
+					}
 
 					await resend.batch.send(
 						recipients.map((recipient) => ({
