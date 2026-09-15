@@ -598,6 +598,7 @@ jobs:
   realtime-changes:
     name: Detect Realtime Changes
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     permissions:
       contents: read
     outputs:
@@ -623,7 +624,7 @@ jobs:
     environment: production
     needs: realtime-changes
     if: >-
-      !cancelled() && (
+      github.repository == 'superset-sh/superset' && !cancelled() && (
         github.event_name == 'workflow_dispatch'
         || needs.realtime-changes.result != 'success'
         || needs.realtime-changes.outputs.realtime == 'true'
@@ -689,6 +690,7 @@ jobs:
   deploy-sandbox-gate:
     name: Deploy Gate Worker to Cloudflare
     runs-on: ubuntu-latest
+    if: github.repository == 'superset-sh/superset'
     environment: production
 
     steps:
