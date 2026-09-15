@@ -66,5 +66,8 @@ describe("node-pty pty crash-handler patch", () => {
 				"_task_set_exception_ports",
 			);
 		},
+		// `nm` is an xcrun shim: under a parallel full-suite run its cold start
+		// alone can exceed bun's 5s default and the test times out with no output.
+		30_000,
 	);
 });
