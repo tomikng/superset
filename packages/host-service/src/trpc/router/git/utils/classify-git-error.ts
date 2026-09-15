@@ -38,6 +38,13 @@ const XCODE_SELECT_NO_TOOLS_PATTERN =
 // off a hook that reaches some other tool through the same stub.
 const XCODE_SELECT_GIT_NOT_LOCATED_PATTERN =
 	/^xcode-select: Failed to locate 'git', requesting installation of command line developer tools\.$/im;
+// The same stub after an Xcode update whose license nobody has accepted yet:
+// it refuses to run git with this sentence and nothing else, and every git
+// command fails the same way until the license is agreed to. The sentence
+// names no tool, so a hook reaching any shimmed tool prints the same line;
+// anchoring the whole message keeps this to the case where git never ran.
+const XCODE_LICENSE_NOT_ACCEPTED_PATTERN =
+	/^You have not agreed to the Xcode license agreements\. Please run 'sudo xcodebuild -license' from within a Terminal window to review and agree to the Xcode and Apple SDKs license\.\n?$/;
 // A content filter's helper program is not installed on this machine. Git runs
 // `filter.<name>.process`/`.clean` through the shell with the configured
 // command as the shell's $0, so an absent helper fails as
@@ -74,12 +81,26 @@ const UNREADABLE_TREE_OBJECT_PATTERN =
 // NOT_GIT_REPO_PATTERN keeps.
 const NESTED_REPO_GIT_DIR_INVALID_PATTERN =
 	/^fatal: '.*\/\.git' not recognized as a git repository$/im;
+// Git's closing line (builtin/push.c) whenever a push it ran to completion
+// was refused: a local pre-push hook exited non-zero, the remote rejected a
+// ref (non-fast-forward, protected branch, pre-receive hook), or both. The
+// refusing party has already written its reason above this line — hook
+// output, `! [rejected]`, `remote:` — and that reason is the user's to act
+// on. Auth and network failures die before any ref is offered and never
+// print this line. The one variant that is ours rather than a refusal is
+// carved out below: git also closes with it after complaining that the
+// source refspec resolves to nothing, which means the push arguments were
+// wrong.
+const PUSH_REFUSED_PATTERN = /^error: failed to push some refs to '/im;
+const PUSH_SRC_REFSPEC_UNRESOLVED_PATTERN =
+	/^error: src refspec .* does not match any$/im;
 
 /**
- * Rethrows environmental git failures as typed non-500 TRPCErrors — the same
- * classification resolve-worktree.ts applies before git runs — so the Sentry
- * middleware doesn't report them as bugs. No-op for anything else; genuine
- * unexpected git failures keep reporting as 500s.
+ * Rethrows environmental git failures — the same classification
+ * resolve-worktree.ts applies before git runs — and pushes git refused as
+ * typed non-500 TRPCErrors, so the Sentry middleware doesn't report them as
+ * bugs. No-op for anything else; genuine unexpected git failures keep
+ * reporting as 500s.
  */
 export function rethrowEnvironmentalGitError(error: unknown): void {
 	if (error instanceof TRPCError || !(error instanceof Error)) return;
@@ -120,7 +141,8 @@ export function rethrowEnvironmentalGitError(error: unknown): void {
 	}
 	if (
 		XCODE_SELECT_NO_TOOLS_PATTERN.test(error.message) ||
-		XCODE_SELECT_GIT_NOT_LOCATED_PATTERN.test(error.message)
+		XCODE_SELECT_GIT_NOT_LOCATED_PATTERN.test(error.message) ||
+		XCODE_LICENSE_NOT_ACCEPTED_PATTERN.test(error.message)
 	) {
 		throw new TRPCError({
 			code: "PRECONDITION_FAILED",
@@ -143,6 +165,16 @@ export function rethrowEnvironmentalGitError(error: unknown): void {
 			code: "PRECONDITION_FAILED",
 			message: error.message,
 			cause: { kind: "GIT_REPO_DAMAGED" },
+		});
+	}
+	if (
+		PUSH_REFUSED_PATTERN.test(error.message) &&
+		!PUSH_SRC_REFSPEC_UNRESOLVED_PATTERN.test(error.message)
+	) {
+		throw new TRPCError({
+			code: "PRECONDITION_FAILED",
+			message: error.message,
+			cause: { kind: "PUSH_REJECTED" },
 		});
 	}
 }

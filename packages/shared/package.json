@@ -4,6 +4,10 @@
 	"private": true,
 	"type": "module",
 	"exports": {
+		"./page-zoom": {
+			"types": "./src/page-zoom.ts",
+			"default": "./src/page-zoom.ts"
+		},
 		"./usercontent": {
 			"types": "./src/usercontent/index.ts",
 			"default": "./src/usercontent/index.ts"
@@ -11,6 +15,10 @@
 		"./page-comments-runtime": {
 			"types": "./src/page-comments-runtime.ts",
 			"default": "./src/page-comments-runtime.ts"
+		},
+		"./page-comments": {
+			"types": "./src/page-comments/index.ts",
+			"default": "./src/page-comments/index.ts"
 		},
 		"./automation-matching": {
 			"types": "./src/automation-matching/index.ts",
@@ -35,6 +43,10 @@
 		"./attachment-limits": {
 			"types": "./src/attachment-limits.ts",
 			"default": "./src/attachment-limits.ts"
+		},
+		"./agent-credentials": {
+			"types": "./src/agent-credentials.ts",
+			"default": "./src/agent-credentials.ts"
 		},
 		"./constants": {
 			"types": "./src/constants.ts",
@@ -63,6 +75,14 @@
 		"./plugins": {
 			"types": "./src/plugins/index.ts",
 			"default": "./src/plugins/index.ts"
+		},
+		"./sandbox-contract": {
+			"types": "./src/sandbox-contract.ts",
+			"default": "./src/sandbox-contract.ts"
+		},
+		"./sandbox-gate": {
+			"types": "./src/sandbox-gate.ts",
+			"default": "./src/sandbox-gate.ts"
 		},
 		"./sentry": {
 			"types": "./src/sentry.ts",
@@ -244,6 +264,14 @@
 			"types": "./src/host-routing.ts",
 			"default": "./src/host-routing.ts"
 		},
+		"./realtime": {
+			"types": "./src/realtime.ts",
+			"default": "./src/realtime.ts"
+		},
+		"./verify-jwt": {
+			"types": "./src/verify-jwt.ts",
+			"default": "./src/verify-jwt.ts"
+		},
 		"./install-update-lock": {
 			"types": "./src/install-update-lock.ts",
 			"default": "./src/install-update-lock.ts"
@@ -297,6 +325,7 @@
 		"culori": "4.0.2",
 		"drizzle-orm": "0.45.2",
 		"friendly-words": "1.3.1",
+		"jose": "6.2.2",
 		"rrule": "2.8.1",
 		"semver": "7.7.4",
 		"zod": "4.4.3"

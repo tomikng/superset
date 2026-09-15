@@ -210,8 +210,59 @@ case "$V1_EVENT_TYPE" in
     ;;
 esac
 
+PREVIEW_FIELD=""
+PREVIEW_KEYS="last_assistant_message last-assistant-message message"
+case "$EVENT_TYPE" in
+  StopFailure|stop_failure|Failed|failed) PREVIEW_KEYS="error_details error_message message last_assistant_message last-assistant-message" ;;
+  PermissionRequest|Notification|notification|PreToolUse|preToolUse|pre_tool_use|exec_approval_request|apply_patch_approval_request|request_user_input) PREVIEW_KEYS="message last_assistant_message last-assistant-message" ;;
+esac
+case "$EVENT_TYPE" in
+  Stop|stop|Interrupt|AfterAgent|agent-turn-complete|task_complete|post_agent|post_agent_turn|StopFailure|stop_failure|Failed|failed|PermissionRequest|Notification|notification|PreToolUse|preToolUse|pre_tool_use|exec_approval_request|apply_patch_approval_request|request_user_input)
+    for PREVIEW_KEY in $PREVIEW_KEYS; do
+      PREVIEW_VALUE=$(printf '%s' "$INPUT" | grep -oE "\"$PREVIEW_KEY\"[[:space:]]*:[[:space:]]*\"(\\\\.|[^\"\\\\])*\"" | head -n 1 | sed -E 's/^[^:]*:[[:space:]]*//')
+      if [ -n "$PREVIEW_VALUE" ] && [ "$PREVIEW_VALUE" != '""' ]; then
+        PREVIEW_FIELD=",\"preview\":$PREVIEW_VALUE"
+        break
+      fi
+    done
+    ;;
+esac
+
+ATTRIBUTION_FIELD=""
+[ -n "$SUPERSET_ACCOUNT_ATTRIBUTION_TOKEN" ] && ATTRIBUTION_FIELD=",\"attributionToken\":\"$(json_escape "$SUPERSET_ACCOUNT_ATTRIBUTION_TOKEN")\""
+LAUNCH_FIELD=""
+[ -n "$SUPERSET_AGENT_LAUNCH_ID" ] && LAUNCH_FIELD=",\"launchId\":\"$(json_escape "$SUPERSET_AGENT_LAUNCH_ID")\""
+ACCOUNT_FIELD=""
+case "$EVENT_TYPE" in
+  Attached|attached|SessionStart|sessionStart|session_start)
+    ACCOUNT_PROFILE=""
+    ACCOUNT_API_KEY=false
+    case "$AGENT_ID" in
+      claude)
+        ACCOUNT_PROFILE="$CLAUDE_CONFIG_DIR"
+        [ -n "$ANTHROPIC_API_KEY" ] && ACCOUNT_API_KEY=true
+        if [ -n "$ANTHROPIC_AUTH_TOKEN$ANTHROPIC_BASE_URL$CLAUDE_CODE_USE_BEDROCK$CLAUDE_CODE_USE_VERTEX$CLAUDE_CODE_USE_FOUNDRY" ]; then
+          ACCOUNT_PROFILE="__unverified__"
+          ACCOUNT_API_KEY=false
+        fi
+        ;;
+      codex)
+        ACCOUNT_PROFILE="$CODEX_HOME"
+        [ -n "$OPENAI_API_KEY" ] && ACCOUNT_API_KEY=true
+        if [ -n "$OPENAI_BASE_URL" ]; then
+          ACCOUNT_PROFILE="__unverified__"
+          ACCOUNT_API_KEY=false
+        fi
+        ;;
+    esac
+    if [ "$AGENT_ID" = "claude" ] || [ "$AGENT_ID" = "codex" ]; then
+    ACCOUNT_FIELD=",\"accountProfile\":\"$(json_escape "$ACCOUNT_PROFILE")\",\"apiKey\":$ACCOUNT_API_KEY"
+    fi
+    ;;
+esac
+
 if [ -n "$SUPERSET_TERMINAL_ID" ]; then
-  dispatch_to_host "{\"json\":{\"terminalId\":\"$(json_escape "$SUPERSET_TERMINAL_ID")\",\"eventType\":\"$(json_escape "$EVENT_TYPE")\",\"agent\":{\"agentId\":\"$(json_escape "$AGENT_ID")\",\"sessionId\":\"$(json_escape "$SESSION_ID")\"}}}"
+  dispatch_to_host "{\"json\":{\"terminalId\":\"$(json_escape "$SUPERSET_TERMINAL_ID")\",\"eventType\":\"$(json_escape "$EVENT_TYPE")\",\"agent\":{\"agentId\":\"$(json_escape "$AGENT_ID")\",\"sessionId\":\"$(json_escape "$SESSION_ID")\"}$PREVIEW_FIELD$ACCOUNT_FIELD$LAUNCH_FIELD$ATTRIBUTION_FIELD}}"
   [ "$HOOK_ACCEPTED" = "1" ] && exit 0
   # Delivered somewhere (2xx) but no host owned the terminal: keep the
   # pre-existing "any 2xx wins" behavior and skip the v1 fallback.

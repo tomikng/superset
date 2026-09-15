@@ -41,6 +41,7 @@ import {
 } from "../db/schema.ts";
 import type { EventBus } from "../events/index.ts";
 import { portManager } from "../ports/port-manager.ts";
+import { issueAttributionToken } from "../terminal-agents/attribution-token.ts";
 import { sweepAgentBindingsAfterDaemonLoss } from "../terminal-agents/daemon-loss-sweep.ts";
 import { markTerminalAgentBindingEnded } from "../terminal-agents/persistence.ts";
 import {
@@ -2965,6 +2966,7 @@ export async function createTerminalSessionInternal({
 		// this terminal run on the selected login. Baked at spawn as the fast
 		// path; the agent wrappers re-resolve later switches at launch time.
 		...resolveDefaultAccountTerminalEnv(db),
+		SUPERSET_ACCOUNT_ATTRIBUTION_TOKEN: issueAttributionToken(terminalId),
 	};
 
 	let daemon: DaemonClient;

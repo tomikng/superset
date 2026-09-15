@@ -1,17 +1,30 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { existsSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import {
 	type CloudAgentLaunch,
 	readCloudAgentLaunch,
 } from "@superset/shared/cloud-agent-launch";
+import {
+	SANDBOX_PATHS,
+	type SandboxRepository,
+	sandboxCheckoutDir,
+	sandboxRepositoriesSchema,
+} from "@superset/shared/sandbox-contract";
 import { eq } from "drizzle-orm";
 import type { HostDb } from "../../db";
 import { projects, workspaces } from "../../db/schema";
 import { runAgentInWorkspace } from "../../trpc/router/agents/agents";
 import { seedDefaultsIfEmpty } from "../../trpc/router/settings/agent-configs";
 import type { HostServiceContext } from "../../types";
+import {
+	getManagedEnv,
+	waitForManagedEnv,
+} from "../sandbox-managed-env/sandbox-managed-env.ts";
+import { resolveScript, shellSingleQuote } from "../setup/config";
 
 /**
  * Makes a sandbox describe its own workspace, instead of being described from
@@ -33,31 +46,114 @@ export interface SandboxIdentity {
 	workspaceName: string;
 	projectName: string;
 	branch: string;
+	/** The directory the checkouts live under. */
+	workspaceRoot: string;
+	/** The primary repository's checkout: the one the workspace opens on. */
 	worktreePath: string;
+	/** Every checkout on the box, the primary first. */
+	repositories: SandboxRepository[];
+	/** The checkout whose `.superset/config.json` the box acts on. */
+	hooksPath: string;
 	/** The agent the workspace was created with, or null for an idle one. */
 	launch: CloudAgentLaunch | null;
 	/** Written once the launch has happened, so a restart never repeats it. */
 	launchMarkerPath: string;
 }
 
+function readSandboxRepositories(raw: string | undefined): SandboxRepository[] {
+	if (!raw) return [];
+	let json: unknown;
+	try {
+		json = JSON.parse(raw);
+	} catch {
+		json = null;
+	}
+	const parsed = sandboxRepositoriesSchema.safeParse(json);
+	if (!parsed.success) {
+		console.warn(
+			"[sandbox] SUPERSET_SANDBOX_REPOSITORIES is not a repository list",
+		);
+		return [];
+	}
+	return parsed.data;
+}
+
 export function readSandboxIdentity(
 	env: NodeJS.ProcessEnv = process.env,
 ): SandboxIdentity | null {
 	const workspaceId = env.SUPERSET_SANDBOX_WORKSPACE_ID;
-	const worktreePath = env.SUPERSET_SANDBOX_WORKSPACE_PATH;
-	if (!workspaceId || !worktreePath) return null;
+	const root = env.SUPERSET_SANDBOX_WORKSPACE_PATH;
+	if (!workspaceId || !root) return null;
+	const repositories = readSandboxRepositories(
+		env.SUPERSET_SANDBOX_REPOSITORIES,
+	);
+	const primary = repositories[0];
+	if (!primary) return null;
+	const hooksRepository = repositories.find((repo) => repo.hooks) ?? primary;
 	return {
 		workspaceId,
-		worktreePath,
-		workspaceName: env.SUPERSET_SANDBOX_WORKSPACE_NAME || "workspace",
-		projectName: env.SUPERSET_SANDBOX_PROJECT_NAME || "project",
-		branch: env.SUPERSET_SANDBOX_BRANCH || "main",
+		workspaceRoot: root,
+		worktreePath: sandboxCheckoutDir(root, primary.path),
+		repositories,
+		hooksPath: sandboxCheckoutDir(root, hooksRepository.path),
+		// The API owns the workspace's name; the row here is scratch host-service
+		// serves panes against, so it needs a name, not the name.
+		workspaceName: "workspace",
+		projectName: "project",
+		branch: primary.branch,
 		launch: readCloudAgentLaunch(env),
 		launchMarkerPath: join(
-			dirname(env.HOST_DB_PATH || "/data/host.db"),
-			".sandbox-agent-launched",
+			dirname(env.HOST_DB_PATH || SANDBOX_PATHS.hostDb),
+			"agent-launched",
 		),
 	};
+}
+
+const START_HOOK_MARKER = join(SANDBOX_PATHS.run, "start-hook.pid");
+const START_HOOK_LOG = join(SANDBOX_PATHS.logs, "start-hook.log");
+
+export type StartHookOutcome =
+	| { started: true; pid: number; command: string }
+	| { started: false; reason: "already-started" | "no-hook" };
+
+/**
+ * Runs the repository's `start` hook: the services a workspace needs on
+ * every boot. The boot runner asks for it once host-service answers, the
+ * managed environment has been pushed and the checkout is in; it runs here
+ * because this process is the only one holding that environment, and the
+ * variables never leave it. Once per boot: the marker lives in the run
+ * directory the boot runner clears.
+ */
+export function runSandboxStartHook(
+	identity: SandboxIdentity,
+): StartHookOutcome {
+	if (existsSync(START_HOOK_MARKER))
+		return { started: false, reason: "already-started" };
+	const resolved = resolveScript("start", {
+		repoPath: identity.hooksPath,
+		projectId: identity.workspaceId,
+	});
+	const commands = !resolved
+		? null
+		: resolved.kind === "commands"
+			? resolved.commands
+			: [`bash ${shellSingleQuote(resolved.scriptPath)}`];
+	if (!commands?.length) return { started: false, reason: "no-hook" };
+	const command = commands.join(" && ");
+	const configured = resolved?.cwd
+		? resolve(identity.hooksPath, resolved.cwd)
+		: identity.hooksPath;
+	const log = openSync(START_HOOK_LOG, "a");
+	const child = spawn("bash", ["-lc", command], {
+		cwd: existsSync(configured) ? configured : identity.hooksPath,
+		env: { ...process.env, ...getManagedEnv(), IS_SANDBOX: "1" },
+		stdio: ["ignore", log, log],
+		detached: true,
+	});
+	child.unref();
+	writeFileSync(START_HOOK_MARKER, `${child.pid ?? 0}\n`);
+	console.log(`[sandbox] start hook running (pid ${child.pid}): ${command}`);
+	return { started: true, pid: child.pid ?? 0, command };
 }
 
 /**
@@ -121,6 +217,16 @@ export async function launchSandboxAgentOnce(
 	if (!identity.launch) return;
 	if (existsSync(identity.launchMarkerPath)) return;
 	const { agent, prompt, model, effort, mode } = identity.launch;
+	// The agent needs the environment the control plane pushes after boot and
+	// the branch the boot runner is checking out beside us; both are seconds.
+	const [pushed, checkedOut] = await Promise.all([
+		waitForManagedEnv(120_000),
+		waitForFlag(join(SANDBOX_PATHS.run, "checkout.ready"), 120_000),
+	]);
+	if (!pushed)
+		console.warn("[sandbox] launching without a managed environment push");
+	if (!checkedOut)
+		console.warn("[sandbox] launching before the checkout reported ready");
 	// Claimed before the launch, not after: a restart while the first launch
 	// is still setting up its terminal would otherwise start a second one.
 	// A failed launch gives the claim back so the next start retries.
@@ -153,42 +259,71 @@ export async function launchSandboxAgentOnce(
 	}
 }
 
+async function waitForFlag(path: string, timeoutMs: number): Promise<boolean> {
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		if (existsSync(path)) return true;
+		await new Promise((resolve) => setTimeout(resolve, 250));
+	}
+	return false;
+}
+
+/**
+ * A cloud workspace's id names its primary checkout's row, which is what the
+ * app opens; every other repository gets a row of its own with an id derived
+ * from the workspace's, so a restart seeds the same ids.
+ */
+export function sandboxRepositoryWorkspaceId(
+	workspaceId: string,
+	path: string,
+): string {
+	const hash = createHash("sha256")
+		.update(`${workspaceId}:${path}`)
+		.digest("hex");
+	return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
 export function runSandboxSelfSeed(
 	db: HostDb,
 	identity: SandboxIdentity,
 ): void {
-	const existing = db
-		.select({ id: workspaces.id })
-		.from(workspaces)
-		.where(eq(workspaces.id, identity.workspaceId))
-		.get();
-	if (existing) return;
-
+	const root = identity.workspaceRoot;
 	const now = Date.now();
-	const projectId = crypto.randomUUID();
-	db.insert(projects)
-		.values({
-			id: projectId,
-			repoPath: identity.worktreePath,
-			name: identity.projectName,
-			createdAt: now,
-			updatedAt: now,
-		})
-		.run();
-	// type='main' because the checkout *is* the repo here — there is no base
-	// repo it was branched from. It also keeps the boot-time main-workspace
-	// sweep from adding a second, phantom workspace to satisfy its
-	// one-main-per-project index.
-	db.insert(workspaces)
-		.values({
-			id: identity.workspaceId,
-			projectId,
-			worktreePath: identity.worktreePath,
-			branch: identity.branch,
-			name: identity.workspaceName,
-			type: "main",
-			createdAt: now,
-			updatedAt: now,
-		})
-		.run();
+	identity.repositories.forEach((repo, index) => {
+		const id =
+			index === 0
+				? identity.workspaceId
+				: sandboxRepositoryWorkspaceId(identity.workspaceId, repo.path);
+		const existing = db
+			.select({ id: workspaces.id })
+			.from(workspaces)
+			.where(eq(workspaces.id, id))
+			.get();
+		if (existing) return;
+		const projectId = crypto.randomUUID();
+		const worktreePath = sandboxCheckoutDir(root, repo.path);
+		db.insert(projects)
+			.values({
+				id: projectId,
+				repoPath: worktreePath,
+				name: index === 0 ? identity.projectName : repo.path,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.run();
+		// type='local' because the checkout *is* the repo here — there is no
+		// base repo it was branched from.
+		db.insert(workspaces)
+			.values({
+				id,
+				projectId,
+				worktreePath,
+				branch: repo.branch,
+				name: index === 0 ? identity.workspaceName : repo.path,
+				type: "local",
+				createdAt: now,
+				updatedAt: now,
+			})
+			.run();
+	});
 }

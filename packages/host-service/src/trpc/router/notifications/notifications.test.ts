@@ -12,6 +12,7 @@ import { terminalSessions, workspaces } from "../../../db/schema";
 import type { AgentLifecycleEventType } from "../../../events";
 import type { WorkspaceChangedMessage } from "../../../events/types";
 import { TerminalAgentStore } from "../../../terminal-agents";
+import { issueAttributionToken } from "../../../terminal-agents/attribution-token";
 import type { HostServiceContext } from "../../../types";
 import {
 	getLocalWorkspace,
@@ -24,6 +25,7 @@ interface BroadcastedAgentLifecycleEvent {
 	eventType: AgentLifecycleEventType;
 	terminalId: string;
 	agent?: AgentIdentity;
+	preview?: string;
 	occurredAt: number;
 }
 
@@ -539,5 +541,51 @@ describe("notificationsRouter.hook", () => {
 		} finally {
 			console.warn = warn;
 		}
+	});
+});
+
+it("broadcasts a bounded preview with the lifecycle event", async () => {
+	const { ctx, broadcastAgentLifecycle } = createContext("workspace-1");
+	await notificationsRouter.createCaller(ctx).hook({
+		terminalId: "terminal-1",
+		eventType: "Stop",
+		preview: "x".repeat(5000),
+	});
+	expect(broadcastAgentLifecycle.mock.calls[0]?.[0].preview).toBe(
+		"x".repeat(4000),
+	);
+});
+
+describe("login attribution authentication", () => {
+	for (const authorized of [false, true]) {
+		it(`records lifecycle events with ${authorized ? "verified" : "unverified"} attribution`, async () => {
+			const { ctx, terminalAgentStore } = createContext("workspace-1");
+			const caller = notificationsRouter.createCaller(ctx);
+			await caller.hook({
+				terminalId: "terminal-1",
+				eventType: "SessionStart",
+				agent: { agentId: "claude" },
+				accountProfile: "",
+				apiKey: true,
+				attributionToken: issueAttributionToken(
+					authorized ? "terminal-1" : "other-terminal",
+				),
+			});
+			expect(terminalAgentStore.get("terminal-1")?.agentId).toBe("claude");
+			expect(terminalAgentStore.get("terminal-1")?.account?.identity).toBe(
+				authorized ? "api-env" : undefined,
+			);
+		});
+	}
+	it("does not attribute unauthenticated API billing claims", async () => {
+		const { ctx, terminalAgentStore } = createContext("workspace-1");
+		await notificationsRouter.createCaller(ctx).hook({
+			terminalId: "terminal-1",
+			eventType: "SessionStart",
+			agent: { agentId: "claude" },
+			accountProfile: "",
+			apiKey: true,
+		});
+		expect(terminalAgentStore.get("terminal-1")?.account).toBeUndefined();
 	});
 });

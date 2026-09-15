@@ -34,11 +34,15 @@ import { GATED_FEATURES, usePaywall } from "renderer/components/Paywall";
 import { SidebarKbdHint } from "renderer/components/SidebarKbdHint";
 import { ZoomStable } from "renderer/components/ZoomStable";
 import { env } from "renderer/env.renderer";
-import { useOpenNewWorkspace } from "renderer/hooks/useOpenNewWorkspace";
+import {
+	useOpenNewWorkspace,
+	useOpenNewWorkspaceForLocalProject,
+} from "renderer/hooks/useOpenNewWorkspace";
 import { useZoomFactor } from "renderer/hooks/useZoomFactor";
 import { useHotkeyDisplay } from "renderer/hotkeys";
 import { electronTrpc } from "renderer/lib/electron-trpc";
 import { useFolderFirstImport } from "renderer/routes/_authenticated/_dashboard/components/AddRepositoryModals/hooks/useFolderFirstImport";
+import { AppMenuButton } from "renderer/routes/_authenticated/_dashboard/components/AppMenuButton";
 import { NavigationControls } from "renderer/routes/_authenticated/_dashboard/components/NavigationControls";
 import { SidebarToggle } from "renderer/routes/_authenticated/_dashboard/components/SidebarToggle";
 import { TopBarPortsDropdown } from "renderer/routes/_authenticated/_dashboard/components/TopBar/components/TopBarPortsDropdown";
@@ -72,6 +76,7 @@ export function DashboardSidebarHeader({
 }: DashboardSidebarHeaderProps) {
 	const { t } = useLingui();
 	const openNewWorkspace = useOpenNewWorkspace();
+	const openProjectWorkspace = useOpenNewWorkspaceForLocalProject();
 	const openEmptyProject = useOpenEmptyProjectModal();
 	const openNewProject = useOpenNewProjectModal();
 	const openTemplateGallery = useOpenTemplateGalleryModal();
@@ -107,9 +112,10 @@ export function DashboardSidebarHeader({
 	const handleImportFolder = async () => {
 		const result = await folderImport.start();
 		if (result) {
+			openProjectWorkspace(result.projectId);
 			toast.success(
 				t({
-					message: "Project ready — open it from the sidebar.",
+					message: "Project imported and selected.",
 				}),
 			);
 		}
@@ -163,7 +169,8 @@ export function DashboardSidebarHeader({
 	const isPluginsEnabled =
 		(useFeatureFlagEnabled(FEATURE_FLAGS.PLUGINS) ?? false) ||
 		env.NODE_ENV === "development";
-	const { myFailedCount } = useFailedAutomations();
+	const { myFailedCount, hasAutomations, automationsPending } =
+		useFailedAutomations();
 
 	const {
 		tab: lastTab,
@@ -187,8 +194,20 @@ export function DashboardSidebarHeader({
 		navigate({ to: "/v2-workspaces" });
 	};
 
+	// Automations are Pro, but an org that already has some (a downgrade) can
+	// still reach the list to pause, edit, or delete them; the page gates the
+	// actions that need the plan. A Free org with none meets the paywall here.
+	// While the list is still loading the answer is unknown, so let the click
+	// through: an empty list page gates every action itself, and a wrong
+	// paywall on a downgraded org would be the worse mistake.
 	const handleAutomationsClick = () => {
-		navigate({ to: "/automations" });
+		if (hasAutomations || automationsPending) {
+			navigate({ to: "/automations" });
+			return;
+		}
+		gateFeature(GATED_FEATURES.AUTOMATIONS, () => {
+			navigate({ to: "/automations" });
+		});
 	};
 
 	const handleTasksClick = () => {
@@ -551,6 +570,7 @@ export function DashboardSidebarHeader({
 					style={{ width: isMac ? `${80 / zoomFactor}px` : "8px" }}
 				/>
 				<ZoomStable enabled={isMac} className="flex items-center gap-1">
+					{!isMac && <AppMenuButton />}
 					<SidebarToggle />
 					<NavigationControls />
 					{/* Lives here (persistent chrome) rather than the workspace tab

@@ -85,7 +85,7 @@ interface TerminalWebViewProps {
 
 type PageMessage =
 	| { type: "ready" }
-	| { type: "dial"; id: number; seq: string }
+	| { type: "dial"; id: number; terminalId: string | null; seq: string }
 	| {
 			type: "snapshot";
 			terminalId: string;
@@ -141,7 +141,7 @@ export const TerminalWebView = forwardRef<
 	onTapRef.current = onTap;
 	const onScrollChangeRef = useRef(onScrollChange);
 	onScrollChangeRef.current = onScrollChange;
-	const openLink = useOpenLink();
+	const openLink = useOpenLink({ workspaceId });
 	const openLinkRef = useRef(openLink);
 	openLinkRef.current = openLink;
 
@@ -165,8 +165,7 @@ export const TerminalWebView = forwardRef<
 	// sandbox's edge token expires, so a redial after a long background must
 	// re-mint rather than reuse the URL that worked last time.
 	const buildDialUrl = useCallback(
-		async (seq: string): Promise<string> => {
-			const token = await getHostAuthToken();
+		async (dialTerminalId: string, seq: string): Promise<string> => {
 			const query = [
 				`workspaceId=${encodeURIComponent(workspaceId)}`,
 				"themeType=dark",
@@ -174,16 +173,16 @@ export const TerminalWebView = forwardRef<
 				// asks for the bytes it missed, "new" for the ring tail,
 				// "none" to reanchor without overwriting restored content.
 				`seq=${encodeURIComponent(seq)}`,
-				`token=${encodeURIComponent(token)}`,
 			];
-			const path = `/terminal/${encodeURIComponent(terminalId)}`;
+			const path = `/terminal/${encodeURIComponent(dialTerminalId)}`;
 			if (isSandboxHost(host.machineId)) {
 				// A browser can't put a header on a WebSocket upgrade, so the
-				// provider's edge reads its token from the query string here.
+				// sandbox's host-service reads its token from the query string.
 				const access = await ensureSandboxAccess(host.machineId);
-				query.push(`bl_preview_token=${encodeURIComponent(access.token)}`);
+				query.push(`token=${encodeURIComponent(access.token)}`);
 				return `${access.url.replace(/^http/, "ws")}${path}?${query.join("&")}`;
 			}
+			query.push(`token=${encodeURIComponent(await getHostAuthToken())}`);
 			const base = getRelayUrl().replace(/^http/, "ws");
 			const routingKey = buildHostRoutingKey(
 				host.organizationId,
@@ -191,7 +190,7 @@ export const TerminalWebView = forwardRef<
 			);
 			return `${base}/hosts/${routingKey}${path}?${query.join("&")}`;
 		},
-		[host.machineId, host.organizationId, terminalId, workspaceId],
+		[host.machineId, host.organizationId, workspaceId],
 	);
 
 	// The host runs the PTY at the smallest box across the clients that are
@@ -259,8 +258,11 @@ export const TerminalWebView = forwardRef<
 				return;
 			}
 			if (message.type === "dial") {
+				// The page names the session it is dialling for: a pooled session
+				// behind the active tab redials on resume, and a backstop start
+				// (null) means whichever tab is current.
 				const { id, seq } = message;
-				buildDialUrl(seq)
+				buildDialUrl(message.terminalId ?? terminalId, seq)
 					.then((url) => postToPage({ type: "dialUrl", id, url }))
 					.catch((error: unknown) =>
 						postToPage({
@@ -303,9 +305,10 @@ export const TerminalWebView = forwardRef<
 
 	// Tab switches swap sessions inside the live page instead of remounting
 	// the WebView — a remount pays the 400KB xterm parse and two cold TLS
-	// handshakes on every switch; a switch reuses the warm connection pool.
-	// If the page isn't booted yet the message is lost harmlessly: its first
-	// dial request signs whatever terminalId is current.
+	// handshakes on every switch; a switch back to a session the page still
+	// holds is a repaint from memory. If the page isn't booted yet the message
+	// is lost harmlessly: its first dial request signs whatever terminalId is
+	// current.
 	const mountedTerminalId = useRef(terminalId);
 	useEffect(() => {
 		if (mountedTerminalId.current === terminalId) return;

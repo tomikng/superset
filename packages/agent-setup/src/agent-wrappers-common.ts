@@ -173,6 +173,7 @@ export interface BuildWrapperScriptOptions {
 	 * variable can only arrive from a wrapper in the same terminal.
 	 */
 	agentId?: string;
+	beforeLaunch?: string;
 }
 
 /**
@@ -221,6 +222,7 @@ export function buildWrapperScript(
 	const identity = options.agentId
 		? `if [ -z "$SUPERSET_AGENT_ID" ]; then
 export SUPERSET_AGENT_ID="${options.agentId}"
+export SUPERSET_AGENT_LAUNCH_ID="$$-$(date +%s)"
 
 ${buildLaunchReportBlock()}fi
 
@@ -237,7 +239,7 @@ if [ -z "$REAL_BIN" ]; then
   exit 127
 fi
 
-${identity}${execLine}
+${options.beforeLaunch ?? ""}${identity}${execLine}
 `;
 }
 

@@ -15,6 +15,8 @@ import type {
 } from "./types";
 
 interface RecordEventInput {
+	launchId?: string;
+	account?: TerminalAgentBinding["account"];
 	terminalId: string;
 	workspaceId: string;
 	eventType: string;
@@ -200,7 +202,11 @@ export class TerminalAgentStore extends EventEmitter {
 		// a swap event that omits agentSessionId/definitionId would inherit the
 		// prior agent's values and corrupt definitionId-filtered reads.
 		const prior =
-			existing !== undefined && existing.agentId === nextAgentId
+			existing !== undefined &&
+			existing.agentId === nextAgentId &&
+			(!input.launchId ||
+				!existing.launchId ||
+				input.launchId === existing.launchId)
 				? existing
 				: undefined;
 
@@ -230,6 +236,12 @@ export class TerminalAgentStore extends EventEmitter {
 			agentId: nextAgentId,
 			agentSessionId: agentSessionId ?? prior?.agentSessionId,
 			definitionId: definitionId ?? prior?.definitionId,
+			launchId: input.launchId ?? prior?.launchId,
+			account:
+				input.account ??
+				(prior && (!sessionChanged || prior.agentSessionId === undefined)
+					? prior.account
+					: undefined),
 			startedAt:
 				prior !== undefined && !sessionChanged ? prior.startedAt : occurredAt,
 			lastEventAt: occurredAt,
@@ -413,7 +425,7 @@ export class TerminalAgentStore extends EventEmitter {
 
 	get(terminalId: string): TerminalAgentBinding | undefined {
 		const binding = this.byTerminal.get(terminalId);
-		return binding && this.withSubagents(binding);
+		return binding && this.withRuntimeState(binding);
 	}
 
 	listByWorkspace(
@@ -423,7 +435,7 @@ export class TerminalAgentStore extends EventEmitter {
 		if (this.persistence?.listLiveByWorkspace) {
 			return this.persistence
 				.listLiveByWorkspace(workspaceId, filter)
-				.map((binding) => this.withSubagents(binding));
+				.map((binding) => this.withRuntimeState(binding));
 		}
 		const out: TerminalAgentBinding[] = [];
 		for (const binding of this.byTerminal.values()) {
@@ -431,7 +443,7 @@ export class TerminalAgentStore extends EventEmitter {
 			if (filter?.agentId && binding.agentId !== filter.agentId) continue;
 			if (filter?.definitionId && binding.definitionId !== filter.definitionId)
 				continue;
-			out.push(this.withSubagents(binding));
+			out.push(this.withRuntimeState(binding));
 		}
 		return out;
 	}
@@ -440,10 +452,10 @@ export class TerminalAgentStore extends EventEmitter {
 		if (this.persistence?.listLive) {
 			return this.persistence
 				.listLive()
-				.map((binding) => this.withSubagents(binding));
+				.map((binding) => this.withRuntimeState(binding));
 		}
 		return [...this.byTerminal.values()].map((binding) =>
-			this.withSubagents(binding),
+			this.withRuntimeState(binding),
 		);
 	}
 
@@ -451,7 +463,20 @@ export class TerminalAgentStore extends EventEmitter {
 	 * Attach the terminal's live subagents to a binding read. Stale entries
 	 * are dropped here rather than on a timer so the store stays passive.
 	 */
-	private withSubagents(binding: TerminalAgentBinding): TerminalAgentBinding {
+	private withRuntimeState(
+		binding: TerminalAgentBinding,
+	): TerminalAgentBinding {
+		const memory = this.byTerminal.get(binding.terminalId);
+		if (
+			memory?.agentId === binding.agentId &&
+			memory.agentSessionId === binding.agentSessionId
+		) {
+			binding = {
+				...binding,
+				account: memory.account,
+				launchId: memory.launchId,
+			};
+		}
 		const roster = this.pruneSubagents(binding.terminalId);
 		if (!roster) return binding;
 		const live = [...roster.values()]
