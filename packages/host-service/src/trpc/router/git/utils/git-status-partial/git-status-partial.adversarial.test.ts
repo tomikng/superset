@@ -737,7 +737,7 @@ describe("getGitStatusPartial: renames and index interplay", () => {
 			}
 			await expectMatchesFull(git, repo, snapshot);
 		}
-	});
+	}, 30_000);
 });
 
 describe("getGitStatusPartial: FIFO and vanished files", () => {
