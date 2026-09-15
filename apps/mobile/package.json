@@ -143,7 +143,7 @@
 		"@bacons/apple-targets": "5.0.0",
 		"@lingui/babel-plugin-lingui-macro": "6.6.0",
 		"@storybook/addon-ondevice-actions": "10.4.2",
-		"@storybook/addon-ondevice-controls": "10.4.2",
+		"@storybook/addon-ondevice-controls": "10.5.4",
 		"@storybook/react-native": "10.4.2",
 		"@superset/host-service": "workspace:*",
 		"@trpc/server": "11.16.0",
