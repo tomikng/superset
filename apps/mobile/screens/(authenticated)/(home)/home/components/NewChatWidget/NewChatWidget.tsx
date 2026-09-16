@@ -82,11 +82,8 @@ export function NewChatWidget({
 		targets.find((target) => target.key === targetKey) ?? defaultTarget;
 	const isCloudTarget = selectedTarget?.kind === "cloud";
 	const cloudScope = useWorkspaceScope() === "cloud";
-	const {
-		environment: selectedEnvironment,
-		picksRepository,
-		repository: cloudRepository,
-	} = useCloudCreateSelection();
+	const { environment: selectedEnvironment, repository: cloudRepository } =
+		useCloudCreateSelection();
 
 	const { data: session } = useSession();
 	const organizationId = session?.session?.activeOrganizationId ?? null;
@@ -228,15 +225,10 @@ export function NewChatWidget({
 			return;
 		}
 		if (selectedTarget.kind === "cloud") {
-			if (picksRepository && !cloudRepository) {
-				router.push("/(authenticated)/(home)/new-session/repository");
-				return;
-			}
 			await createCloudWorkspace
 				.mutateAsync({
 					branch: baseBranch ?? branchData?.defaultBranch ?? null,
 					environmentId: selectedEnvironment?.id ?? null,
-					repositoryId: picksRepository ? (cloudRepository?.id ?? null) : null,
 					agent: effectiveAgentId,
 					model,
 					effort,
@@ -288,8 +280,7 @@ export function NewChatWidget({
 
 	// Under Cloud there is no project to show: a sandbox has no real project
 	// structure yet, so the chip is the place itself. The repo it clones comes
-	// from the environment, or from the repository chip when the environment
-	// has none.
+	// from the environment.
 	const headerChips = [
 		cloudScope
 			? {
@@ -311,15 +302,6 @@ export function NewChatWidget({
 							t({
 								message: "Environment",
 							}),
-					},
-				]
-			: []),
-		...(cloudScope && picksRepository
-			? [
-					{
-						id: "repository",
-						label:
-							cloudRepository?.fullName ?? t({ message: "Select repository" }),
 					},
 				]
 			: []),
@@ -403,8 +385,6 @@ export function NewChatWidget({
 				void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 				if (id === "environment") {
 					router.push("/(authenticated)/(home)/new-session/environment");
-				} else if (id === "repository") {
-					router.push("/(authenticated)/(home)/new-session/repository");
 				} else if (id === "project") {
 					if (targets.length > 0) {
 						router.push({

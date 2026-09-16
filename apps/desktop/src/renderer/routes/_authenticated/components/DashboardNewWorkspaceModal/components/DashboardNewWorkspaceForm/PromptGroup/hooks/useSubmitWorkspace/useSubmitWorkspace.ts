@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { startableCloudEnvironments } from "@superset/shared/cloud-environments";
 import { toast } from "@superset/ui/sonner";
 import { useMatchRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
@@ -105,31 +106,14 @@ export function useSubmitWorkspace(
 			const environments = await cloudTrpcClient.environment.list.query({
 				organizationId: activeOrganizationId,
 			});
+			const startable = startableCloudEnvironments(environments);
 			const environment =
-				environments.find((row) => row.id === draft.environmentId) ??
-				environments[0];
+				startable.find((row) => row.id === draft.environmentId) ?? startable[0];
 			if (!environment) {
 				toast.error(
 					t({
 						message:
 							"Add an environment in Settings before creating a cloud workspace",
-					}),
-				);
-				return;
-			}
-			// An environment without repositories of its own takes the picked
-			// ones. No branch means the API resolves the primary's default.
-			const pickedRepositoryIds =
-				(environment.repositories ?? []).length === 0
-					? draft.repositoryIds
-					: [];
-			if (
-				(environment.repositories ?? []).length === 0 &&
-				pickedRepositoryIds.length === 0
-			) {
-				toast.error(
-					t({
-						message: "Pick a repository for this cloud workspace",
 					}),
 				);
 				return;
@@ -164,9 +148,6 @@ export function useSubmitWorkspace(
 					prompt:
 						(cloudPrompt ?? draft.prompt).trim().slice(0, 20_000) || undefined,
 					branch: draft.baseBranch ?? branchName ?? undefined,
-					...(pickedRepositoryIds.length
-						? { repositoryIds: pickedRepositoryIds }
-						: {}),
 					...(wantCloudAgent
 						? {
 								agent: selectedAgent,

@@ -30,7 +30,6 @@ import {
 	loadRepositories,
 	mintSandboxGateAccess,
 	primaryRepository,
-	RepositoryError,
 	recordWorkspaceRepositories,
 	SandboxNotReadyError,
 	SandboxUnavailableError,
@@ -57,7 +56,48 @@ const isLocalApi = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(
 	env.NEXT_PUBLIC_API_URL,
 );
 
+/** The caller's cloud workspace, refused unless it exists, they may use it, and it is ready. */
+async function loadReadyWorkspace(
+	ctx: Parameters<typeof assertCloudAccess>[0] & { organizationIds: string[] },
+	id: string,
+) {
+	const row = await db.query.cloudWorkspaces.findFirst({
+		where: eq(cloudWorkspaces.id, id),
+	});
+	if (!row) {
+		throw userError({
+			code: "NOT_FOUND",
+			message: "Not found",
+			i18nKey: "serverError.cloudWorkspace.notFound",
+		});
+	}
+	await assertCloudAccess(ctx);
+	assertMember(ctx.organizationIds, row.organizationId);
+	if (row.status !== "ready") {
+		throw new TRPCError({
+			code: "PRECONDITION_FAILED",
+			message: `Cloud workspace is ${row.status}`,
+			cause: { kind: "CLOUD_WORKSPACE_NOT_READY", status: row.status },
+		});
+	}
+	return row;
+}
+
 export const cloudWorkspaceRouter = {
+	/**
+	 * Whether this account may use cloud workspaces. Clients decide their
+	 * default location from it: a workspace command defaults to the cloud only
+	 * for an account that can use it, so nobody else's commands change.
+	 */
+	available: jwtProcedure.query(async ({ ctx }) => {
+		try {
+			await assertCloudAccess(ctx);
+			return { available: true };
+		} catch {
+			return { available: false };
+		}
+	}),
+
 	list: jwtProcedure
 		.input(z.object({ organizationId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
@@ -169,8 +209,6 @@ export const cloudWorkspaceRouter = {
 				/** Omitted = the repo's default branch, resolved here — a client
 				 * whose branch query hadn't answered must not guess "main". */
 				branch: z.string().min(1).max(300).optional(),
-				/** Only for an environment without repositories of its own. */
-				repositoryIds: z.array(z.string().uuid()).min(1).max(20).optional(),
 				environmentId: z.string().uuid(),
 				/**
 				 * A built-in agent to launch on first boot with `prompt`. Absent
@@ -216,30 +254,16 @@ export const cloudWorkspaceRouter = {
 				});
 			}
 
-			// An environment with repositories fixes them; the shared image
-			// environment takes the caller's. Either way one installation.
-			let repositories = await environmentRepositoryRows(environment.id);
+			// A workspace is started from an environment, and the environment's
+			// repositories are its checkouts.
+			const repositories = await environmentRepositoryRows(environment.id);
 			if (repositories.length === 0) {
-				if (!input.repositoryIds?.length) {
-					throw userError({
-						code: "BAD_REQUEST",
-						message: "Pick at least one repository for this workspace",
-						i18nKey: "serverError.cloudWorkspace.repositoryRequired",
-					});
-				}
-				try {
-					repositories = await loadRepositories({
-						organizationId: input.organizationId,
-						repositoryIds: input.repositoryIds,
-					});
-				} catch (error) {
-					if (!(error instanceof RepositoryError)) throw error;
-					throw userError({
-						code: "BAD_REQUEST",
-						message: error.message,
-						i18nKey: "serverError.cloudWorkspace.repositoryNotConnected",
-					});
-				}
+				throw userError({
+					code: "BAD_REQUEST",
+					message:
+						"This environment has no repositories. Create an environment with repositories in Settings, then start the workspace from it",
+					i18nKey: "serverError.cloudWorkspace.environmentHasNoRepositories",
+				});
 			}
 			const primary = primaryRepository(
 				repositories,
@@ -407,25 +431,7 @@ export const cloudWorkspaceRouter = {
 			z.object({ id: z.string().uuid(), wake: z.boolean().default(false) }),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const row = await db.query.cloudWorkspaces.findFirst({
-				where: eq(cloudWorkspaces.id, input.id),
-			});
-			if (!row) {
-				throw userError({
-					code: "NOT_FOUND",
-					message: "Not found",
-					i18nKey: "serverError.cloudWorkspace.notFound",
-				});
-			}
-			await assertCloudAccess(ctx);
-			assertMember(ctx.organizationIds, row.organizationId);
-			if (row.status !== "ready") {
-				throw new TRPCError({
-					code: "PRECONDITION_FAILED",
-					message: `Cloud workspace is ${row.status}`,
-					cause: { kind: "CLOUD_WORKSPACE_NOT_READY", status: row.status },
-				});
-			}
+			const row = await loadReadyWorkspace(ctx, input.id);
 			let address: {
 				hostTarget: string;
 				desktopTarget: string;
@@ -438,6 +444,12 @@ export const cloudWorkspaceRouter = {
 						providerSandboxId: row.providerSandboxId,
 						claim,
 					});
+					if (woken.hostTarget !== row.sandboxUrl) {
+						await db
+							.update(cloudWorkspaces)
+							.set({ sandboxUrl: woken.hostTarget })
+							.where(eq(cloudWorkspaces.id, row.id));
+					}
 					address = { ...woken, running: true };
 				} else {
 					address = await describeSandbox(row.providerSandboxId);
@@ -489,6 +501,29 @@ export const cloudWorkspaceRouter = {
 				running: address.running,
 				desktop: { url: desktop.url, token: desktop.token },
 			};
+		}),
+
+	/**
+	 * A ticket for host-service in this workspace's sandbox at its last known
+	 * address, without asking the provider. For callers that reach the box
+	 * right away (CLI, MCP, SDK): a stopped sandbox, or one whose address moved
+	 * on resume, does not answer it, and they then ask `access` with `wake`,
+	 * which also records the current address.
+	 */
+	hostTicket: jwtProcedure
+		.input(z.object({ id: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			const row = await loadReadyWorkspace(ctx, input.id);
+			const target =
+				row.sandboxUrl ??
+				(await describeSandbox(row.providerSandboxId)).hostTarget;
+			const host = await mintSandboxGateAccess({
+				workspaceId: row.id,
+				userId: ctx.userId,
+				port: HOST_SERVICE_PORT,
+				target,
+			});
+			return { url: host.url, token: host.token, expiresAt: host.expiresAt };
 		}),
 
 	delete: jwtProcedure
