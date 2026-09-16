@@ -305,11 +305,6 @@ msgstr "{0} {actorVerb}"
 msgid "{0} → {1} pending"
 msgstr "{0} → {1} pending"
 
-#. placeholder {0}: selected[0]?.fullName
-#. placeholder {1}: selected.length - 1
-msgid "{0} +{1}"
-msgstr "{0} +{1}"
-
 #. placeholder {0}: skill.name
 msgid "{0} actions"
 msgstr "{0} actions"
@@ -9576,12 +9571,6 @@ msgstr "No public agent configs yet. This route is ready for future agent config
 msgid "No pull requests found."
 msgstr "No pull requests found."
 
-msgid "No repositories connected."
-msgstr "No repositories connected."
-
-msgid "No repositories found"
-msgstr "No repositories found"
-
 msgid "No repositories found. Make sure your GitHub App has access to repositories."
 msgstr "No repositories found. Make sure your GitHub App has access to repositories."
 
@@ -10910,9 +10899,6 @@ msgstr "Pick a parent directory"
 msgid "Pick a project location"
 msgstr "Pick a project location"
 
-msgid "Pick a repository for this cloud workspace"
-msgstr "Pick a repository for this cloud workspace"
-
 msgid "Pick a sound or add your own. Custom audio supports .mp3, .wav, and .ogg."
 msgstr "Pick a sound or add your own. Custom audio supports .mp3, .wav, and .ogg."
 
@@ -10924,9 +10910,6 @@ msgstr "Pick a workspace"
 
 msgid "Pick an icon and a color, or upload a custom image. Defaults to the linked GitHub owner's avatar."
 msgstr "Pick an icon and a color, or upload a custom image. Defaults to the linked GitHub owner's avatar."
-
-msgid "Pick at least one repository for this workspace"
-msgstr "Pick at least one repository for this workspace"
 
 msgid "Pick how {label} signs in inside a sandbox. The credential is handed to the agent process when it launches and is not stored in the sandbox."
 msgstr "Pick how {label} signs in inside a sandbox. The credential is handed to the agent process when it launches and is not stored in the sandbox."
@@ -15104,6 +15087,9 @@ msgstr "This directory does not exist. The terminal script will fall back to the
 
 msgid "This email is already registered with another sign-in method, and the provider did not confirm it as verified. Sign in with the method you used before."
 msgstr "This email is already registered with another sign-in method, and the provider did not confirm it as verified. Sign in with the method you used before."
+
+msgid "This environment has no repositories. Create an environment with repositories in Settings, then start the workspace from it"
+msgstr "This environment has no repositories. Create an environment with repositories in Settings, then start the workspace from it"
 
 msgid "This environment was promoted from a workspace, so its repositories are fixed. Promote a workspace again to change them."
 msgstr "This environment was promoted from a workspace, so its repositories are fixed. Promote a workspace again to change them."

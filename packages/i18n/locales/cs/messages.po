@@ -305,11 +305,6 @@ msgstr "{0} {actorVerb}"
 msgid "{0} → {1} pending"
 msgstr "čeká {0} → {1}"
 
-#. placeholder {0}: selected[0]?.fullName
-#. placeholder {1}: selected.length - 1
-msgid "{0} +{1}"
-msgstr "{0} +{1}"
-
 #. placeholder {0}: skill.name
 msgid "{0} actions"
 msgstr "Akce {0}"
@@ -9576,12 +9571,6 @@ msgstr "Zatím žádné veřejné konfigurace agentů. Tato adresa je připraven
 msgid "No pull requests found."
 msgstr "Nenalezeny žádné pull requesty."
 
-msgid "No repositories connected."
-msgstr "Žádné připojené repozitáře."
-
-msgid "No repositories found"
-msgstr "Nenalezeny žádné repozitáře"
-
 msgid "No repositories found. Make sure your GitHub App has access to repositories."
 msgstr "Nenalezeny žádné repozitáře. Ověřte, že vaše GitHub App má k repozitářům přístup."
 
@@ -10910,9 +10899,6 @@ msgstr "Vyberte nadřazený adresář"
 msgid "Pick a project location"
 msgstr "Vyberte umístění projektu"
 
-msgid "Pick a repository for this cloud workspace"
-msgstr "Vyberte repozitář pro tento cloudový pracovní prostor"
-
 msgid "Pick a sound or add your own. Custom audio supports .mp3, .wav, and .ogg."
 msgstr "Vyberte zvuk nebo přidejte vlastní. Vlastní zvuk podporuje .mp3, .wav a .ogg."
 
@@ -10924,9 +10910,6 @@ msgstr "Vyberte pracovní prostor"
 
 msgid "Pick an icon and a color, or upload a custom image. Defaults to the linked GitHub owner's avatar."
 msgstr "Vyberte ikonu a barvu nebo nahrajte vlastní obrázek. Ve výchozím stavu se použije avatar propojeného vlastníka na GitHubu."
-
-msgid "Pick at least one repository for this workspace"
-msgstr "Vyberte alespoň jeden repozitář pro tento pracovní prostor"
 
 msgid "Pick how {label} signs in inside a sandbox. The credential is handed to the agent process when it launches and is not stored in the sandbox."
 msgstr "Vyberte, jak se {label} přihlašuje uvnitř sandboxu. Přihlašovací údaj se předá procesu agenta při spuštění a v sandboxu se neukládá."
@@ -15104,6 +15087,9 @@ msgstr "Tento adresář neexistuje. Terminálový skript se vrátí ke kořeni p
 
 msgid "This email is already registered with another sign-in method, and the provider did not confirm it as verified. Sign in with the method you used before."
 msgstr "Tento e-mail je již zaregistrován jiným způsobem přihlášení a poskytovatel jej nepotvrdil jako ověřený. Přihlaste se způsobem, který jste použili dříve."
+
+msgid "This environment has no repositories. Create an environment with repositories in Settings, then start the workspace from it"
+msgstr "Toto prostředí nemá žádné repozitáře. V Nastavení vytvořte prostředí s repozitáři a pracovní prostor spusťte z něj"
 
 msgid "This environment was promoted from a workspace, so its repositories are fixed. Promote a workspace again to change them."
 msgstr "Toto prostředí bylo povýšeno z pracovního prostoru, takže jeho repozitáře jsou pevně dané. Pro jejich změnu znovu povyšte pracovní prostor."

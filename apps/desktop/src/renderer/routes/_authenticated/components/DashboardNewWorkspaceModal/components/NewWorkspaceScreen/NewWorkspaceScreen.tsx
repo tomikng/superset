@@ -5,6 +5,7 @@ import {
 	getAgentModelSupport,
 	getAgentModeSupport,
 } from "@superset/shared/agent-models";
+import { startableCloudEnvironments } from "@superset/shared/cloud-environments";
 import {
 	PromptInput,
 	PromptInputButton,
@@ -79,7 +80,6 @@ import { LinkedPRPill } from "../DashboardNewWorkspaceForm/PromptGroup/component
 import { PRLinkCommand } from "../DashboardNewWorkspaceForm/PromptGroup/components/PRLinkCommand";
 import { ProjectPickerPill } from "../DashboardNewWorkspaceForm/PromptGroup/components/ProjectPickerPill";
 import { PromptHistoryCommand } from "../DashboardNewWorkspaceForm/PromptGroup/components/PromptHistoryCommand";
-import { RepositoryPickerPill } from "../DashboardNewWorkspaceForm/PromptGroup/components/RepositoryPickerPill";
 import { useBranchPickerController } from "../DashboardNewWorkspaceForm/PromptGroup/hooks/useBranchPickerController";
 import { useLinkedContext } from "../DashboardNewWorkspaceForm/PromptGroup/hooks/useLinkedContext";
 import { useSubmitWorkspace } from "../DashboardNewWorkspaceForm/PromptGroup/hooks/useSubmitWorkspace";
@@ -158,28 +158,15 @@ export function NewWorkspaceScreen({
 		{ organizationId: activeOrganizationId ?? "" },
 		{ enabled: draft.hostId === CLOUD_HOST_ID && !!activeOrganizationId },
 	);
-	const environmentOptions = environmentsQuery.data ?? [];
+	const environmentOptions = startableCloudEnvironments(
+		environmentsQuery.data ?? [],
+	);
 	const selectedEnvironment =
 		environmentOptions.find((row) => row.id === draft.environmentId) ??
 		environmentOptions[0];
-	// An environment that fixes no repositories takes them from the form.
-	const environmentPicksRepositories =
-		draft.hostId === CLOUD_HOST_ID &&
-		!!selectedEnvironment &&
-		(selectedEnvironment.repositories ?? []).length === 0;
-	const githubRepositoriesQuery =
-		cloudTrpc.integration.github.listRepositories.useQuery(
-			{ organizationId: activeOrganizationId ?? "" },
-			{ enabled: environmentPicksRepositories && !!activeOrganizationId },
-		);
-	const githubRepositories = githubRepositoriesQuery.data ?? [];
 	const cloudRepository = useMemo(() => {
 		if (draft.hostId !== CLOUD_HOST_ID) return null;
-		const primary = environmentPicksRepositories
-			? githubRepositories
-					.filter((repo) => draft.repositoryIds.includes(repo.id))
-					.sort((a, b) => a.fullName.localeCompare(b.fullName))[0]
-			: selectedEnvironment?.repositories?.[0];
+		const primary = selectedEnvironment?.repositories?.[0];
 		return primary
 			? {
 					owner: primary.owner,
@@ -187,13 +174,7 @@ export function NewWorkspaceScreen({
 					defaultBranch: primary.defaultBranch,
 				}
 			: null;
-	}, [
-		draft.hostId,
-		draft.repositoryIds,
-		environmentPicksRepositories,
-		githubRepositories,
-		selectedEnvironment,
-	]);
+	}, [draft.hostId, selectedEnvironment]);
 	const setLastProjectId = useV2WorkspaceCreateDefaultsStore(
 		(state) => state.setLastProjectId,
 	);
@@ -1051,16 +1032,8 @@ export function NewWorkspaceScreen({
 									selectedEnvironment={selectedEnvironment}
 									environments={environmentOptions}
 									onSelectEnvironment={(next) =>
-										updateDraft({ environmentId: next, repositoryIds: [] })
+										updateDraft({ environmentId: next })
 									}
-								/>
-							)}
-							{environmentPicksRepositories && (
-								<RepositoryPickerPill
-									selectedIds={draft.repositoryIds}
-									repositories={githubRepositories}
-									isLoading={githubRepositoriesQuery.isLoading}
-									onChange={(repositoryIds) => updateDraft({ repositoryIds })}
 								/>
 							)}
 							{draft.linkedPR ? (

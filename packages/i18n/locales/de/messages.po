@@ -305,11 +305,6 @@ msgstr "{0} {actorVerb}"
 msgid "{0} → {1} pending"
 msgstr "{0} → {1} ausstehend"
 
-#. placeholder {0}: selected[0]?.fullName
-#. placeholder {1}: selected.length - 1
-msgid "{0} +{1}"
-msgstr "{0} +{1}"
-
 #. placeholder {0}: skill.name
 msgid "{0} actions"
 msgstr "Aktionen für {0}"
@@ -9576,12 +9571,6 @@ msgstr "Noch keine öffentlichen Agenten-Konfigurationen. Diese Seite ist für k
 msgid "No pull requests found."
 msgstr "Keine Pull Requests gefunden."
 
-msgid "No repositories connected."
-msgstr "Keine Repositories verbunden."
-
-msgid "No repositories found"
-msgstr "Keine Repositories gefunden"
-
 msgid "No repositories found. Make sure your GitHub App has access to repositories."
 msgstr "Keine Repositories gefunden. Stelle sicher, dass deine GitHub-App Zugriff auf Repositories hat."
 
@@ -10910,9 +10899,6 @@ msgstr "Wähle ein übergeordnetes Verzeichnis"
 msgid "Pick a project location"
 msgstr "Wähle einen Projekt-Speicherort"
 
-msgid "Pick a repository for this cloud workspace"
-msgstr "Wähle ein Repository für diesen Cloud-Arbeitsbereich"
-
 msgid "Pick a sound or add your own. Custom audio supports .mp3, .wav, and .ogg."
 msgstr "Wähle einen Ton oder füge einen eigenen hinzu. Eigenes Audio unterstützt .mp3, .wav und .ogg."
 
@@ -10924,9 +10910,6 @@ msgstr "Arbeitsbereich auswählen"
 
 msgid "Pick an icon and a color, or upload a custom image. Defaults to the linked GitHub owner's avatar."
 msgstr "Wähle ein Icon und eine Farbe oder lade ein eigenes Bild hoch. Standard ist der Avatar des verknüpften GitHub-Eigentümers."
-
-msgid "Pick at least one repository for this workspace"
-msgstr "Wähle mindestens ein Repository für diesen Arbeitsbereich"
 
 msgid "Pick how {label} signs in inside a sandbox. The credential is handed to the agent process when it launches and is not stored in the sandbox."
 msgstr "Wähle, wie sich {label} in einer Sandbox anmeldet. Die Zugangsdaten werden dem Agent-Prozess beim Start übergeben und nicht in der Sandbox gespeichert."
@@ -15104,6 +15087,9 @@ msgstr "Dieses Verzeichnis existiert nicht. Das Terminal-Skript greift auf die W
 
 msgid "This email is already registered with another sign-in method, and the provider did not confirm it as verified. Sign in with the method you used before."
 msgstr "Diese E-Mail-Adresse ist bereits mit einer anderen Anmeldemethode registriert, und der Anbieter hat sie nicht als verifiziert bestätigt. Melde dich mit der zuvor verwendeten Methode an."
+
+msgid "This environment has no repositories. Create an environment with repositories in Settings, then start the workspace from it"
+msgstr "Diese Umgebung hat keine Repositories. Erstelle in den Einstellungen eine Umgebung mit Repositories und starte den Arbeitsbereich daraus"
 
 msgid "This environment was promoted from a workspace, so its repositories are fixed. Promote a workspace again to change them."
 msgstr "Diese Umgebung wurde aus einem Arbeitsbereich befördert, daher sind ihre Repositories festgelegt. Befördere erneut einen Arbeitsbereich, um sie zu ändern."
