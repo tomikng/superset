@@ -3,7 +3,6 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 /** The claims the Workers act on. `scope` is set only on tokens the API mints for itself. */
 export interface AuthContext {
 	sub: string;
-	email: string;
 	organizationIds: string[];
 	scope?: string;
 }
@@ -34,7 +33,6 @@ export async function verifyJWT(
 			audience: authUrl,
 		});
 		const sub = payload.sub;
-		const email = payload.email as string | undefined;
 		const organizationIds = payload.organizationIds as string[] | undefined;
 		if (!sub || !organizationIds) return null;
 		const scope = typeof payload.scope === "string" ? payload.scope : undefined;
