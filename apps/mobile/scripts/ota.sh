@@ -20,6 +20,8 @@ if ! command -v node >/dev/null 2>&1; then
   export PATH="${nvm_node:-/opt/homebrew/opt/node/bin}:$PATH"
 fi
 export PATH="$HOME/.bun/bin:$PATH"
+# See testflight.sh: the config imports TypeScript source from @superset/i18n.
+export NODE_OPTIONS="${NODE_OPTIONS:-} --experimental-strip-types"
 
 msg="${1:-$(git log -1 --pretty=%s)}"
 eas update --channel selfhost --platform ios --message "$msg" --non-interactive 2>&1 \

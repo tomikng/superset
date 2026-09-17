@@ -57,6 +57,12 @@ command -v node >/dev/null || { echo "node not found (install nvm node or brew n
 : "${APPLE_TEAM_ID:?set APPLE_TEAM_ID (or put it in apps/mobile/selfhost.env)}"
 : "${MOBILE_APP_ID:?set MOBILE_APP_ID (or put it in apps/mobile/selfhost.env)}"
 export MOBILE_BUILD_NUMBER="${MOBILE_BUILD_NUMBER:-$(date -u +%Y%m%d%H%M)}"
+# app.config.ts imports @superset/i18n/locales, which resolves to TypeScript
+# source (`as const`). The Expo CLI transpiles the config file itself but lets
+# node load its imports, and node 22 only parses TypeScript with type
+# stripping on (default from 23.6). Exported, so the Xcode bundle phase
+# (`expo export:embed`) inherits it too.
+export NODE_OPTIONS="${NODE_OPTIONS:-} --experimental-strip-types"
 
 # --- API key on disk -------------------------------------------------------
 # altool only finds keys under ~/.appstoreconnect/private_keys; xcodebuild takes
