@@ -51,10 +51,21 @@ export const env = createEnv({
 		// every marketing render as one visitor (Vercel shares egress IPs).
 		// Absent means every read is anonymous and rate-limited.
 		LEADERBOARD_INTERNAL_TOKEN: z.string().min(1).optional(),
-		// Blaxel (cloud workspace sandboxes).
-		BLAXEL_API_KEY: z.string().min(1),
-		BLAXEL_WORKSPACE: z.string().min(1),
-		BLAXEL_REGION: z.string().min(1),
+		// Vercel Sandbox (cloud workspace sandboxes). A token for the team's
+		// `sandboxes` project, not the deploy token.
+		VERCEL_SANDBOX_TOKEN: z.string().min(1),
+		VERCEL_SANDBOX_TEAM_ID: z.string().min(1),
+		VERCEL_SANDBOX_PROJECT_ID: z.string().min(1),
+		VERCEL_SANDBOX_REGION: z.string().min(1).default("iad1"),
+		// Shared with the gate Worker: signs the tickets clients present
+		// there and derives the secret each sandbox's host-service is booted with.
+		SANDBOX_GATE_SECRET: z.string().min(32),
+		// The gate with `*` where a workspace's `<id>-<port>` label goes, e.g.
+		// https://*.sandbox.supersetusercontent.com; a local wrangler dev has no `*`.
+		SANDBOX_GATE_ORIGIN: z
+			.string()
+			.url()
+			.or(z.string().regex(/^https?:\/\/\*\./)),
 		SENTRY_DSN_SANDBOX: z.string().optional(),
 		NEXT_PUBLIC_SENTRY_ENVIRONMENT: z
 			.enum(["development", "preview", "production"])
@@ -64,9 +75,15 @@ export const env = createEnv({
 		GH_APP_ID: z.string().min(1),
 		GH_APP_PRIVATE_KEY: z.string().min(1),
 		GH_WEBHOOK_SECRET: z.string().min(1),
+		// The same App's OAuth client, for a person's own GitHub connection;
+		// without them nobody can connect and workspaces use the App's token.
+		GH_APP_CLIENT_ID: z.string().min(1).optional(),
+		GH_APP_CLIENT_SECRET: z.string().min(1).optional(),
 		ANTHROPIC_API_KEY: z.string(),
 		OPENAI_API_KEY: z.string().min(1),
 		RELAY_URL: z.string().url().default("https://relay.superset.sh"),
+		REALTIME_URL: z.string().url().default("https://realtime.superset.sh"),
+		REALTIME_NUDGE_SECRET: z.string().min(1),
 		LINEAR_CLIENT_ID: z.string().min(1),
 		LINEAR_CLIENT_SECRET: z.string().min(1),
 		GOOGLE_CLIENT_ID: z.string().min(1),

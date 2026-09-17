@@ -1,25 +1,60 @@
+import { workspaceTrpc } from "@superset/workspace-client";
+import { useMemo } from "react";
 import { WorkItemDetailState } from "renderer/routes/_authenticated/_dashboard/components/WorkItemDetailState";
 import { PullRequestDetailHeader } from "renderer/routes/_authenticated/_dashboard/pull-requests/components/PullRequestDetailHeader";
 import { PullRequestSummaryContent } from "renderer/routes/_authenticated/_dashboard/pull-requests/components/PullRequestSummaryContent";
 import { usePullRequestDetail } from "renderer/routes/_authenticated/_dashboard/pull-requests/hooks/usePullRequestDetail";
 import { resolvePullRequestDetail } from "renderer/routes/_authenticated/_dashboard/pull-requests/utils/resolvePullRequestDetail";
-import { useWorkspace } from "renderer/routes/_authenticated/_dashboard/v2-workspace/providers/WorkspaceProvider";
-import type { PullRequestPaneData } from "../../../../types";
+import { normalizeThreadsToComments } from "../../../../components/CommentsSection/utils/normalizeThreadsToComments";
+import type { CommentPaneData, PullRequestPaneData } from "../../../../types";
+import {
+	type OpenReviewDiff,
+	useReviewCommentNavigation,
+} from "../../../useReviewCommentNavigation";
+import { PullRequestComments } from "./components/PullRequestComments";
+import { usePullRequestPaneProject } from "./hooks/usePullRequestPaneProject";
 
 interface PullRequestPaneProps {
 	data: PullRequestPaneData;
+	onOpenDiff: OpenReviewDiff;
+	onOpenComment: (comment: CommentPaneData) => void;
 }
 
-/**
- * The PR view's summary side — title, merge actions, description, checks —
- * as a workspace pane, so the PR can sit beside the diff instead of
- * replacing the workspace with the Pull requests screen. The Code tab
- * stays on that screen: the workspace's own Changes pane already shows
- * this branch's diff.
- */
-export function PullRequestPane({ data }: PullRequestPaneProps) {
-	const { workspace, hostUrl } = useWorkspace();
-	const projectId = workspace.projectId;
+export function PullRequestPane({
+	data,
+	onOpenDiff,
+	onOpenComment,
+}: PullRequestPaneProps) {
+	const {
+		workspace,
+		projectId,
+		hostId,
+		hostUrl,
+		isWorkspaceProject,
+		isReady,
+		hasProject,
+	} = usePullRequestPaneProject(data.projectId);
+	const linkedPR = workspaceTrpc.git.getPullRequest.useQuery({
+		workspaceId: workspace.id,
+	});
+	const hasMatchingPR =
+		isWorkspaceProject && linkedPR.data?.number === data.prNumber;
+	const threads = workspaceTrpc.git.getPullRequestThreads.useQuery(
+		{ workspaceId: workspace.id },
+		{
+			enabled: hasMatchingPR,
+			refetchInterval: 30_000,
+			refetchOnWindowFocus: true,
+		},
+	);
+	const comments = useMemo(
+		() =>
+			hasMatchingPR && threads.data
+				? normalizeThreadsToComments(threads.data, linkedPR.data?.url)
+				: [],
+		[hasMatchingPR, threads.data, linkedPR.data?.url],
+	);
+	const onOpenInDiff = useReviewCommentNavigation(workspace.id, onOpenDiff);
 	const detail = usePullRequestDetail({
 		projectId,
 		hostUrl,
@@ -28,10 +63,8 @@ export function PullRequestPane({ data }: PullRequestPaneProps) {
 	const resolved = resolvePullRequestDetail({
 		prNumber: data.prNumber,
 		projectId,
-		// The workspace's project is the one its host serves; there's no
-		// project list to wait on the way the Pull requests screen does.
-		areProjectsReady: true,
-		hasProject: true,
+		areProjectsReady: isReady,
+		hasProject,
 		hostUrl,
 		isLoading: detail.isLoading,
 		error: detail.error,
@@ -44,7 +77,7 @@ export function PullRequestPane({ data }: PullRequestPaneProps) {
 			<div className="flex shrink-0 flex-col border-b border-border pt-3">
 				<PullRequestDetailHeader
 					projectId={projectId}
-					hostId={workspace.hostId}
+					hostId={hostId}
 					hostUrl={hostUrl}
 					prNumber={data.prNumber}
 					data={detail.data}
@@ -61,7 +94,18 @@ export function PullRequestPane({ data }: PullRequestPaneProps) {
 				/>
 			) : (
 				<div className="min-h-0 flex-1">
-					<PullRequestSummaryContent data={resolved.data} />
+					<PullRequestSummaryContent data={resolved.data}>
+						{hasMatchingPR ? (
+							<PullRequestComments
+								workspaceId={workspace.id}
+								comments={comments}
+								isLoading={threads.isLoading}
+								isError={threads.isError}
+								onOpenComment={onOpenComment}
+								onOpenInDiff={onOpenInDiff}
+							/>
+						) : null}
+					</PullRequestSummaryContent>
 				</div>
 			)}
 		</div>

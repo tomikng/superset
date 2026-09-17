@@ -1,9 +1,11 @@
+import { FEATURE_FLAGS } from "@superset/shared/constants";
 import {
 	createFileRoute,
 	Outlet,
 	useLocation,
 	useNavigate,
 } from "@tanstack/react-router";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useEffect, useMemo } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { CheckResourcesHotkeyMount } from "renderer/commandPalette";
@@ -30,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 const SECTION_ORDER: SettingsSection[] = [
 	"account",
+	"connections",
 	"appearance",
 	"ringtones",
 	"usage",
@@ -40,6 +43,8 @@ const SECTION_ORDER: SettingsSection[] = [
 	"terminal",
 	"links",
 	"browser",
+	"environments",
+	"agentAccounts",
 	"organization",
 	"teams",
 	"project",
@@ -59,6 +64,7 @@ const SECTION_ORDER: SettingsSection[] = [
  */
 const SECTION_PATHS: Partial<Record<SettingsSection, string>> = {
 	account: "/settings/account",
+	connections: "/settings/connections",
 	organization: "/settings/organization",
 	teams: "/settings/teams",
 	appearance: "/settings/appearance",
@@ -105,6 +111,8 @@ const NON_ROUTABLE_ESCAPE_PARENTS = new Set([
 function SettingsLayout() {
 	const { data: platform } = electronTrpc.window.getPlatform.useQuery();
 	const isV2CloudEnabled = useIsV2CloudEnabled();
+	const cloudWorkspacesEnabled =
+		useFeatureFlagEnabled(FEATURE_FLAGS.CLOUD_WORKSPACES) === true;
 	const isMac = platform === undefined || platform === "darwin";
 	const searchQuery = useSettingsSearchQuery();
 	const setSearchQuery = useSetSettingsSearchQuery();
@@ -120,9 +128,18 @@ function SettingsLayout() {
 	const matchCounts = useMemo(
 		() =>
 			isSearchActive
-				? getVisibleMatchCountBySection(normalizedSearchQuery, isV2CloudEnabled)
+				? getVisibleMatchCountBySection(
+						normalizedSearchQuery,
+						isV2CloudEnabled,
+						cloudWorkspacesEnabled,
+					)
 				: {},
-		[isSearchActive, normalizedSearchQuery, isV2CloudEnabled],
+		[
+			isSearchActive,
+			normalizedSearchQuery,
+			isV2CloudEnabled,
+			cloudWorkspacesEnabled,
+		],
 	);
 	const totalMatches = Object.values(matchCounts).reduce(
 		(sum, count) => sum + count,

@@ -14,7 +14,7 @@ import { Fragment, useState } from "react";
 import { HiArrowLeft, HiArrowUpRight, HiCheck } from "react-icons/hi2";
 import { useActiveOrganizationId } from "renderer/hooks/useActiveOrganizationId";
 import { env } from "renderer/env.renderer";
-import { resolveCurrentPlan } from "renderer/hooks/useCurrentPlan";
+import { useCurrentPlan } from "renderer/hooks/useCurrentPlan";
 import { track } from "renderer/lib/analytics";
 import { authClient } from "renderer/lib/auth-client";
 import { cloudTrpc } from "renderer/lib/cloud-trpc";
@@ -196,21 +196,21 @@ const COMPARISON_SECTIONS: ComparisonSection[] = [
 			},
 			{
 				label: msg({
+					message: "GitHub integration",
+				}),
+				values: [true, true, true],
+			},
+			{
+				label: msg({
 					message: "Remote access",
 				}),
 				values: [null, true, true],
-				badge: {
-					label: msg({
-						message: "Beta",
-					}),
-					variant: "default",
-				},
 			},
 			{
 				label: msg({
 					message: "Automations",
 				}),
-				values: [true, true, true],
+				values: [null, true, true],
 			},
 			{
 				label: msg({
@@ -223,12 +223,6 @@ const COMPARISON_SECTIONS: ComparisonSection[] = [
 					}),
 					variant: "secondary",
 				},
-			},
-			{
-				label: msg({
-					message: "GitHub integration",
-				}),
-				values: [true, true, true],
 			},
 			{
 				label: msg({
@@ -345,7 +339,6 @@ function PlansPage() {
 	const [isUpgrading, setIsUpgrading] = useState(false);
 	const [isCanceling, setIsCanceling] = useState(false);
 	const [isRestoring, setIsRestoring] = useState(false);
-	const { data: session } = authClient.useSession();
 	const openUrl = electronTrpc.external.openUrl.useMutation();
 	const utils = cloudTrpc.useUtils();
 
@@ -353,17 +346,7 @@ function PlansPage() {
 	// a second window on another org would render the first window's org here.
 	const activeOrgId = useActiveOrganizationId();
 
-	const { data: activePlan } = cloudTrpc.billing.activePlan.useQuery(undefined);
-
-	// An unresolved query must not read as "free": that renders a live Upgrade
-	// action for an org that may already be paying. Session plan fills in
-	// until it arrives.
-	const planResolved = activePlan !== undefined;
-	const currentPlan: PlanTier = resolveCurrentPlan({
-		subscriptionPlan: activePlan?.plan,
-		sessionPlan: session?.session?.plan,
-		subscriptionsLoaded: planResolved,
-	});
+	const { plan: currentPlan, isReady: planResolved, activePlan } = useCurrentPlan();
 	const cancelAt = activePlan?.cancelAt;
 
 	const subscriptionIsYearly = activePlan

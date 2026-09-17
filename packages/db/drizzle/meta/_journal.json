@@ -785,6 +785,48 @@
       "when": 1788934235832,
       "tag": "0111_page_comment_thread_intent",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1789074124482,
+      "tag": "0112_automation_continue_agent_session",
+      "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1789162453342,
+      "tag": "0113_agent_credentials_and_vercel_sandboxes",
+      "breakpoints": true
+    },
+    {
+      "idx": 114,
+      "version": "7",
+      "when": 1789162454064,
+      "tag": "0114_retire_blaxel_sandboxes",
+      "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1789423806672,
+      "tag": "0115_cloud_environments_repositories",
+      "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1789426475004,
+      "tag": "0116_github_user_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "7",
+      "when": 1789530172162,
+      "tag": "0117_slack_thread_sessions",
+      "breakpoints": true
     }
   ]
 }

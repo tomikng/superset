@@ -1,6 +1,6 @@
 import { FEATURE_FLAGS } from "@superset/shared/constants";
 import { useFeatureFlagEnabled } from "posthog-js/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useIsV2CloudEnabled } from "renderer/hooks/useIsV2CloudEnabled";
 import { useV2AgentConfigs } from "renderer/hooks/useV2AgentConfigs";
 import { authClient } from "renderer/lib/auth-client";
@@ -20,6 +20,10 @@ import {
 	type V1GroupTarget,
 } from "renderer/lib/v1-migration/groups";
 import { electronV1MigrationIpc } from "renderer/lib/v1-migration/ipc";
+import {
+	isTransientV1MigrationFailure,
+	nextV1MigrationRetryDelayMs,
+} from "renderer/lib/v1-migration/retry";
 import { v1MigrationEventProps } from "renderer/lib/v1-migration/telemetry";
 import { useFinalizeProjectSetup } from "renderer/react-query/projects";
 import { useDashboardSidebarState } from "renderer/routes/_authenticated/hooks/useDashboardSidebarState";
@@ -39,9 +43,29 @@ import { appendPendingMigratedTerminals } from "renderer/stores/workspace-create
  * machines the forced-flip backstop moved before their gate completed.
  * Completed v2 migrations still run the ledger-guarded group backfill, since
  * older passes omitted groups entirely.
- * Cross-instance single-flight via a main-process lock file; failures retry
- * next boot.
+ * Cross-instance single-flight via a main-process lock file. A pass that
+ * throws, or leaves the gate open only for transient reasons (network,
+ * host-service down), re-arms itself on a short backoff within the session;
+ * anything else waits for the next boot.
  */
+async function listGatingFailureReasons(
+	organizationId: string,
+): Promise<string[]> {
+	const rows = await electronV1MigrationIpc.ledgerList(organizationId);
+	return [
+		...new Set(
+			rows
+				.filter(
+					(r) =>
+						r.status === "error" &&
+						(r.kind === "project" || r.kind === "workspace"),
+				)
+				.map((r) => r.reason)
+				.filter((r): r is string => !!r),
+		),
+	];
+}
+
 export function V1AutoMigration() {
 	const { data: session } = authClient.useSession();
 	const isV2CloudEnabled = useIsV2CloudEnabled();
@@ -57,6 +81,10 @@ export function V1AutoMigration() {
 		FEATURE_FLAGS.V1_AUTO_MIGRATION,
 	);
 	const startedOrgsRef = useRef<Set<string>>(new Set());
+	const retryAttemptsRef = useRef<Map<string, number>>(new Map());
+	const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const retryOrgRef = useRef<string | null>(null);
+	const [retryTick, setRetryTick] = useState(0);
 
 	const organizationId = session?.session?.activeOrganizationId ?? null;
 	const onboarded = !!session?.user?.onboardedAt;
@@ -66,6 +94,16 @@ export function V1AutoMigration() {
 	const agentsSettled = agentsQuery.isFetched;
 	const agents = agentsQuery.data ?? [];
 
+	useEffect(() => {
+		retryOrgRef.current = organizationId;
+		return () => {
+			retryOrgRef.current = null;
+			if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+			retryTimerRef.current = null;
+		};
+	}, [organizationId]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: retryTick re-runs the pass after a scheduled retry
 	useEffect(() => {
 		if (!organizationId || !onboarded || !activeHostUrl || !agentsSettled) {
 			return;
@@ -84,6 +122,26 @@ export function V1AutoMigration() {
 
 		const hostUrl = activeHostUrl;
 		const trigger = isV2CloudEnabled ? "v2-followup" : "v1-surface";
+		const scheduleRetry = (reasons: string[]) => {
+			if (retryTimerRef.current || retryOrgRef.current !== organizationId) {
+				return;
+			}
+			const attempt = (retryAttemptsRef.current.get(organizationId) ?? 0) + 1;
+			const delayMs = nextV1MigrationRetryDelayMs(attempt);
+			if (delayMs === null) return;
+			retryAttemptsRef.current.set(organizationId, attempt);
+			posthog.capture("v1_auto_migration_retry_scheduled", {
+				trigger,
+				attempt,
+				delay_ms: delayMs,
+				reasons: reasons.slice(0, 5),
+			});
+			retryTimerRef.current = setTimeout(() => {
+				retryTimerRef.current = null;
+				startedOrgsRef.current.delete(organizationId);
+				setRetryTick((tick) => tick + 1);
+			}, delayMs);
+		};
 		void (async () => {
 			let locked = false;
 			const startedAt = Date.now();
@@ -123,6 +181,7 @@ export function V1AutoMigration() {
 					organizationId,
 					hostClient: getHostServiceClientByUrl(hostUrl),
 					ipc: electronV1MigrationIpc,
+					reconcileWithHost: !isV2CloudEnabled,
 					presetTarget: {
 						agents,
 						existing: Array.from(
@@ -138,7 +197,6 @@ export function V1AutoMigration() {
 						finalizeSetup(hostUrl, {
 							projectId: result.v2ProjectId,
 							repoPath: result.repoPath,
-							mainWorkspaceId: result.mainWorkspaceId,
 						});
 					},
 					onWorkspaceAdopted: (v2WorkspaceId, v2ProjectId) => {
@@ -147,6 +205,19 @@ export function V1AutoMigration() {
 				});
 
 				console.log("[v1-migration] auto pass finished", summary);
+				if (!summary.gateComplete) {
+					let gatingReasons: string[] = [];
+					try {
+						gatingReasons = await listGatingFailureReasons(organizationId);
+					} catch {}
+					if (
+						gatingReasons.length > 0 &&
+						gatingReasons.every(isTransientV1MigrationFailure)
+					) {
+						scheduleRetry(gatingReasons);
+					}
+				}
+
 				let firstCompletion = false;
 				if (summary.gateComplete) {
 					firstCompletion = !isV1MigrationComplete(organizationId);
@@ -169,25 +240,33 @@ export function V1AutoMigration() {
 					);
 				}
 
-				// Failure reasons come from the ledger (the summary only counts)
-				// so the stuck cohort is identifiable, not just sized.
+				// Failure and skip reasons come from the ledger (the summary only
+				// counts) so the stuck cohort is identifiable, not just sized.
 				let failureReasons: string[] = [];
-				if (summary.projects.failed + summary.workspaces.failed > 0) {
+				let skipReasons: string[] = [];
+				const gating = (r: { kind: string }) =>
+					r.kind === "project" || r.kind === "workspace";
+				if (
+					summary.projects.failed +
+						summary.workspaces.failed +
+						summary.projects.skipped +
+						summary.workspaces.skipped >
+					0
+				) {
 					try {
 						const rows =
 							await electronV1MigrationIpc.ledgerList(organizationId);
-						failureReasons = [
-							...new Set(
-								rows
-									.filter(
-										(r) =>
-											r.status === "error" &&
-											(r.kind === "project" || r.kind === "workspace"),
-									)
-									.map((r) => r.reason)
-									.filter((r): r is string => !!r),
-							),
-						].slice(0, 5);
+						const reasons = (status: "error" | "skipped") =>
+							[
+								...new Set(
+									rows
+										.filter((r) => r.status === status && gating(r))
+										.map((r) => r.reason)
+										.filter((r): r is string => !!r),
+								),
+							].slice(0, 5);
+						failureReasons = reasons("error");
+						skipReasons = reasons("skipped");
 					} catch {}
 				}
 				posthog.capture("v1_auto_migration_completed", {
@@ -196,6 +275,7 @@ export function V1AutoMigration() {
 					first_completion: firstCompletion,
 					duration_ms: Date.now() - startedAt,
 					failure_reasons: failureReasons,
+					skip_reasons: skipReasons,
 				});
 			} catch (err) {
 				// Retries next boot; the ledger holds whatever progress landed.
@@ -205,6 +285,7 @@ export function V1AutoMigration() {
 					duration_ms: Date.now() - startedAt,
 					error: err instanceof Error ? err.message : String(err),
 				});
+				scheduleRetry([err instanceof Error ? err.message : String(err)]);
 			} finally {
 				if (locked) {
 					void electronTrpcClient.migration.releaseRunLock
@@ -224,6 +305,7 @@ export function V1AutoMigration() {
 		collections,
 		finalizeSetup,
 		ensureWorkspaceInSidebar,
+		retryTick,
 	]);
 
 	return null;

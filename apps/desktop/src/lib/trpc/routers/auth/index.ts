@@ -19,6 +19,7 @@ import {
 	saveToken,
 	stateStore,
 } from "./utils/auth-functions";
+import { writeAuth } from "./utils/write-auth";
 
 const PASSWORD_TOKEN_LIFETIME_MS = 1000 * 60 * 60 * 24 * 30;
 
@@ -81,7 +82,7 @@ export const createAuthRouter = () => {
 				}),
 			)
 			.mutation(async ({ input }) => {
-				await saveToken(input);
+				await writeAuth(() => saveToken(input));
 				return { success: true };
 			}),
 
@@ -94,7 +95,7 @@ export const createAuthRouter = () => {
 				}),
 			)
 			.mutation(async ({ input }) => {
-				return await saveOrganizationIds(input);
+				return await writeAuth(() => saveOrganizationIds(input));
 			}),
 
 		/**
@@ -220,7 +221,7 @@ export const createAuthRouter = () => {
 
 		signOut: publicProcedure.mutation(async () => {
 			getHostServiceCoordinator().stopAll();
-			await clearToken();
+			await writeAuth(() => clearToken());
 			return { success: true };
 		}),
 	});

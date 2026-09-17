@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PortalHost } from "@rn-primitives/portal";
+import { CloudClientProvider } from "@superset/cloud-client";
 import { resolveLocale } from "@superset/i18n";
 import { I18nProvider } from "@superset/i18n/react";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
@@ -20,10 +21,12 @@ import { Uniwind } from "uniwind";
 import { useSession } from "@/lib/auth/client";
 import { watchNetworkState } from "@/lib/errors";
 import { NAV_THEME } from "@/lib/theme";
+import { apiClient } from "@/lib/trpc/client";
 
 Uniwind.setTheme("dark");
 
 import { PostHogUserIdentifier } from "./components/PostHogUserIdentifier";
+import { VersionGate } from "./components/VersionGate";
 import { PostHogProvider } from "./providers/PostHogProvider";
 
 // What Home's first paint waits on, kept so a returning launch opens on rows.
@@ -31,7 +34,7 @@ import { PostHogProvider } from "./providers/PostHogProvider";
 // credential and must not reach disk. Decoration and terminal lists are live.
 const PERSISTED_QUERY_PREFIXES = [
 	["cloud", "user", "myOrganizations"],
-	["cloud", "v2Host", "list"],
+	["cloud", "host", "roster"],
 	["cloud", "cloudWorkspace", "list"],
 	["host-service", "workspaces", "list"],
 	["host-service", "projects", "list"],
@@ -111,25 +114,29 @@ export function RootLayout() {
 					},
 				}}
 			>
-				<PostHogProvider>
-					<I18nProvider locale={deviceLocale} deferUntilReady>
-						<ThemeProvider value={NAV_THEME.dark}>
-							<Stack screenOptions={{ headerShown: false }}>
-								<Stack.Protected guard={!!session && !pendingDeletion}>
-									<Stack.Screen name="(authenticated)" />
-								</Stack.Protected>
-								<Stack.Protected guard={pendingDeletion}>
-									<Stack.Screen name="account-pending-deletion" />
-								</Stack.Protected>
-								<Stack.Protected guard={!session}>
-									<Stack.Screen name="(auth)" />
-								</Stack.Protected>
-							</Stack>
-							<PostHogUserIdentifier />
-							<PortalHost />
-						</ThemeProvider>
-					</I18nProvider>
-				</PostHogProvider>
+				<CloudClientProvider client={apiClient}>
+					<PostHogProvider>
+						<I18nProvider locale={deviceLocale} deferUntilReady>
+							<ThemeProvider value={NAV_THEME.dark}>
+								<VersionGate>
+									<Stack screenOptions={{ headerShown: false }}>
+										<Stack.Protected guard={!!session && !pendingDeletion}>
+											<Stack.Screen name="(authenticated)" />
+										</Stack.Protected>
+										<Stack.Protected guard={pendingDeletion}>
+											<Stack.Screen name="account-pending-deletion" />
+										</Stack.Protected>
+										<Stack.Protected guard={!session}>
+											<Stack.Screen name="(auth)" />
+										</Stack.Protected>
+									</Stack>
+								</VersionGate>
+								<PostHogUserIdentifier />
+								<PortalHost />
+							</ThemeProvider>
+						</I18nProvider>
+					</PostHogProvider>
+				</CloudClientProvider>
 			</PersistQueryClientProvider>
 		</GestureHandlerRootView>
 	);

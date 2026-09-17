@@ -9,7 +9,7 @@ import { useState } from "react";
 import { HiArrowRight } from "react-icons/hi2";
 import { env } from "renderer/env.renderer";
 import { useActiveOrganizationId } from "renderer/hooks/useActiveOrganizationId";
-import { resolveCurrentPlan } from "renderer/hooks/useCurrentPlan";
+import { useCurrentPlan } from "renderer/hooks/useCurrentPlan";
 import { track } from "renderer/lib/analytics";
 import { authClient } from "renderer/lib/auth-client";
 import { cloudTrpc } from "renderer/lib/cloud-trpc";
@@ -21,7 +21,6 @@ import {
 	SETTING_ITEM_ID,
 	type SettingItemId,
 } from "../../../utils/settings-search";
-import type { PlanTier } from "../../constants";
 import { BillingDetails } from "./components/BillingDetails";
 import { CurrentPlanCard } from "./components/CurrentPlanCard";
 import { PaymentFailedBanner } from "./components/PaymentFailedBanner";
@@ -59,16 +58,7 @@ export function BillingOverview({ visibleItems }: BillingOverviewProps) {
 	const currentMember = members?.find((m) => m.userId === currentUserId);
 	const isOwner = currentMember?.role === "owner";
 
-	const { data: activePlan } = cloudTrpc.billing.activePlan.useQuery(undefined);
-
-	// The subscription row wins over the session (which can lag a checkout), but
-	// an unresolved query must not read as "free" — fall back to the session plan
-	// until it arrives.
-	const plan: PlanTier = resolveCurrentPlan({
-		subscriptionPlan: activePlan?.plan,
-		sessionPlan: session?.session?.plan,
-		subscriptionsLoaded: activePlan !== undefined,
-	});
+	const { plan, activePlan } = useCurrentPlan();
 
 	// Seats are billed from this — never derive it from an unresolved query.
 	// undefined (not 0) keeps the upgrade action disabled until it loads. It is

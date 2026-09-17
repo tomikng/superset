@@ -11,7 +11,10 @@ let calls: Array<{
 
 // Both stubbed so the real clients — and the validated env and database
 // connection they open at import — stay out of this test's module graph.
+// Bun keeps the export names of the first stub of a module for the whole
+// run, so this lists `dbWs` for test files that load after it and import it.
 mock.module("@superset/db/client", () => ({
+	dbWs: {},
 	db: {
 		query: {
 			users: {

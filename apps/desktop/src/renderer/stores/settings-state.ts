@@ -23,7 +23,9 @@ export type SettingsSection =
 	| "security"
 	| "project"
 	| "hosts"
-	| "environments";
+	| "environments"
+	| "agentAccounts"
+	| "connections";
 
 interface SettingsState {
 	activeSection: SettingsSection;

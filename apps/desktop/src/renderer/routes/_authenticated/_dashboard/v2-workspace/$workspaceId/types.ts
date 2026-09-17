@@ -53,9 +53,9 @@ export interface CommentPaneData {
 	line?: number;
 }
 
-/** The workspace's linked PR, shown as its summary (description, checks, merge). */
 export interface PullRequestPaneData {
 	prNumber: number;
+	projectId?: string;
 }
 
 export interface PagePaneData {
