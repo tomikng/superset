@@ -13,8 +13,20 @@ type SessionData = NonNullable<
 
 const OFFLINE_RETRY_INTERVAL_MS = 30_000;
 
+function getSessionAtom(): SessionAtom<SessionData> {
+	return authClient.$store.atoms.session as SessionAtom<SessionData>;
+}
+
+// Resolved per call, never at import: test files mock `auth-client` with a
+// stub that has no `$store`, and bun's module mocks leak into later files.
+const sessionAtom: SessionAtom<SessionData> = {
+	get: () => getSessionAtom().get(),
+	set: (value) => getSessionAtom().set(value),
+	listen: (listener) => getSessionAtom().listen(listener),
+};
+
 export const offlineSession = createOfflineSession<SessionData>({
-	sessionAtom: authClient.$store.atoms.session as SessionAtom<SessionData>,
+	sessionAtom,
 	getAuthToken,
 	loadCachedSession: async () => {
 		const cached = await electronTrpcClient.auth.getOfflineSession.query();

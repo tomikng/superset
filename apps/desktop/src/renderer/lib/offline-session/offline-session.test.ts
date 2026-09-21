@@ -235,6 +235,7 @@ describe("startSync", () => {
 		offline.startSync();
 
 		await offline.restoreIfUnreachable("token-a");
+		expect(atom.get().data).toEqual(sessionFor("token-a"));
 		expect(persistSession).not.toHaveBeenCalled();
 	});
 
