@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import {
 	SidebarCardSlot,
 	useHiringCard,
+	useOfflineModeCard,
 	usePaymentFailedCard,
 	useStarNagCard,
 } from "renderer/components/SidebarCardSlot";
@@ -31,6 +32,7 @@ export function WorkspaceSidebar({
 
 	// Ordered by priority for the single card slot below — blocking first,
 	// then actionable, then nags.
+	const offlineModeCard = useOfflineModeCard();
 	const paymentFailedCard = usePaymentFailedCard({ surface: "v1" });
 	const setupScriptCard = useSetupScriptCard({
 		projectId: activeProjectId,
@@ -127,7 +129,13 @@ export function WorkspaceSidebar({
 
 			<SidebarCardSlot
 				isCollapsed={isCollapsed}
-				entries={[paymentFailedCard, setupScriptCard, starNagCard, hiringCard]}
+				entries={[
+					offlineModeCard,
+					paymentFailedCard,
+					setupScriptCard,
+					starNagCard,
+					hiringCard,
+				]}
 			/>
 
 			<WorkspaceSidebarFooter isCollapsed={isCollapsed} />

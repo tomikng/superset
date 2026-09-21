@@ -14,6 +14,7 @@ import { HiOutlineCog6Tooth } from "react-icons/hi2";
 import {
 	SidebarCardSlot,
 	useHiringCard,
+	useOfflineModeCard,
 	usePaymentFailedCard,
 	useStarNagCard,
 } from "renderer/components/SidebarCardSlot";
@@ -306,6 +307,7 @@ export function DashboardSidebar({
 
 	// Ordered by priority for the single card slot below — blocking first,
 	// then actionable, then nags.
+	const offlineModeCard = useOfflineModeCard();
 	const paymentFailedCard = usePaymentFailedCard({ surface: "v2" });
 	const setupScriptCard = useV2SetupScriptCard({
 		hostUrl: activeHostUrl,
@@ -427,6 +429,7 @@ export function DashboardSidebar({
 									<SidebarCardSlot
 										isCollapsed={isCollapsed}
 										entries={[
+											offlineModeCard,
 											paymentFailedCard,
 											setupScriptCard,
 											starNagCard,

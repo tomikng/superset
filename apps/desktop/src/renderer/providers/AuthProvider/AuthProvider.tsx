@@ -5,6 +5,10 @@ import {
 	setAuthToken,
 	setJwt,
 } from "renderer/lib/auth-client";
+import {
+	offlineSession,
+	useOfflineSessionSync,
+} from "renderer/lib/offline-session";
 import { SupersetLogo } from "renderer/routes/sign-in/components/SupersetLogo/SupersetLogo";
 import { electronTrpc } from "../../lib/electron-trpc";
 
@@ -13,6 +17,7 @@ const HYDRATION_TIMEOUT_MS = 15_000;
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [isHydrated, setIsHydrated] = useState(false);
 	const { refetch: refetchSession } = authClient.useSession();
+	useOfflineSessionSync();
 
 	const { data: storedToken, isSuccess } =
 		electronTrpc.auth.getStoredToken.useQuery(undefined, {
@@ -59,6 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 							window.setTimeout(resolve, HYDRATION_TIMEOUT_MS),
 						),
 					]);
+					// SELF-HOSTED: API unreachable → open on the last confirmed session.
+					if (!cancelled) {
+						await offlineSession.restoreIfUnreachable(storedToken.token);
+					}
 				}
 			}
 			if (!cancelled) {
@@ -92,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			} else if (data === null) {
 				setAuthToken(null);
 				setJwt(null);
+				offlineSession.drop();
 				try {
 					await refetchSession();
 				} catch (err) {
