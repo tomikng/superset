@@ -17,6 +17,7 @@ import {
 	setCloudOrganizationId,
 } from "renderer/lib/cloud-trpc";
 import { electronTrpc } from "renderer/lib/electron-trpc";
+import { useIsOfflineMode } from "renderer/lib/offline-session";
 import { electronTrpcClient } from "renderer/lib/trpc-client";
 import { electronQueryClient } from "renderer/providers/ElectronTRPCProvider/ElectronTRPCProvider";
 import { MOCK_ORG_ID } from "shared/constants";
@@ -100,6 +101,19 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
 	// not depend on — the org header this provider sets.
 	const { data: organizations } =
 		cloudTrpc.organization.list.useQuery(undefined);
+	// SELF-HOSTED: offline mode. The list can't load while the API is down;
+	// fall back to the cached session's membership rather than wait forever.
+	const isOfflineMode = useIsOfflineMode();
+	const cachedOrganizationIds = isOfflineMode
+		? session?.session?.organizationIds
+		: undefined;
+	const memberOrganizationIds = useMemo(
+		() =>
+			organizations?.map((organization) => organization.id) ??
+			cachedOrganizationIds ??
+			null,
+		[organizations, cachedOrganizationIds],
+	);
 
 	// Initialize the window's org exactly once. After this, the window's org is
 	// owned by local state (and switchOrganization); later — possibly transient —
@@ -119,15 +133,15 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
 		// guess — the window is showing nothing yet either way.
 		const registryOrgIsStillMine =
 			windowOrgId != null &&
-			organizations != null &&
-			organizations.some((organization) => organization.id === windowOrgId);
-		if (windowOrgId != null && organizations == null) return;
+			memberOrganizationIds != null &&
+			memberOrganizationIds.includes(windowOrgId);
+		if (windowOrgId != null && memberOrganizationIds == null) return;
 		const resolved =
 			(registryOrgIsStillMine ? windowOrgId : sessionOrgId) ?? null;
 		if (!resolved) return;
 		initializedRef.current = true;
 		setActiveOrganizationId(resolved);
-	}, [windowOrgPending, windowOrgId, sessionOrgId, organizations]);
+	}, [windowOrgPending, windowOrgId, sessionOrgId, memberOrganizationIds]);
 
 	// Scope this window's cloud reads to its own org, during render rather than
 	// in an effect: children below issue their first queries while this render

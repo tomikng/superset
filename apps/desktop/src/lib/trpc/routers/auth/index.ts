@@ -19,6 +19,11 @@ import {
 	saveToken,
 	stateStore,
 } from "./utils/auth-functions";
+import {
+	clearOfflineSession,
+	loadOfflineSession,
+	saveOfflineSession,
+} from "./utils/offline-session";
 import { writeAuth } from "./utils/write-auth";
 
 const PASSWORD_TOKEN_LIFETIME_MS = 1000 * 60 * 60 * 24 * 30;
@@ -96,6 +101,33 @@ export const createAuthRouter = () => {
 			)
 			.mutation(async ({ input }) => {
 				return await writeAuth(() => saveOrganizationIds(input));
+			}),
+
+		/** SELF-HOSTED: offline mode (utils/offline-session). */
+		getOfflineSession: publicProcedure.query(async () => {
+			const { token } = await loadToken();
+			if (!token) return null;
+			return await loadOfflineSession(token);
+		}),
+
+		persistOfflineSession: publicProcedure
+			.input(
+				z.object({
+					token: z.string(),
+					session: z
+						.object({
+							user: z.object({ id: z.string() }).passthrough(),
+							session: z.object({}).passthrough(),
+						})
+						.passthrough(),
+				}),
+			)
+			.mutation(async ({ input }) => {
+				// A renderer can still hold the previous sign-in's session.
+				const { token } = await loadToken();
+				if (token !== input.token) return { saved: false };
+				await saveOfflineSession(input);
+				return { saved: true };
 			}),
 
 		/**
@@ -222,6 +254,9 @@ export const createAuthRouter = () => {
 		signOut: publicProcedure.mutation(async () => {
 			getHostServiceCoordinator().stopAll();
 			await writeAuth(() => clearToken());
+			await clearOfflineSession().catch((error) =>
+				console.warn("[auth] Failed to remove the offline session", error),
+			);
 			return { success: true };
 		}),
 	});
