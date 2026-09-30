@@ -24,6 +24,10 @@ else
   # ms3: systemd user units superset-<svc>.service; bun is the mise install
   # pinned by .bun-version (the same binary the units' ExecStart uses).
   export PATH="$HOME/.local/share/mise/installs/bun/$(cat .bun-version)/bin:/usr/local/bin:/usr/bin:$PATH"
+  # turbo runs under mise's node shim, which puts the shims dir first on PATH
+  # for its children; without a pinned version the bun shim then errors out
+  # ("No version is set for shim: bun") and every build task fails.
+  export MISE_BUN_VERSION="$(cat .bun-version)"
   LOG_DIR="$HOME/.local/state/superset"
   DEPLOY_HOST="${DEPLOY_HOST:-ms3}"
   restart_svc() { systemctl --user restart "superset-$1.service"; }
