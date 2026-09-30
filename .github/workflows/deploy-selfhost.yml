@@ -1,6 +1,7 @@
-# Push-to-deploy for the ms1 self-host. Runs on the self-hosted runner that
-# lives on ms1 itself (labels: self-hosted, macOS, ms1) and advances the live
-# clone in place — see deploy/launchd/README.md "Auto-deploy".
+# Push-to-deploy for the self-host. Runs on the self-hosted runner that lives
+# on ms3 itself (labels: self-hosted, Linux, ms3) and advances the live clone in
+# place. ms3 replaced ms1 (macOS); ms1 keeps its runner for TestFlight only.
+# deploy/deploy.sh handles both launchd (macOS) and systemd --user (Linux).
 name: Deploy Self-host
 
 on:
@@ -14,14 +15,14 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy to ms1
+    name: Deploy to ms3
     if: github.repository == 'tomikng/superset'
-    runs-on: [self-hosted, macOS, ms1]
+    runs-on: [self-hosted, Linux, ms3]
     timeout-minutes: 30
     env:
-      SUPERSET_ROOT: Code/superset
+      SUPERSET_ROOT: srv/superset
     steps:
-      # No actions/checkout: the deploy target is the live clone the launchd
+      # No actions/checkout: the deploy target is the live clone the systemd
       # services run from, not the runner's scratch workspace.
       - name: Advance the live clone
         id: advance
@@ -36,5 +37,6 @@ jobs:
       - name: Deploy
         run: |
           cd "$HOME/$SUPERSET_ROOT"
-          deploy/deploy.sh "${{ steps.advance.outputs.prev }}" 2>&1 | tee -a ~/Library/Logs/superset/deploy.log
+          mkdir -p ~/.local/state/superset
+          deploy/deploy.sh "${{ steps.advance.outputs.prev }}" 2>&1 | tee -a ~/.local/state/superset/deploy.log
           exit "${PIPESTATUS[0]}"

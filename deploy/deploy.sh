@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Deploy the checked-out `selfhost` tree on ms1: install if the lockfile moved,
+# Deploy the checked-out `selfhost` tree on the self-host (ms3 on Linux/systemd,
+# formerly ms1 on macOS/launchd): install if the lockfile moved,
 # migrate if packages/db/drizzle moved, rebuild only the apps whose inputs
 # changed, restart only those launchd services, health-check, notify Discord.
 #
@@ -13,9 +14,21 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 cd "$ROOT"
-export PATH="$HOME/.bun/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
-LOG_DIR="$HOME/Library/Logs/superset"; mkdir -p "$LOG_DIR"
-DOMAIN="gui/$(id -u)"
+if [ "$(uname -s)" = Darwin ]; then
+  # ms1: launchd LaunchAgents dev.tom-nguyen.superset.<svc>
+  export PATH="$HOME/.bun/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+  LOG_DIR="$HOME/Library/Logs/superset"
+  DEPLOY_HOST="${DEPLOY_HOST:-ms1}"
+  restart_svc() { launchctl kickstart -k "gui/$(id -u)/dev.tom-nguyen.superset.$1"; }
+else
+  # ms3: systemd user units superset-<svc>.service; bun is the mise install
+  # pinned by .bun-version (the same binary the units' ExecStart uses).
+  export PATH="$HOME/.local/share/mise/installs/bun/$(cat .bun-version)/bin:/usr/local/bin:/usr/bin:$PATH"
+  LOG_DIR="$HOME/.local/state/superset"
+  DEPLOY_HOST="${DEPLOY_HOST:-ms3}"
+  restart_svc() { systemctl --user restart "superset-$1.service"; }
+fi
+mkdir -p "$LOG_DIR"
 PREV="${1:-}"
 NEW="$(git rev-parse HEAD)"
 SHORT="$(git rev-parse --short HEAD)"
@@ -26,7 +39,7 @@ SUBJECT="$(git log -1 --format=%s)"
 notify() {   # notify <emoji> <text>
   [ -z "${DISCORD_WEBHOOK_URL:-}" ] && return 0
   local payload
-  payload="$(printf '%s' "$1 **ms1 deploy** \`$SHORT\` — $2"$'\n'"$SUBJECT" | python3 -c 'import json,sys; print(json.dumps({"content": sys.stdin.read()}))')"
+  payload="$(printf '%s' "$1 **$DEPLOY_HOST deploy** \`$SHORT\` — $2"$'\n'"$SUBJECT" | python3 -c 'import json,sys; print(json.dumps({"content": sys.stdin.read()}))')"
   curl -fsS -m 10 -H 'Content-Type: application/json' -d "$payload" "$DISCORD_WEBHOOK_URL" >/dev/null || true
 }
 fail() { echo "deploy: $1" >&2; notify "❌" "$1"; exit 1; }
@@ -77,7 +90,7 @@ if [ ${#BUILD[@]} -gt 0 ]; then
 fi
 
 for svc in ${RESTART[@]+"${RESTART[@]}"}; do
-  launchctl kickstart -k "$DOMAIN/dev.tom-nguyen.superset.$svc"
+  restart_svc "$svc"
 done
 
 # --- health --------------------------------------------------------------
