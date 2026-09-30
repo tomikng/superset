@@ -11,6 +11,11 @@ import {
 	mcpToolToAnthropicTool,
 	parseToolName,
 } from "./mcp-clients";
+import {
+	callPluginTool,
+	loadPluginTools,
+	type ToolCallResult,
+} from "./plugin-tools";
 
 /**
  * Collect unique Slack user IDs from `<@U...>` mentions in text,
@@ -158,11 +163,16 @@ interface RunSlackAgentParams {
 	/** The newest thread message the agent had read before this turn. */
 	lastContextTs?: string;
 	onProgress?: (status: string) => void | Promise<void>;
+	/** Bound on listing a plugin's tools before the first model call. */
+	pluginDiscoveryTimeoutMs?: number;
+	/** Checked between steps; true ends the turn with the stopped copy. */
+	shouldStop?: () => Promise<boolean>;
 }
 
 /** Everything after the handler's claim shares one budget (job maxDuration is 300s). */
 const DEFAULT_RUN_BUDGET_MS = 240_000;
 const MODEL_CALL_TIMEOUT_MS = 120_000;
+const PLUGIN_DISCOVERY_TIMEOUT_MS = 15_000;
 
 /**
  * A failure with copy already written for Slack. Never routed through the
@@ -183,12 +193,34 @@ const AGENT_COPY = {
 	truncated:
 		"My reply was cut off before it finished. Ask me to continue, or narrow the request. Anything I completed is listed below.",
 	refusal: "I can't help with that request.",
+	stopped: "Stopped. Anything I completed before that is listed below.",
 	empty: "I finished without an answer to show. Ask again with more detail.",
 } as const;
+
+const RATE_LIMIT_DEFAULT_WAIT_MS = 2_000;
+const RATE_LIMIT_MAX_WAIT_MS = 10_000;
+
+/** Retry-After is delay-seconds or an HTTP-date; either becomes a bounded wait. */
+export function rateLimitWaitMs(
+	error: { headers?: { get?: (name: string) => string | null | undefined } },
+	now = Date.now(),
+): number {
+	const header = error.headers?.get?.("retry-after") ?? "";
+	const seconds = Number(header);
+	const fromDate = Date.parse(header) - now;
+	const wait =
+		Number.isFinite(seconds) && seconds > 0
+			? seconds * 1000
+			: Number.isFinite(fromDate) && fromDate > 0
+				? fromDate
+				: RATE_LIMIT_DEFAULT_WAIT_MS;
+	return Math.min(wait, RATE_LIMIT_MAX_WAIT_MS);
+}
 
 export interface SlackAgentResult {
 	text: string;
 	actions: AgentAction[];
+	unconnectedPlugins: SlackPlugin[];
 }
 
 const ERROR_REWRITE_TIMEOUT_MS = 45_000;
@@ -210,7 +242,7 @@ export async function formatErrorForSlack(
 	}
 	try {
 		const anthropic = new Anthropic({
-			apiKey: env.ANTHROPIC_API_KEY,
+			apiKey: env.SERVER_ANTHROPIC_API_KEY,
 			timeout: Math.min(ERROR_REWRITE_TIMEOUT_MS, remaining - 5_000),
 			maxRetries: 0,
 		});
@@ -236,14 +268,32 @@ export async function formatErrorForSlack(
 	}
 }
 
-function getActionFromToolResult(
-	toolName: string,
-	// biome-ignore lint/suspicious/noExplicitAny: MCP result varies by tool
-	result: any,
-): AgentAction | null {
-	const data = result.structuredContent ?? parseTextContent(result.content);
+function getActionFromToolResult({
+	prefix,
+	toolName,
+	input,
+	result,
+}: {
+	prefix: string;
+	toolName: string;
+	input: Record<string, unknown>;
+	result: ToolCallResult;
+}): AgentAction | null {
+	const data =
+		(result.structuredContent as Record<string, unknown> | undefined) ??
+		parseTextContent(result.content);
 	if (!data) return null;
 
+	if (prefix === "superset") return getSupersetAction(toolName, data);
+	if (prefix === "linear") return getLinearAction(toolName, input, data);
+	if (prefix === "github") return getGithubAction(toolName, input, data);
+	return null;
+}
+
+function getSupersetAction(
+	toolName: string,
+	data: Record<string, unknown>,
+): AgentAction | null {
 	if (toolName === "tasks_create" && data.task) {
 		const t = data.task as { id: string; slug: string; title: string };
 		return {
@@ -275,18 +325,76 @@ function getActionFromToolResult(
 	return null;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: MCP content is loosely typed
-function parseTextContent(content: any): Record<string, unknown> | null {
+// Linear's server serialises an issue with its identifier (SUP-12) as `id`.
+function getLinearAction(
+	toolName: string,
+	input: Record<string, unknown>,
+	data: Record<string, unknown>,
+): AgentAction | null {
+	if (toolName !== "save_issue" || input.id !== undefined) return null;
+	const issue = (data.issue ?? data) as {
+		id?: unknown;
+		identifier?: unknown;
+		title?: unknown;
+		url?: unknown;
+	};
+	const identifier =
+		typeof issue.identifier === "string" ? issue.identifier : issue.id;
+	if (
+		typeof identifier !== "string" ||
+		typeof issue.title !== "string" ||
+		typeof issue.url !== "string"
+	) {
+		return null;
+	}
+	return {
+		type: "issue_created",
+		issues: [{ identifier, title: issue.title, url: issue.url }],
+	};
+}
+
+// GitHub's server answers a create with `{ id, url }` only: the number is in
+// the URL and the title is the one that was requested.
+function getGithubAction(
+	toolName: string,
+	input: Record<string, unknown>,
+	data: Record<string, unknown>,
+): AgentAction | null {
+	const url = data.url;
+	if (typeof url !== "string") return null;
+	const title = typeof input.title === "string" ? input.title : "";
+
+	if (toolName === "create_pull_request") {
+		const number = Number(url.match(/\/pull\/(\d+)$/)?.[1]);
+		if (!number) return null;
+		return { type: "pr_opened", pullRequests: [{ number, title, url }] };
+	}
+
+	if (toolName === "issue_write" && input.method === "create") {
+		const match = url.match(/github\.com\/([^/]+\/[^/]+)\/issues\/(\d+)$/);
+		if (!match) return null;
+		return {
+			type: "issue_created",
+			issues: [{ identifier: `${match[1]}#${match[2]}`, title, url }],
+		};
+	}
+
+	return null;
+}
+
+function parseTextContent(content: unknown): Record<string, unknown> | null {
+	const first = Array.isArray(content) ? content[0] : undefined;
+	if (
+		!first ||
+		typeof first !== "object" ||
+		!("text" in first) ||
+		typeof first.text !== "string"
+	) {
+		return null;
+	}
 	try {
-		const contentItem = content?.[0];
-		if (
-			!contentItem ||
-			typeof contentItem !== "object" ||
-			!("text" in contentItem)
-		) {
-			return null;
-		}
-		return JSON.parse(contentItem.text as string);
+		const parsed = JSON.parse(first.text);
+		return parsed && typeof parsed === "object" ? parsed : null;
 	} catch {
 		return null;
 	}
@@ -312,6 +420,16 @@ const TOOL_PROGRESS_STATUS: Record<string, string> = {
 	// Server-side
 	slack_get_channel_history: "Reading channel history...",
 	slack_thread_quiet: "Updating thread settings...",
+	linear_list_issues: "Searching Linear issues...",
+	linear_get_issue: "Fetching Linear issue...",
+	linear_save_issue: "Saving Linear issue...",
+	linear_save_comment: "Commenting in Linear...",
+	github_search_issues: "Searching GitHub issues...",
+	github_search_pull_requests: "Searching pull requests...",
+	github_search_code: "Searching code on GitHub...",
+	github_issue_write: "Saving GitHub issue...",
+	github_add_issue_comment: "Commenting on GitHub...",
+	github_create_pull_request: "Opening pull request...",
 };
 
 // Explicit opt-in: newly added MCP tools must not silently acquire Slack access.
@@ -320,6 +438,7 @@ export const ALLOWED_SLACK_TOOLS = new Set([
 	"tasks_list",
 	"tasks_get",
 	"tasks_create",
+	"tasks_update",
 	"workspaces_list",
 	"workspaces_create",
 	"projects_list",
@@ -353,6 +472,69 @@ const SLACK_THREAD_QUIET_TOOL: Anthropic.Tool = {
 		required: ["quiet"],
 	},
 };
+
+export interface SlackPlugin {
+	name: string;
+	displayName: string;
+	capability: string;
+}
+
+export const SLACK_PLUGINS: readonly SlackPlugin[] = [
+	{
+		name: "linear",
+		displayName: "Linear",
+		capability:
+			"search and read issues, file issues, comment, and look up teams, projects, users, statuses and labels",
+	},
+	{
+		name: "github",
+		displayName: "GitHub",
+		capability:
+			"search and read issues, pull requests and code, file or update issues, comment, and open pull requests",
+	},
+];
+
+// Same opt-in rule as ALLOWED_SLACK_TOOLS, per plugin. Names are what each
+// plugin's MCP server lists. save_issue and issue_write are the only way to
+// file an issue on those servers and also edit one issue at a time.
+export const PLUGIN_SLACK_TOOLS: Record<string, Set<string>> = {
+	linear: new Set([
+		"list_issues",
+		"get_issue",
+		"save_issue",
+		"list_comments",
+		"save_comment",
+		"list_teams",
+		"list_projects",
+		"get_project",
+		"list_users",
+		"list_issue_statuses",
+		"list_issue_labels",
+	]),
+	github: new Set([
+		"get_me",
+		"search_issues",
+		"search_pull_requests",
+		"search_code",
+		"list_issues",
+		"issue_read",
+		"issue_write",
+		"add_issue_comment",
+		"list_pull_requests",
+		"pull_request_read",
+		"create_pull_request",
+		"get_file_contents",
+	]),
+};
+
+const EMPTY_INPUT_SCHEMA = { type: "object", properties: {} } as const;
+
+export function mentionsPlugin(text: string, plugin: SlackPlugin): boolean {
+	const name = plugin.displayName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	return new RegExp(`(?<![\\p{L}\\p{N}])${name}(?![\\p{L}\\p{N}])`, "iu").test(
+		text,
+	);
+}
 
 const SLACK_GET_CHANNEL_HISTORY_TOOL: Anthropic.Tool = {
 	name: "slack_get_channel_history",
@@ -414,7 +596,7 @@ async function handleGetChannelHistory({
 const SYSTEM_PROMPT = `You are a helpful assistant in Slack for Superset, a platform for managing tasks and running coding agents in workspaces.
 
 You can:
-- Create and search tasks using superset_* tools (updating and deleting tasks is not available from Slack yet)
+- Create, search and update tasks using superset_* tools (deleting tasks is not available from Slack)
 - Spawn workspaces and launch coding agents to do the work using superset_* tools
 - Read recent channel messages using slack_get_channel_history
 - Search the web for current information using web_search
@@ -549,20 +731,36 @@ export async function runSlackAgent(
 	params: RunSlackAgentParams,
 ): Promise<SlackAgentResult> {
 	const anthropic = new Anthropic({
-		apiKey: env.ANTHROPIC_API_KEY,
+		apiKey: env.SERVER_ANTHROPIC_API_KEY,
 		timeout: MODEL_CALL_TIMEOUT_MS,
 		maxRetries: 1,
 	});
 	const actions: AgentAction[] = [];
+	let unconnectedPlugins: SlackPlugin[] = [...SLACK_PLUGINS];
 	const deadline = params.deadline ?? Date.now() + DEFAULT_RUN_BUDGET_MS;
-	const mcpRequestOptions = (): McpRequestOptions => {
+	const remainingBudget = (): number => {
 		const remaining = deadline - Date.now();
 		if (remaining <= 0) throw new SlackAgentError(AGENT_COPY.timeLimit);
-		return { timeout: remaining };
+		return remaining;
 	};
+	const mcpRequestOptions = (): McpRequestOptions => ({
+		timeout: remainingBudget(),
+	});
+	const pluginSignal = (): AbortSignal =>
+		AbortSignal.timeout(remainingBudget());
+	// Discovery runs before the first model call. A hung plugin endpoint must
+	// cost that plugin, not the whole turn.
+	const discoverySignal = (): AbortSignal =>
+		AbortSignal.timeout(
+			Math.min(
+				remainingBudget(),
+				params.pluginDiscoveryTimeoutMs ?? PLUGIN_DISCOVERY_TIMEOUT_MS,
+			),
+		);
 
 	let supersetMcp: Client | null = null;
 	let cleanupSuperset: (() => Promise<void>) | null = null;
+	let closePlugins: (() => Promise<void>) | null = null;
 
 	try {
 		const [threadContext, supersetMcpResult] = await Promise.all([
@@ -583,18 +781,45 @@ export async function runSlackAgent(
 		supersetMcp = supersetMcpResult.client;
 		cleanupSuperset = supersetMcpResult.cleanup;
 
-		const [supersetToolsResult, agentContext] = await Promise.all([
+		const [supersetToolsResult, agentContext, pluginLoad] = await Promise.all([
 			supersetMcp.listTools(undefined, mcpRequestOptions()),
 			fetchAgentContext({
 				mcpClient: supersetMcp,
 				userId: params.userId,
 				requestOptions: mcpRequestOptions,
 			}),
+			loadPluginTools({
+				userId: params.userId,
+				organizationId: params.organizationId,
+				pluginNames: Object.keys(PLUGIN_SLACK_TOOLS),
+				signal: discoverySignal(),
+			}),
 		]);
+		closePlugins = pluginLoad.close;
+		const pluginToolSets = pluginLoad.sets;
+		// Unresolved connections are unknown, not absent: no Connect prompt and
+		// no "not connected" line on a transient failure.
+		unconnectedPlugins = pluginLoad.resolved
+			? SLACK_PLUGINS.filter((plugin) => !pluginToolSets.has(plugin.name))
+			: [];
 
 		const supersetTools = supersetToolsResult.tools
 			.filter((t) => ALLOWED_SLACK_TOOLS.has(t.name))
 			.map((t) => mcpToolToAnthropicTool(t, "superset"));
+		const curatedPluginTools = new Map(
+			[...pluginToolSets.entries()].map(([pluginName, { tools: listed }]) => [
+				pluginName,
+				listed
+					.filter((t) => PLUGIN_SLACK_TOOLS[pluginName]?.has(t.name))
+					.map((t) =>
+						mcpToolToAnthropicTool(
+							{ ...t, inputSchema: t.inputSchema ?? EMPTY_INPUT_SCHEMA },
+							pluginName,
+						),
+					),
+			]),
+		);
+		const pluginTools = [...curatedPluginTools.values()].flat();
 
 		const model = params.model ?? DEFAULT_SLACK_MODEL;
 		// Haiku 4.5 only supports the basic web search tool; the 4.6+ models take
@@ -609,6 +834,7 @@ export async function runSlackAgent(
 		} as unknown as Anthropic.Messages.ToolUnion;
 		const tools: Anthropic.Messages.ToolUnion[] = [
 			...supersetTools,
+			...pluginTools,
 			SLACK_GET_CHANNEL_HISTORY_TOOL,
 			...(params.threadQuiet ? [SLACK_THREAD_QUIET_TOOL] : []),
 			webSearchTool,
@@ -619,11 +845,37 @@ export async function runSlackAgent(
 				? "\n- This thread is quiet: only replies that mention you reach you. If asked to respond without mentions again, call slack_thread_quiet with quiet=false. People can also type !unmute."
 				: "\n- This thread is open: every reply in it reaches you without a mention. If asked to only respond when mentioned, call slack_thread_quiet with quiet=true. People can also type !mute."
 			: "";
+		const integrationLines = SLACK_PLUGINS.flatMap((plugin) => {
+			if (curatedPluginTools.get(plugin.name)?.length) {
+				return [
+					`- ${plugin.displayName} is connected: ${plugin.capability} with the ${plugin.name}_* tools`,
+				];
+			}
+			if (pluginToolSets.has(plugin.name)) {
+				return [
+					`- ${plugin.displayName} is connected but its tools could not be loaded for this run. Say so if the request needs ${plugin.displayName}.`,
+				];
+			}
+			if (!pluginLoad.resolved) {
+				return mentionsPlugin(params.prompt, plugin)
+					? [
+							`- ${plugin.displayName} could not be checked this run. If the request needs ${plugin.displayName}, say it is unavailable right now rather than not connected.`,
+						]
+					: [];
+			}
+			if (mentionsPlugin(params.prompt, plugin)) {
+				return [
+					`- ${plugin.displayName} is not connected to this user's Superset account, so there are no ${plugin.name}_* tools. If the request needs ${plugin.displayName}, say it is not connected instead of guessing; they can connect it from the Plugins page in Superset.`,
+				];
+			}
+			return [];
+		});
+
 		const contextualSystem = `Current context:
 - Slack Channel: ${params.channelId}
 - Thread: ${params.threadTs}
 - Organization ID: ${params.organizationId}${threadState}
-
+${integrationLines.length > 0 ? `\nIntegrations:\n${integrationLines.join("\n")}\n` : ""}
 ${agentContext}`;
 
 		const userContent = buildUserMessageContent({
@@ -640,13 +892,22 @@ ${agentContext}`;
 			},
 		];
 
-		const request = () => {
+		const stopIfRequested = async () => {
+			if (await params.shouldStop?.()) {
+				throw new SlackAgentError(AGENT_COPY.stopped);
+			}
+		};
+		const request = async () => {
+			await stopIfRequested();
 			const remaining = deadline - Date.now();
 			if (remaining <= 0) throw new SlackAgentError(AGENT_COPY.timeLimit);
 			return anthropic.messages.create(
 				{
 					model,
-					max_tokens: 8192,
+					// A Slack turn is a short reply or a tool call. 8192 non-streamed
+					// tokens took longer than the 120s request timeout and burned the
+					// whole budget on a retry of the same generation.
+					max_tokens: 4096,
 					system: [
 						{
 							type: "text",
@@ -671,12 +932,30 @@ ${agentContext}`;
 				},
 				{
 					timeout: Math.min(MODEL_CALL_TIMEOUT_MS, remaining),
-					// One retry for 429/5xx when the budget can absorb a second attempt.
-					maxRetries: remaining > MODEL_CALL_TIMEOUT_MS * 1.5 ? 1 : 0,
+					maxRetries: 0,
 				},
 			);
 		};
-		let response = await request();
+		// Retry once for 429/5xx/connection errors when the budget can absorb
+		// a second attempt. A timeout is not retried: a generation that took
+		// longer than the request timeout takes just as long the second time.
+		const requestWithRetry = async () => {
+			try {
+				return await request();
+			} catch (error) {
+				if (!(error instanceof Anthropic.APIError)) throw error;
+				const retryable =
+					error instanceof Anthropic.APIConnectionError
+						? !(error instanceof Anthropic.APIConnectionTimeoutError)
+						: error.status === 429 || (error.status ?? 0) >= 500;
+				if (!retryable) throw error;
+				const wait = error.status === 429 ? rateLimitWaitMs(error) : 0;
+				if (deadline - Date.now() - wait < MODEL_CALL_TIMEOUT_MS) throw error;
+				if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+				return request();
+			}
+		};
+		let response = await requestWithRetry();
 
 		const MAX_TOOL_ITERATIONS = 10;
 		let iterations = 0;
@@ -696,7 +975,7 @@ ${agentContext}`;
 					// Non-critical
 				}
 				messages.push({ role: "assistant", content: response.content });
-				response = await request();
+				response = await requestWithRetry();
 				continue;
 			}
 
@@ -708,14 +987,19 @@ ${agentContext}`;
 			const toolResults: Anthropic.ToolResultBlockParam[] = [];
 
 			for (const toolUse of toolUseBlocks) {
+				// Per tool, not per batch: a stop that lands during one tool call
+				// must not let the next one create a task or launch an agent.
+				await stopIfRequested();
 				if (Date.now() >= deadline)
 					throw new SlackAgentError(AGENT_COPY.timeLimit);
 				try {
-					const { toolName: rawToolName } = parseToolName(toolUse.name);
+					const { prefix, toolName } = parseToolName(toolUse.name);
+					const plugin = SLACK_PLUGINS.find((p) => p.name === prefix);
 					const progressStatus =
 						TOOL_PROGRESS_STATUS[toolUse.name] ??
-						TOOL_PROGRESS_STATUS[rawToolName] ??
-						"Working...";
+						(plugin
+							? `Working in ${plugin.displayName}...`
+							: (TOOL_PROGRESS_STATUS[toolName] ?? "Working..."));
 
 					try {
 						await params.onProgress?.(progressStatus);
@@ -742,13 +1026,28 @@ ${agentContext}`;
 						params.threadQuiet.quiet = quiet;
 						resultContent = JSON.stringify({ quiet });
 					} else {
-						const { prefix, toolName } = parseToolName(toolUse.name);
+						const input = toolUse.input as Record<string, unknown>;
+						const pluginSet = pluginToolSets.get(prefix);
+						let result: ToolCallResult;
 
 						if (
-							prefix !== "superset" ||
-							!supersetMcp ||
-							!ALLOWED_SLACK_TOOLS.has(toolName)
+							prefix === "superset" &&
+							supersetMcp &&
+							ALLOWED_SLACK_TOOLS.has(toolName)
 						) {
+							result = await supersetMcp.callTool(
+								{ name: toolName, arguments: input },
+								undefined,
+								mcpRequestOptions(),
+							);
+						} else if (pluginSet && PLUGIN_SLACK_TOOLS[prefix]?.has(toolName)) {
+							result = await callPluginTool({
+								context: pluginSet.context,
+								tool: toolName,
+								args: input,
+								signal: pluginSignal(),
+							});
+						} else {
 							toolResults.push({
 								type: "tool_result",
 								tool_use_id: toolUse.id,
@@ -759,15 +1058,6 @@ ${agentContext}`;
 							});
 							continue;
 						}
-
-						const result = await supersetMcp.callTool(
-							{
-								name: toolName,
-								arguments: toolUse.input as Record<string, unknown>,
-							},
-							undefined,
-							mcpRequestOptions(),
-						);
 
 						resultContent = JSON.stringify(result.content);
 
@@ -780,7 +1070,12 @@ ${agentContext}`;
 							});
 							continue;
 						}
-						const action = getActionFromToolResult(toolName, result);
+						const action = getActionFromToolResult({
+							prefix,
+							toolName,
+							input,
+							result,
+						});
 						if (action) {
 							actions.push(action);
 						}
@@ -817,7 +1112,7 @@ ${agentContext}`;
 			});
 			messages.push({ role: "user", content: toolResults });
 
-			response = await request();
+			response = await requestWithRetry();
 		}
 
 		// Never report an unfinished tool plan or truncated text as completed work.
@@ -829,24 +1124,40 @@ ${agentContext}`;
 					: response.stop_reason === "max_tokens"
 						? AGENT_COPY.truncated
 						: AGENT_COPY.turnLimit;
-			return { text, actions };
+			return { text, actions, unconnectedPlugins };
 		}
+		// Web search splits one paragraph into several text blocks around its
+		// citations: the block after a cited block continues its sentence.
+		// A block after an uncited one (a preamble before a search) is a
+		// new paragraph.
 		const text = response.content
 			.filter((block): block is Anthropic.TextBlock => block.type === "text")
-			.map((block) => block.text)
-			.join("\n\n");
-		return { text: text || AGENT_COPY.empty, actions };
+			.reduce(
+				(joined, block, i, blocks) =>
+					i === 0
+						? block.text
+						: joined +
+							(blocks[i - 1]?.citations?.length ? "" : "\n\n") +
+							block.text,
+				"",
+			);
+		return { text: text || AGENT_COPY.empty, actions, unconnectedPlugins };
 	} catch (error) {
 		console.error("[slack-agent] Agent request failed", error);
 		const text =
 			error instanceof SlackAgentError
 				? error.message
 				: await formatErrorForSlack(error, deadline);
-		return { text, actions };
+		return { text, actions, unconnectedPlugins };
 	} finally {
 		if (cleanupSuperset) {
 			try {
 				await cleanupSuperset();
+			} catch {}
+		}
+		if (closePlugins) {
+			try {
+				await closePlugins();
 			} catch {}
 		}
 	}

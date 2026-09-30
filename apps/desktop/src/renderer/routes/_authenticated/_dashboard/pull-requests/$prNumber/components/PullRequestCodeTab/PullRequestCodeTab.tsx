@@ -24,9 +24,8 @@ import {
 	PIERRE_TREE_UNSAFE_CSS,
 	type PierreGitStatus,
 } from "renderer/lib/pierreTree";
-import { normalizeTerminalCommand } from "renderer/lib/terminal/launch-command";
+import type { AgentTarget } from "renderer/routes/_authenticated/_dashboard/components/AgentSessionPicker";
 import { WorkItemDetailState } from "renderer/routes/_authenticated/_dashboard/components/WorkItemDetailState";
-import type { AgentTarget } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/usePaneRegistry/components/AgentCommentComposer/hooks/useDiffCommentTarget";
 import { useDiffCardCodeViewTheme } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/usePaneRegistry/components/DiffPane/hooks/useDiffCodeViewTheme";
 import { DiffFileCollapseButton } from "renderer/screens/main/components/DiffFileCollapseButton";
 import { DiffFileHeaderName } from "renderer/screens/main/components/DiffFileHeaderName";
@@ -468,10 +467,11 @@ export function PullRequestCodeTab({
 					throw new Error("No workspace open for this session");
 				}
 				const client = getHostServiceClientByUrl(hostUrl);
-				await client.terminal.writeInput.mutate({
+				await client.terminal.send.mutate({
 					workspaceId: linkedWorkspaceId,
 					terminalId: input.target.terminalId,
-					data: normalizeTerminalCommand(sanitizePromptForPty(text)),
+					text: sanitizePromptForPty(text).trimEnd(),
+					submit: true,
 				});
 				return;
 			}

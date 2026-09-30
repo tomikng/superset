@@ -13,8 +13,11 @@ export const SHA256 = /^[0-9a-f]{64}$/;
 const assetSchema = z.object({
 	/** sha256 of the object's bytes; the object's name in the bucket. */
 	sha256: z.string().regex(SHA256),
-	/** Appended to the sha in the bucket key so a browser or curl sees a type. */
-	suffix: z.string().regex(/^\.[a-z0-9.]+$/),
+	/**
+	 * Appended to the sha in the bucket key so a browser or curl sees a type.
+	 * Empty for an executable, which has none.
+	 */
+	suffix: z.string().regex(/^(\.[a-z0-9.]+)?$/),
 	/** Absolute path on the box. Archives are staged under the media dir. */
 	dest: z.string().startsWith("/"),
 	mode: z

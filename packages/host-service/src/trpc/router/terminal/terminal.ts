@@ -1,3 +1,4 @@
+import { terminalColorsSchema } from "@superset/shared/terminal-colors";
 import { TERMINAL_HANDOFF_MAX_CHARS } from "@superset/shared/terminal-session-handoff";
 import { normalizeTerminalTitle } from "@superset/shared/terminal-title-scanner";
 import { TRPCError } from "@trpc/server";
@@ -10,9 +11,11 @@ import {
 	disposeSessionAndWait,
 	disposeSessionsByWorkspaceId,
 	disposeSessionsByWorktreePath,
+	getPendingTerminalWorkspaceId,
 	listLiveTerminalSessions,
 	parseThemeType,
 	renameTerminalSession,
+	sendAgentMessage,
 	sessionHasRunningProcess,
 	snapshotSession,
 	transcriptSession,
@@ -36,6 +39,7 @@ export const createSessionInputSchema = z.object({
 		.transform((value) => (value ? value : undefined)),
 	cwd: z.string().optional(),
 	themeType: z.string().optional(),
+	colors: terminalColorsSchema.optional(),
 	cols: z.number().int().positive().optional(),
 	rows: z.number().int().positive().optional(),
 });
@@ -52,6 +56,7 @@ async function createTerminalSessionFromInput({
 		terminalId,
 		workspaceId: input.workspaceId,
 		themeType: parseThemeType(input.themeType),
+		colors: input.colors,
 		db: ctx.db,
 		eventBus: ctx.eventBus,
 		initialCommand: input.initialCommand,
@@ -187,11 +192,15 @@ export const terminalRouter = router({
 				}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const result = await writeFramedInputToSession({
-				...input,
-				db: ctx.db,
-				eventBus: ctx.eventBus,
-			});
+			const message = { ...input, db: ctx.db, eventBus: ctx.eventBus };
+			const binding = ctx.terminalAgentStore.get(input.terminalId);
+			const result =
+				binding && binding.endedAt === undefined
+					? await sendAgentMessage({
+							...message,
+							terminalAgentStore: ctx.terminalAgentStore,
+						})
+					: await writeFramedInputToSession(message);
 			if ("error" in result) {
 				throw toTerminalSessionError(result);
 			}
@@ -311,6 +320,29 @@ export const terminalRouter = router({
 					message: "Workspace not found",
 				});
 			}
+
+			const pendingWorkspaceId = getPendingTerminalWorkspaceId(
+				input.terminalId,
+			);
+			if (pendingWorkspaceId && pendingWorkspaceId !== input.workspaceId) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Terminal session does not belong to this workspace",
+				});
+			}
+
+			const now = Date.now();
+			ctx.db
+				.insert(terminalSessions)
+				.values({
+					id: input.terminalId,
+					originWorkspaceId: input.workspaceId,
+					status: "disposed",
+					createdAt: now,
+					disposeRequestedAt: now,
+				})
+				.onConflictDoNothing()
+				.run();
 
 			const session = ctx.db.query.terminalSessions
 				.findFirst({ where: eq(terminalSessions.id, input.terminalId) })

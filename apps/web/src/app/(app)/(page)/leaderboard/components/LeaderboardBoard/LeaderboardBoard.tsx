@@ -50,10 +50,12 @@ export function LeaderboardBoard() {
 	const total = standings.data?.total ?? 0;
 	const range = standings.data?.range ?? null;
 	const totals = stats.data?.totals;
+	// `totals.tokens` is a decimal string (bigint-safe); a share only needs a float.
+	const totalTokens = Number(totals?.tokens ?? 0);
 	const cachedShare =
-		totals && totals.tokens > 0
+		totalTokens > 0
 			? Math.round(
-					((stats.data?.tokenSplit.cachedInput ?? 0) / totals.tokens) * 100,
+					(Number(stats.data?.tokenSplit.cachedInput ?? 0) / totalTokens) * 100,
 				)
 			: 0;
 

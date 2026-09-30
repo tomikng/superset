@@ -1,13 +1,13 @@
 import { db } from "@superset/db/client";
 import {
-	integrationConnections,
 	type SelectSlackThreadSession,
 	type SlackQueuedEvent,
 	type SlackThreadEntity,
 	slackThreadSessions,
 } from "@superset/db/schema";
 import { FEATURE_FLAGS } from "@superset/shared/constants";
-import { and, desc, eq, isNull, lt, or, sql } from "drizzle-orm";
+import { accountConnection } from "@superset/trpc/connectors";
+import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
 import { posthog } from "@/lib/analytics";
 import type { AgentAction } from "../slack-blocks";
 
@@ -19,6 +19,8 @@ const FLAG_TIMEOUT_MS = 1_000;
 const STALE_RUN_MS = 6 * 60_000;
 const MAX_QUEUED_EVENTS = 20;
 const CLAIM_ATTEMPTS = 3;
+/** A hand-back still marked after this long belongs to a worker that died mid-publish. */
+const HANDOFF_STALE_MS = 60_000;
 
 interface ThreadKey {
 	organizationId: string;
@@ -27,7 +29,7 @@ interface ThreadKey {
 	threadTs: string;
 }
 
-export type ThreadCommand = "mute" | "unmute";
+export type ThreadCommand = "mute" | "unmute" | "stop";
 
 /**
  * Explicit commands only. Intent phrased in prose ("only reply when I
@@ -41,7 +43,55 @@ export function parseThreadCommand(text: string): ThreadCommand | null {
 		.toLowerCase();
 	if (/^!(mute|quiet)\b/.test(stripped)) return "mute";
 	if (/^!(unmute|unquiet)\b/.test(stripped)) return "unmute";
+	if (/^!(stop|cancel)\b/.test(stripped)) return "stop";
 	return null;
+}
+
+/**
+ * Ask the running turn to stop at its next step. Stamped with the stop
+ * message's own Slack time, so it can be ordered against the message that
+ * started a turn: a stop sent after that message applies to the turn, even
+ * one still in preflight without a session row; a stop sent before it was
+ * aimed at an earlier turn. Returns whether a turn was running.
+ */
+export async function requestThreadStop(
+	key: ThreadKey,
+	stopTs: string,
+): Promise<boolean> {
+	const stampedAt = sql`to_timestamp(${stopTs}::numeric)`;
+	const [row] = await db
+		.insert(slackThreadSessions)
+		.values({
+			organizationId: key.organizationId,
+			teamId: key.teamId,
+			channelId: key.channelId,
+			threadTs: key.threadTs,
+			stopRequestedAt: stampedAt,
+		})
+		.onConflictDoUpdate({
+			target: THREAD_CONFLICT_TARGET,
+			// Two stops can arrive out of order; the newer one must win.
+			set: {
+				stopRequestedAt: sql`GREATEST(${slackThreadSessions.stopRequestedAt}, ${stampedAt})`,
+			},
+		})
+		.returning({ status: slackThreadSessions.status });
+	return row?.status === "running";
+}
+
+/** Whether a stop newer than the turn's own message has been requested. */
+export async function threadStopRequested(
+	id: string,
+	messageTs: string,
+): Promise<boolean> {
+	const row = await db.query.slackThreadSessions.findFirst({
+		where: eq(slackThreadSessions.id, id),
+		columns: { stopRequestedAt: true },
+	});
+	return (
+		row?.stopRequestedAt != null &&
+		row.stopRequestedAt.getTime() > Number(messageTs) * 1000
+	);
 }
 
 const flagCache = new Map<string, { enabled: boolean; expiresAt: number }>();
@@ -52,7 +102,10 @@ const flagCache = new Map<string, { enabled: boolean; expiresAt: number }>();
  * most once a minute, and bounded so a slow PostHog reads as off rather
  * than as a late acknowledgement.
  */
-export async function threadFollowUpsEnabled(teamId: string): Promise<boolean> {
+export async function threadFollowUpsEnabled(
+	teamId: string,
+	{ timeoutMs = FLAG_TIMEOUT_MS }: { timeoutMs?: number } = {},
+): Promise<boolean> {
 	const cached = flagCache.get(teamId);
 	if (cached && cached.expiresAt > Date.now()) return cached.enabled;
 	let enabled = false;
@@ -66,7 +119,7 @@ export async function threadFollowUpsEnabled(teamId: string): Promise<boolean> {
 					{ sendFeatureFlagEvents: false },
 				),
 				new Promise<undefined>((resolve) => {
-					timer = setTimeout(() => resolve(undefined), FLAG_TIMEOUT_MS);
+					timer = setTimeout(() => resolve(undefined), timeoutMs);
 				}),
 			])) === true;
 	} catch (error) {
@@ -109,18 +162,7 @@ export async function threadFollowUpTarget(key: {
 	threadTs: string;
 }): Promise<SelectSlackThreadSession | null> {
 	if (!(await threadFollowUpsEnabled(key.teamId))) return null;
-	const connection = await db.query.integrationConnections.findFirst({
-		where: and(
-			eq(integrationConnections.provider, "slack"),
-			eq(integrationConnections.externalOrgId, key.teamId),
-			isNull(integrationConnections.disconnectedAt),
-		),
-		orderBy: [
-			desc(integrationConnections.updatedAt),
-			desc(integrationConnections.id),
-		],
-		columns: { organizationId: true },
-	});
+	const connection = await accountConnection("slack", key.teamId);
 	if (!connection) return null;
 	const session = await db.query.slackThreadSessions.findFirst({
 		where: whereThread({ ...key, organizationId: connection.organizationId }),
@@ -149,7 +191,9 @@ export async function setThreadQuiet(
 
 export type ThreadRunClaim =
 	| { status: "running"; session: SelectSlackThreadSession }
-	| { status: "queued" };
+	| { status: "queued" }
+	/** A finished turn already ran with this message or a later one as its trigger. */
+	| { status: "covered" };
 
 /**
  * Take the thread for this turn. Exactly one delivery owns a running
@@ -158,13 +202,34 @@ export type ThreadRunClaim =
  * owner to hand back when it finishes.
  */
 export async function beginThreadRun(
-	key: ThreadKey & { userId: string; event: SlackQueuedEvent },
+	key: ThreadKey & {
+		userId: string;
+		event: SlackQueuedEvent;
+		/**
+		 * A hand-back may reach the thread twice (a publish whose response was
+		 * lost, then taken and published again). The second copy finds the
+		 * session's last trigger at or past its own message and stands down
+		 * without ever taking the session, so nothing can queue behind it.
+		 */
+		handBack?: boolean;
+	},
 ): Promise<ThreadRunClaim> {
+	const notCovered = key.handBack
+		? or(
+				isNull(slackThreadSessions.lastContextTs),
+				sql`${slackThreadSessions.lastContextTs}::numeric < ${key.event.ts}::numeric`,
+			)
+		: undefined;
 	for (let attempt = 0; attempt < CLAIM_ATTEMPTS; attempt++) {
 		const now = new Date();
 		const [claimed] = await db
 			.update(slackThreadSessions)
-			.set({ status: "running", lastActivityAt: now })
+			.set({
+				status: "running",
+				lastActivityAt: now,
+				// A stop sent after this turn's message was meant for it.
+				stopRequestedAt: sql`CASE WHEN ${slackThreadSessions.stopRequestedAt} > to_timestamp(${key.event.ts}::numeric) THEN ${slackThreadSessions.stopRequestedAt} ELSE NULL END`,
+			})
 			.where(
 				and(
 					whereThread(key),
@@ -175,6 +240,7 @@ export async function beginThreadRun(
 							new Date(now.getTime() - STALE_RUN_MS),
 						),
 					),
+					notCovered,
 				),
 			)
 			.returning();
@@ -193,6 +259,19 @@ export async function beginThreadRun(
 			.onConflictDoNothing({ target: THREAD_CONFLICT_TARGET })
 			.returning();
 		if (inserted) return { status: "running", session: inserted };
+
+		if (key.handBack) {
+			const current = await db.query.slackThreadSessions.findFirst({
+				where: whereThread(key),
+				columns: { lastContextTs: true },
+			});
+			if (
+				current?.lastContextTs &&
+				Number(current.lastContextTs) >= Number(key.event.ts)
+			) {
+				return { status: "covered" };
+			}
+		}
 
 		// Only a running owner can hand the queue back, so queue only while
 		// one exists; if it finished in between, go round and claim instead.
@@ -217,33 +296,69 @@ export async function beginThreadRun(
 	throw new Error("Slack thread session could not be claimed or queued");
 }
 
-/** What arrived while the turn ran, oldest first. Nothing is removed. */
-export async function readQueuedEvents(
+/**
+ * Claim everything that arrived while the turn ran for one hand-back,
+ * oldest first. The events stay in the queue, marked with the hand-off id,
+ * until completeHandBack removes them once QStash has the job; a worker
+ * that dies in between leaves them marked, and a later hand-back takes
+ * them again after HANDOFF_STALE_MS. A hand-back that reaches the thread
+ * twice is caught by the covered check in beginThreadRun.
+ */
+export async function takeQueuedEvents(
 	id: string,
+	handoffId: string,
 ): Promise<SlackQueuedEvent[]> {
-	const row = await db.query.slackThreadSessions.findFirst({
-		where: eq(slackThreadSessions.id, id),
-		columns: { queuedEvents: true },
-	});
+	const staleBefore = Date.now() - HANDOFF_STALE_MS;
+	const mark = JSON.stringify({ handoff: handoffId, handoffAt: Date.now() });
+	const [row] = await db
+		.update(slackThreadSessions)
+		.set({
+			queuedEvents: sql`(
+				SELECT COALESCE(jsonb_agg(
+					CASE WHEN e->>'handoff' IS NULL OR (e->>'handoffAt')::numeric < ${staleBefore}
+						THEN e || ${mark}::jsonb ELSE e END
+					ORDER BY n), '[]'::jsonb)
+				FROM jsonb_array_elements(${slackThreadSessions.queuedEvents}) WITH ORDINALITY AS q(e, n)
+			)`,
+		})
+		.where(eq(slackThreadSessions.id, id))
+		.returning({ queuedEvents: slackThreadSessions.queuedEvents });
 	// Stored newest first.
-	return [...(row?.queuedEvents ?? [])].reverse();
+	return (row?.queuedEvents ?? [])
+		.filter((e) => e.handoff === handoffId)
+		.reverse();
 }
 
-/**
- * Drop queued events up to and including `ts`, once their re-delivery is
- * durable. Anything newer stays for the next hand-back.
- */
-export async function clearQueuedEventsThrough(
+/** QStash has the job: drop the events this hand-back carried. */
+export async function completeHandBack(
 	id: string,
-	ts: string,
+	handoffId: string,
 ): Promise<void> {
 	await db
 		.update(slackThreadSessions)
 		.set({
 			queuedEvents: sql`(
-				SELECT COALESCE(jsonb_agg(e), '[]'::jsonb)
-				FROM jsonb_array_elements(${slackThreadSessions.queuedEvents}) AS e
-				WHERE (e->>'ts')::numeric > ${ts}::numeric
+				SELECT COALESCE(jsonb_agg(e ORDER BY n), '[]'::jsonb)
+				FROM jsonb_array_elements(${slackThreadSessions.queuedEvents}) WITH ORDINALITY AS q(e, n)
+				WHERE e->>'handoff' IS DISTINCT FROM ${handoffId}
+			)`,
+		})
+		.where(eq(slackThreadSessions.id, id));
+}
+
+/** The publish failed: make the events eligible for the next hand-back now. */
+export async function abandonHandBack(
+	id: string,
+	handoffId: string,
+): Promise<void> {
+	await db
+		.update(slackThreadSessions)
+		.set({
+			queuedEvents: sql`(
+				SELECT COALESCE(jsonb_agg(
+					CASE WHEN e->>'handoff' = ${handoffId} THEN e - 'handoff' - 'handoffAt' ELSE e END
+					ORDER BY n), '[]'::jsonb)
+				FROM jsonb_array_elements(${slackThreadSessions.queuedEvents}) WITH ORDINALITY AS q(e, n)
 			)`,
 		})
 		.where(eq(slackThreadSessions.id, id));
@@ -259,6 +374,7 @@ export async function finishThreadRun(params: {
 		.update(slackThreadSessions)
 		.set({
 			status: "idle",
+			stopRequestedAt: null,
 			lastContextTs: params.lastContextTs,
 			lastActivityAt: new Date(),
 			...(entities.length > 0

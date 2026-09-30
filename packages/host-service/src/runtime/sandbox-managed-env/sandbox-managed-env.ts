@@ -1,3 +1,8 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const run = promisify(execFile);
+
 /**
  * The managed environment of a cloud workspace sandbox: the environment's
  * variables and the credential placeholders the control plane pushes after
@@ -22,13 +27,40 @@ reset();
  * agent) sees it the way a terminal does; a key dropped by the next push
  * leaves the process environment too.
  */
-export function setManagedEnv(variables: Record<string, string>): void {
+export async function setManagedEnv(
+	variables: Record<string, string>,
+): Promise<void> {
 	for (const key of Object.keys(managed ?? {})) {
 		if (!(key in variables)) delete process.env[key];
 	}
 	managed = { ...variables };
 	Object.assign(process.env, managed);
+	// Before the push resolves: an agent launched the moment it does would
+	// otherwise commit as the sandbox user.
+	await writeGitIdentity(managed);
 	resolveFirstPush();
+}
+
+/**
+ * The GIT_AUTHOR_* variables only reach what host-service spawns; anything
+ * else on the box would commit as the sandbox user.
+ */
+async function writeGitIdentity(
+	variables: Record<string, string>,
+): Promise<void> {
+	const name = variables.GIT_AUTHOR_NAME;
+	const email = variables.GIT_AUTHOR_EMAIL;
+	if (!name || !email) return;
+	for (const [key, value] of [
+		["user.name", name],
+		["user.email", email],
+	] as const) {
+		try {
+			await run("git", ["config", "--global", key, value]);
+		} catch (error) {
+			console.warn(`[sandbox] could not write git ${key}`, error);
+		}
+	}
 }
 
 /** The current set, or empty until the first push. */

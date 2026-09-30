@@ -10,6 +10,7 @@ import {
 	setManagedEnv,
 } from "../../../runtime/sandbox-managed-env/sandbox-managed-env.ts";
 import {
+	getStartHookState,
 	readSandboxIdentity,
 	runSandboxStartHook,
 } from "../../../runtime/sandbox-self-seed";
@@ -31,6 +32,9 @@ function readTrimmed(path: string): string | null {
 }
 
 /** What the boot log and the runtime pointer say about this box. */
+/** When this process started, so a client can tell a restart from a reconnect. */
+const STARTED_AT = Date.now();
+
 export function readSandboxBootStatus(): {
 	bundle: string | null;
 	runtime: string | null;
@@ -38,9 +42,11 @@ export function readSandboxBootStatus(): {
 	ready: Record<string, boolean>;
 	/** Whether the control plane has pushed the managed environment this process. */
 	environmentPushed: boolean;
+	startedAt: number;
 } {
 	const log = readTrimmed(SANDBOX_PATHS.bootLog);
 	return {
+		startedAt: STARTED_AT,
 		environmentPushed: hasManagedEnv(),
 		bundle: readTrimmed(`${SANDBOX_PATHS.bundleRoot}/current.bundle-hash`),
 		runtime: readTrimmed(`${SANDBOX_PATHS.hostRoot}/current.version`),
@@ -62,15 +68,15 @@ export const sandboxRouter = router({
 	 */
 	setEnvironment: protectedProcedure
 		.input(sandboxManagedEnvSchema)
-		.mutation(({ input }) => {
+		.mutation(async ({ input }) => {
 			sandboxOnly();
-			setManagedEnv(input.variables);
+			await setManagedEnv(input.variables);
 			return { count: Object.keys(input.variables).length };
 		}),
 
 	status: protectedProcedure.query(() => {
 		sandboxOnly();
-		return readSandboxBootStatus();
+		return { ...readSandboxBootStatus(), startHook: getStartHookState() };
 	}),
 
 	/**
@@ -79,7 +85,7 @@ export const sandboxRouter = router({
 	 * been pushed and the checkout is in, so every boot-time action is
 	 * sequenced from one place and reads in one log.
 	 */
-	runStartHook: protectedProcedure.mutation(() => {
+	runStartHook: protectedProcedure.mutation(async () => {
 		sandboxOnly();
 		const identity = readSandboxIdentity();
 		if (!identity) {
@@ -88,6 +94,6 @@ export const sandboxRouter = router({
 				message: "This host-service has no sandbox identity",
 			});
 		}
-		return runSandboxStartHook(identity);
+		return await runSandboxStartHook(identity);
 	}),
 });

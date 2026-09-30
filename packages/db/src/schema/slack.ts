@@ -37,6 +37,9 @@ export interface SlackQueuedEvent {
 	user: string;
 	text: string;
 	files?: SlackQueuedFile[];
+	/** Set while a hand-back for this event is being published; cleared once it is. */
+	handoff?: string;
+	handoffAt?: number;
 }
 
 /**
@@ -64,6 +67,8 @@ export const slackThreadSessions = pgTable(
 
 		status: text().notNull().default("idle"), // idle | running
 		quiet: boolean().notNull().default(false),
+		/** Set by !stop while a turn is running; the run checks it between steps. */
+		stopRequestedAt: timestamp("stop_requested_at", { withTimezone: true }),
 		lastContextTs: text("last_context_ts"),
 		entityLog: jsonb("entity_log")
 			.$type<SlackThreadEntity[]>()

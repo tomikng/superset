@@ -63,6 +63,21 @@ the filesystem snapshot with no processes, so host-service is started again)
 and extends a running one so it never hits the idle stop while someone is in
 it. `resolveSandboxAddress` is the one place that knows the difference.
 
+**A box's agent status doesn't come from the box.** A host row's dot is a
+live subscription to that host's terminal bindings; the sidebar deliberately
+opens no such socket to a sandbox, since holding one keeps the VM awake all
+day. Instead the box reports its own status — the most urgent of its
+terminals, from the same lifecycle events — to
+`POST /api/cloud-workspaces/:id/agent-status` with its host secret, coalesced
+and capped at one report per five seconds (`sandbox-agent-status` in
+host-service). The row keeps the last value (`agent_status`,
+`agent_status_at`) so a cold client sees it at once, and the realtime nudge
+carries it so open clients patch their cache rather than refetch the list.
+A closed box's dot is therefore at most a few seconds behind; the open box's
+own subscribers stay live as before. Reaches a box only through a
+host-service release. **Open:** mobile receives the field and renders nothing
+for it yet.
+
 **A woken sandbox answers seconds after the wake, and every pane reconnects
 at once.** A resumed session has no processes; `wake` starts host-service
 and returns before it listens. The open workspace's hook therefore holds the
@@ -106,24 +121,42 @@ host-service verified Ed25519 tokens itself. `health.check` stays public on
 purpose — it is how the API tells a booting sandbox from a dead one — so
 probe the gate on a guarded route (`/events`), not on health.
 
-**Model credentials never enter a sandbox.** The organization's keys are
-injected into egress by the sandbox firewall: a `transform` rule on
-`api.anthropic.com` / `api.openai.com` sets the auth header, and the sandbox
-env holds only `SANDBOX_CREDENTIAL_PLACEHOLDER`. The placeholder must still be
+**Model credentials never enter a sandbox.** The person's sign-in is injected
+into egress by the sandbox firewall: a rule on `api.anthropic.com` /
+`api.openai.com` that matches the auth header carrying
+`SANDBOX_CREDENTIAL_PLACEHOLDER` and replaces it. The placeholder must still be
 *set* — an unset key reads as "not logged in" and produces no request to
-rewrite. A workspace that brings its own credential for a provider — an
-environment variable, or the person's own sign-in (`agent_credentials`) —
-gets no rule for that provider, so its credential reaches the API untouched;
-a Claude subscription token counts as Anthropic being provided, since a rule
-would otherwise add a second, conflicting auth header to its requests.
+rewrite. An environment variable by a credential's name is ignored and never
+reaches the box; a cloud workspace has no way to carry an app's own provider
+key.
 
 **The firewall terminates TLS for the domains it rewrites, and the terminal
-must trust its CA.** The platform mounts a per-sandbox CA and points
-`NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE` and friends at the system bundle.
+must trust its CA.** The CA is in the image's system bundle, which curl, git,
+gh, python and bun read. Node does not read it, and the platform sets no CA
+variable of its own, so `superset-boot` defaults `NODE_EXTRA_CA_CERTS` to that
+bundle before it builds host-service's environment.
 host-service builds PTY env from a login-shell snapshot, never from its own
 process env, so those variables would be lost and every model call from a
 terminal would fail with a certificate error; the sandbox-mode passthrough
 forwards them (`SANDBOX_FIREWALL_CA_KEYS`).
+
+**`superset` in a box is the workspace, not a person.** The CLI ships as its
+own image asset and sits on PATH. It holds no credential: the firewall adds
+`x-superset-sandbox-credential` to requests for the API the way it adds the
+model and GitHub ones, the API resolves that to the workspace's creator, and
+`SANDBOX_ALLOWED_PROCEDURES` is the list of things it may then call. A header
+rule applies to every process in the box, so that list is the boundary —
+widen it deliberately, and never to a procedure that can grant more access.
+
+**Docker is installed but not started.** An environment whose repository needs
+containers starts it from its own `start` command, which is also where it
+waits for the daemon:
+
+```json
+{ "start": ["sudo dockerd >/var/log/dockerd.log 2>&1 &",
+            "until docker info >/dev/null 2>&1; do sleep 0.2; done",
+            "docker compose up"] }
+```
 
 ## Runtime environment
 
@@ -172,9 +205,11 @@ id, the others get ids derived from it and the path, so anything keyed on the cl
 desktop route, the agent launch, the terminals) lands in the primary and the rest are
 siblings. The `start` hook runs in the hooks repository's checkout, not in `/workspace`.
 
-**The checkout is the workspace.** No worktrees, no base repo, no branch
-creation — anything assuming a worktree can be created or discarded next to a
-main checkout has nothing to work with.
+**The checkout is the workspace.** No worktrees and no base repo — anything
+assuming a worktree can be created or discarded next to a main checkout has
+nothing to work with. Boot does cut the workspace's own branch: each checkout
+fetches its `baseBranch` and lands on `branch` (`superset/<slug>-<id>`), so an
+agent is never sitting on `main`, and the base is what a pull request targets.
 
 **There is no clipboard where the PTY runs.** Pasting an image into a terminal
 forwards Ctrl+V and lets the TUI (Claude Code, Codex) read the image from the
@@ -188,6 +223,31 @@ composer use — mobile proved the pattern) and pastes the worktree-relative
 path instead (`setImagePasteOverride` in the terminal runtime registry).
 Chosen over a new host endpoint because deployed sandboxes never update
 their baked host-service.
+
+**A URL launcher succeeds and reaches nobody.** The image ships `xdg-utils`
+(`packages/sandbox/bundle/rootfs/usr/local/share/superset/desktop.Aptfile`)
+and `/etc/profile.d/superset.sh` exports `DISPLAY`, so `xdg-open` spawns
+cleanly and exits 0 — on a display no one is looking at. Nothing in the spawn
+result distinguishes that from a browser opening on the user's laptop, so a
+CLI that opens a URL as a side effect (`auth login` opening the consent
+screen) has to rule the sandbox out
+before spawning rather than react to a failure. `canReachDesktop()` in
+`packages/cli/src/lib/open-url.ts` is that check: `IS_SANDBOX` (set by
+host-service in sandbox-mode PTY env), `SSH_CONNECTION` or `SSH_TTY`. It is
+deliberately not `shouldOpenBrowser()` from `lib/auth.ts`, whose extra TTY
+test is right for an interactive login prompt and wrong for an agent running
+the CLI with piped stdout.
+
+**A box has no agents until something lists them. Worked around, Open.**
+`agents.run` finds its agent in host-service's `host_agent_configs` table, and
+only a list call (`settings.agentConfigs.list`) or the first-boot launch fills
+it with the built-in presets. The desktop lists on every open, so a machine
+someone uses never shows this. A box that nobody opened and that launched no
+agent answers "No host agent config matching 'claude'". Automation dispatch
+lists before it runs (`cloudDispatch.ts`); `superset agents create` into such a
+box still fails. Still owed: `agents.run` fills the table itself (a host-service
+release), and a decision on which agents a box offers — the list fills every
+preset, but the image installs only Claude and Codex.
 
 ## Lifecycle
 
@@ -323,7 +383,7 @@ and the release poll until `currentSnapshotId` has changed and the status is
 **Snapshots exist only in the region they were taken.** Forking a golden into
 another region is refused (`snapshot_region_mismatch`), and failover regions
 don't replicate it. Forks therefore inherit the golden's region and only
-image-created sandboxes get `VERCEL_SANDBOX_REGION` — passing the setting on
+image-created sandboxes take the environment's `region` — passing a region on
 a fork was what failed every workspace once the goldens moved to sfo1.
 
 **The firewall policy is live-updatable and forks carry it.** Credential
@@ -331,7 +391,7 @@ brokering (`networkPolicy` with `transform` rules) can be set at create, on a
 fork, or changed on a running sandbox, and a fork copies the source's policy
 unless overridden. Both Blaxel limitations — routing fixed at creation, forks
 unable to have the proxy at all — are gone, which is why every sandbox now
-brokers the organization's keys. A custom policy denies everything it doesn't
+brokers its model credentials at the firewall. A custom policy denies everything it doesn't
 list: the `"*": []` catch-all is what keeps npm, git and the rest reachable.
 
 **A fork copies the source's config; every field we pass is an override.**
@@ -439,6 +499,39 @@ under-reported. Sandboxes now report to their own project via
 and provider. Keep the workspace id on both sides: a provisioning failure is
 recorded against the API and a runtime failure against the sandbox, and that id
 is the only thing that joins the two halves of one broken workspace.
+
+## Running this repo's own dev stack inside a sandbox
+
+Reproducing an app bug end to end from a cloud workspace means bringing up
+`apps/web` + `apps/api` inside the sandbox. Three of the documented ways to do
+that do not exist there (found driving GHSA-2cp5-f6gg-w5fp, 2026-09-24).
+
+**The app assumes:** `./.superset/setup.local.sh` can stand up Postgres,
+neon-proxy and Redis with `docker compose`, which is the whole point of the
+zero-credential local path in `DEVELOPMENT.md`.
+
+**A sandbox is:** a container with no Docker daemon — `/var/run/docker.sock`
+does not exist. Nothing in the local stack comes up.
+
+**What we did:** created a throwaway Neon project, migrated it from scratch and
+pointed a `.env` built from `.env.local.example` at it. Never the workspace's
+own `.env`: it carries real provider secrets, and its `DATABASE_URL` is a live
+branch.
+
+**Postgres over TCP is not reachable either.** `bun run db:migrate`
+(drizzle-kit, node-postgres, port 5432) fails against Neon with `password
+authentication failed for user 'neondb_owner'` while the *same* credentials
+work over Neon's HTTP and WebSocket drivers — so the error names the wrong
+cause and costs an hour. Apply migrations through
+`drizzle-orm/neon-serverless/migrator` instead; the HTTP driver alone cannot,
+because drizzle runs every pending migration in one multi-statement
+transaction.
+
+**`/etc/hosts` is read-only, even under sudo.** Pointing a provider hostname at
+a local stand-in — the usual way to drive an OAuth callback without a real
+provider secret — has to go through the resolver instead: a `--require`
+preload patching `dns.lookup` for Node, `--host-resolver-rules` for Chrome.
+Binding 443 and using sudo otherwise work.
 
 ## Shared memory is 64 MB
 

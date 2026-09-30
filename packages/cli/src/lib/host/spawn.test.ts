@@ -2,9 +2,9 @@ import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 // Snapshot the real module BEFORE mock.module: bun module mocks are process-wide,
 // so a partial replacement breaks other test files that import e.g. execFileSync.
 import * as realChildProcess from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { ApiClient } from "../api-client";
 
 const originalFetch = globalThis.fetch;
@@ -29,6 +29,9 @@ const spawnCalls: Array<{
 	options: SpawnOptions;
 }> = [];
 
+type ExitListener = (code: number | null, signal: string | null) => void;
+const exitListeners: ExitListener[] = [];
+
 const spawnMock = mock(
 	(command: string, args: string[], options: SpawnOptions) => {
 		spawnCalls.push({ command, args, options });
@@ -36,6 +39,9 @@ const spawnMock = mock(
 			pid: 12345,
 			kill: mock(() => undefined),
 			unref: mock(() => undefined),
+			once: (event: string, listener: ExitListener) => {
+				if (event === "exit") exitListeners.push(listener);
+			},
 		};
 	},
 );
@@ -46,7 +52,8 @@ mock.module("node:child_process", () => ({
 }));
 
 const { SUPERSET_CONFIG_PATH } = await import("../config");
-const { spawnHostService } = await import("./spawn");
+const { hostServiceLogPath } = await import("./manifest");
+const { describeHostExit, spawnHostService } = await import("./spawn");
 
 function createApi(): ApiClient {
 	return {
@@ -60,6 +67,7 @@ function createApi(): ApiClient {
 
 afterEach(() => {
 	spawnCalls.length = 0;
+	exitListeners.length = 0;
 	spawnMock.mockClear();
 	globalThis.fetch = originalFetch;
 });
@@ -115,6 +123,31 @@ describe("spawnHostService", () => {
 		}
 	});
 
+	test("stops the host when the manifest cannot be written", async () => {
+		const organizationId = "00000000-0000-0000-0000-000000000002";
+		const manifestDir = dirname(hostServiceLogPath(organizationId));
+		mkdirSync(dirname(manifestDir), { recursive: true });
+		writeFileSync(manifestDir, "");
+		globalThis.fetch = mock(
+			async () => new Response("ok", { status: 200 }),
+		) as unknown as typeof fetch;
+
+		await expect(
+			spawnHostService({
+				organizationId,
+				sessionToken: "session-token",
+				api: createApi(),
+				port: 54879,
+				daemon: false,
+			}),
+		).rejects.toThrow();
+
+		const child = spawnMock.mock.results[0]?.value as {
+			kill: ReturnType<typeof mock>;
+		};
+		expect(child.kill).toHaveBeenCalledWith("SIGTERM");
+	});
+
 	test("passes SUPERSET_AUTH_CONFIG_PATH when provided", async () => {
 		globalThis.fetch = mock(
 			async () => new Response("ok", { status: 200 }),
@@ -129,10 +162,53 @@ describe("spawnHostService", () => {
 			daemon: true,
 		});
 
+		expect(spawnCalls[0]?.options.env?.SUPERSET_HOST_AUTO_UPDATE).toBe("false");
 		expect(spawnMock).toHaveBeenCalledTimes(1);
 		expect(spawnCalls[0]?.options.env?.SUPERSET_AUTH_CONFIG_PATH).toBe(
 			SUPERSET_CONFIG_PATH,
 		);
 		expect(spawnCalls[0]?.options.env?.AUTH_TOKEN).toBe("session-token");
 	});
+
+	test("reports the host process exit so the caller can stop supervising nothing", async () => {
+		globalThis.fetch = mock(
+			async () => new Response("ok", { status: 200 }),
+		) as unknown as typeof fetch;
+
+		const { exited } = await spawnHostService({
+			organizationId: "00000000-0000-0000-0000-000000000001",
+			sessionToken: "session-token",
+			api: createApi(),
+			port: 54879,
+			daemon: false,
+		});
+
+		let settled = false;
+		void exited.then(() => {
+			settled = true;
+		});
+		await Promise.resolve();
+		expect(settled).toBe(false);
+
+		for (const listener of exitListeners) listener(null, "SIGSEGV");
+		const exit = await exited;
+		expect(exit).toEqual({ code: null, signal: "SIGSEGV" });
+		expect(describeHostExit(exit)).toBe("killed by SIGSEGV");
+		expect(describeHostExit({ code: 3, signal: null })).toBe("exit code 3");
+	});
+});
+
+test("passes the auto-update opt-in to the host", async () => {
+	globalThis.fetch = mock(
+		async () => new Response("ok"),
+	) as unknown as typeof fetch;
+	await spawnHostService({
+		organizationId: "00000000-0000-0000-0000-000000000001",
+		sessionToken: "session-token",
+		api: createApi(),
+		port: 54879,
+		daemon: true,
+		autoUpdate: true,
+	});
+	expect(spawnCalls[0]?.options.env?.SUPERSET_HOST_AUTO_UPDATE).toBe("true");
 });

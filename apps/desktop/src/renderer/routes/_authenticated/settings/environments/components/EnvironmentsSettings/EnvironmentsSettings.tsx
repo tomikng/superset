@@ -1,6 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { errorMessage } from "@superset/i18n/errors";
-import { SHARED_ENVIRONMENT_ORGANIZATION_ID } from "@superset/shared/constants";
 import { Button } from "@superset/ui/button";
 import { Skeleton } from "@superset/ui/skeleton";
 import { toast } from "@superset/ui/sonner";
@@ -145,44 +144,41 @@ export function EnvironmentsSettings({
 									</div>
 								</div>
 							</button>
-							{environment.organizationId !==
-								SHARED_ENVIRONMENT_ORGANIZATION_ID && (
-								<div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-									<Button
-										aria-label={t({ message: "Edit environment" })}
-										className="h-8 w-8 text-muted-foreground"
-										onClick={() =>
-											setEditor({
-												mode: "edit",
-												seed: {
-													id: environment.id,
-													name: environment.name,
-													scope: environment.scope,
-													repositoryIds: (environment.repositories ?? []).map(
-														(repo) => repo.id,
-													),
-													hooksRepositoryId: environment.hooksRepositoryId,
-													repositoriesFrozen:
-														environment.sourceKind !== "image",
-												},
-											})
-										}
-										size="icon"
-										variant="ghost"
-									>
-										<HiOutlinePencil className="h-4 w-4" />
-									</Button>
-									<Button
-										aria-label={t({ message: "Archive environment" })}
-										className="h-8 w-8 text-muted-foreground hover:text-destructive"
-										onClick={() => archive.mutate({ id: environment.id })}
-										size="icon"
-										variant="ghost"
-									>
-										<HiOutlineArchiveBox className="h-4 w-4" />
-									</Button>
-								</div>
-							)}
+							<div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+								<Button
+									aria-label={t({ message: "Edit environment" })}
+									className="h-8 w-8 text-muted-foreground"
+									onClick={() =>
+										setEditor({
+											mode: "edit",
+											seed: {
+												id: environment.id,
+												name: environment.name,
+												scope: environment.scope,
+												repositoryIds: (environment.repositories ?? []).map(
+													(repo) => repo.id,
+												),
+												hooksRepositoryId: environment.hooksRepositoryId,
+												repositoriesFrozen: environment.sourceKind !== "image",
+												region: environment.region,
+											},
+										})
+									}
+									size="icon"
+									variant="ghost"
+								>
+									<HiOutlinePencil className="h-4 w-4" />
+								</Button>
+								<Button
+									aria-label={t({ message: "Archive environment" })}
+									className="h-8 w-8 text-muted-foreground hover:text-destructive"
+									onClick={() => archive.mutate({ id: environment.id })}
+									size="icon"
+									variant="ghost"
+								>
+									<HiOutlineArchiveBox className="h-4 w-4" />
+								</Button>
+							</div>
 						</div>
 					))}
 				</div>

@@ -1,5 +1,15 @@
 import type { AgentDefinitionId } from "@superset/shared/agent-catalog";
-import { and, desc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
+import {
+	and,
+	desc,
+	eq,
+	inArray,
+	isNotNull,
+	isNull,
+	ne,
+	or,
+	sql,
+} from "drizzle-orm";
 import type { HostDb } from "../db";
 import { terminalAgentBindings, terminalSessions } from "../db/schema.ts";
 import type {
@@ -151,6 +161,27 @@ function resumeCandidatePredicate(workspaceId: string, terminalId: string) {
 	);
 }
 
+/**
+ * Every ended binding that can still be resumed, newest first.
+ */
+export function listResumeCandidateBindings(
+	db: HostDb,
+): TerminalAgentBinding[] {
+	return db
+		.select(bindingColumns)
+		.from(terminalAgentBindings)
+		.where(
+			and(
+				isNotNull(terminalAgentBindings.endedAt),
+				eq(terminalAgentBindings.endReason, "terminal-exited"),
+				isNotNull(terminalAgentBindings.agentSessionId),
+			),
+		)
+		.orderBy(desc(terminalAgentBindings.endedAt))
+		.all()
+		.map(rowToBinding);
+}
+
 /** The ended binding a dead terminal can be resumed from, if any. */
 export function findResumeCandidateBinding(
 	db: HostDb,
@@ -163,6 +194,30 @@ export function findResumeCandidateBinding(
 		.where(resumeCandidatePredicate(workspaceId, terminalId))
 		.get();
 	return row ? rowToBinding(row) : undefined;
+}
+
+/**
+ * Remember the transcript file the harness reported for a session. Written
+ * only while the binding still names that session, so a late hook from a
+ * session the terminal has moved on from cannot attach its file to the next.
+ */
+export function recordTerminalAgentTranscriptPath(
+	db: HostDb,
+	input: { terminalId: string; agentSessionId: string; transcriptPath: string },
+): void {
+	db.update(terminalAgentBindings)
+		.set({ transcriptPath: input.transcriptPath })
+		.where(
+			and(
+				eq(terminalAgentBindings.terminalId, input.terminalId),
+				eq(terminalAgentBindings.agentSessionId, input.agentSessionId),
+				or(
+					isNull(terminalAgentBindings.transcriptPath),
+					ne(terminalAgentBindings.transcriptPath, input.transcriptPath),
+				),
+			),
+		)
+		.run();
 }
 
 /**
@@ -342,6 +397,7 @@ export class SqliteTerminalAgentBindingPersistence
 			.where(
 				and(
 					ne(terminalSessions.status, "disposed"),
+					isNull(terminalSessions.disposeRequestedAt),
 					isNull(terminalAgentBindings.endedAt),
 				),
 			)
@@ -350,13 +406,6 @@ export class SqliteTerminalAgentBindingPersistence
 		return rows.map(rowToBinding);
 	}
 
-	/**
-	 * Bindings whose terminal session is still `active` and workspace-owned.
-	 * Liveness comes from `terminal_sessions.status` — the source already
-	 * maintained by pty onExit, the dispose routes, and the reaper's orphan
-	 * healing — so a dead terminal's agent is unrepresentable in reads no
-	 * matter how the terminal died (kill -9, crash, host downtime).
-	 */
 	listLiveByWorkspace(
 		workspaceId: string,
 		filter?: TerminalAgentBindingListFilter,
@@ -372,6 +421,7 @@ export class SqliteTerminalAgentBindingPersistence
 				and(
 					eq(terminalAgentBindings.workspaceId, workspaceId),
 					eq(terminalSessions.status, "active"),
+					isNull(terminalSessions.disposeRequestedAt),
 					isNotNull(terminalSessions.originWorkspaceId),
 					isNull(terminalAgentBindings.endedAt),
 					...(filter?.agentId
@@ -398,6 +448,7 @@ export class SqliteTerminalAgentBindingPersistence
 			.where(
 				and(
 					eq(terminalSessions.status, "active"),
+					isNull(terminalSessions.disposeRequestedAt),
 					isNotNull(terminalSessions.originWorkspaceId),
 					isNull(terminalAgentBindings.endedAt),
 				),
@@ -424,6 +475,7 @@ export class SqliteTerminalAgentBindingPersistence
 					eq(terminalAgentBindings.workspaceId, workspaceId),
 					eq(terminalAgentBindings.agentId, agentId),
 					eq(terminalSessions.status, "active"),
+					isNull(terminalSessions.disposeRequestedAt),
 					isNotNull(terminalSessions.originWorkspaceId),
 					isNull(terminalAgentBindings.endedAt),
 					...(definitionId
@@ -558,6 +610,9 @@ export class SqliteTerminalAgentBindingPersistence
 					lastEventType: binding.lastEventType,
 					endedAt: null,
 					endReason: null,
+					// A reported transcript belongs to the session that reported
+					// it; the next session in this terminal reports its own.
+					transcriptPath: sql`CASE WHEN ${terminalAgentBindings.agentSessionId} IS excluded.agent_session_id THEN ${terminalAgentBindings.transcriptPath} ELSE NULL END`,
 				},
 			})
 			.run();

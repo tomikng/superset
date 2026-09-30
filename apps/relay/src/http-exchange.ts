@@ -1,9 +1,11 @@
-import type {
-	HttpDialFrame,
-	HttpResponseHeader,
+import {
+	DIAL_TIMEOUT_MS,
+	type HttpDialFrame,
+	type HttpResponseHeader,
 } from "@superset/shared/tunnel-protocol";
 
-const EXCHANGE_TIMEOUT_MS = 30_000;
+// Covers the host's dial-back (DIAL_TIMEOUT_MS) plus the exchange itself.
+const EXCHANGE_TIMEOUT_MS = DIAL_TIMEOUT_MS + 30_000;
 // The host chunks its bodies at this size (TunnelClient.BODY_CHUNK_BYTES);
 // mirror it so a request body never arrives as one oversized frame either.
 const BODY_CHUNK_BYTES = 256 * 1024;

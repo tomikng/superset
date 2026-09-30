@@ -58,7 +58,8 @@ export async function buildSandboxClaim(args: {
 	const checkouts = await workspaceRepositories({
 		cloudWorkspaceId: args.row.id,
 		hooksRepositoryId: environment.hooksRepositoryId,
-		primaryBranch: args.row.branch,
+		primaryBranch: args.row.baseBranch,
+		workingBranch: args.row.branch,
 	});
 	const creator = args.row.createdByUserId;
 	const [userToken, githubAccount, creatorUser] = creator
@@ -81,7 +82,7 @@ export async function buildSandboxClaim(args: {
 		args.withRepoHooks && hooksCheckout
 			? await readRepoHooks({
 					repo: hooksCheckout.repository,
-					branch: hooksCheckout.branch,
+					branch: hooksCheckout.baseBranch,
 					token,
 				})
 			: null;
@@ -107,7 +108,8 @@ export async function buildSandboxClaim(args: {
 			: {}),
 		...(cloudAgentLaunchToEnv(args.launch) as Partial<SandboxIdentity>),
 	};
-	const { networkPolicy, managedEnv } = deriveSandboxCredentials({
+	const { networkPolicy, managedEnv } = await deriveSandboxCredentials({
+		workspaceId: args.row.id,
 		environmentEnv: environment.envs,
 		userAgentEnv,
 		githubToken: token,
@@ -133,6 +135,7 @@ export async function buildSandboxClaim(args: {
 		environment: {
 			sourceKind: environment.sourceKind,
 			sourceRef: environment.sourceRef,
+			region: environment.region,
 		},
 		repositories,
 	};

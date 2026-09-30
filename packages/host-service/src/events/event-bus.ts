@@ -333,6 +333,15 @@ export class EventBus {
 		this.broadcast({ type: "workspace:create-settled", ...message });
 	}
 
+	broadcastWorkspaceNamingFailed(
+		message: Omit<
+			Extract<ServerMessage, { type: "workspace:naming-failed" }>,
+			"type"
+		>,
+	): void {
+		this.broadcast({ type: "workspace:naming-failed", ...message });
+	}
+
 	/**
 	 * Fan out project lifecycle changes (create/rename/delete) from the
 	 * host-owned projects table. Broadcast to all clients — list consumers
@@ -469,6 +478,10 @@ export class EventBus {
 					workspaceId,
 					error,
 				});
+				if (state.fsSubscriptions.get(workspaceId)?.dispose === dispose) {
+					state.fsSubscriptions.delete(workspaceId);
+				}
+				dispose();
 				sendMessage(socket, {
 					type: "error",
 					message:

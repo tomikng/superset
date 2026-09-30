@@ -9,6 +9,8 @@ const otherPublicRoutes = [
 	// app, so a sign-in wall only strands the recipient of a shared link.
 	"/tasks",
 	"/automations",
+	"/page",
+	"/robots.txt",
 ] as const;
 
 const publicRoutes = [...authPageRoutes, ...otherPublicRoutes] as const;

@@ -53,8 +53,11 @@ mock.module("./utils/thread-sessions", () => ({
 	setThreadQuiet: async () => {},
 	threadFollowUpsEnabled: async () => true,
 	parseThreadCommand: () => null,
-	readQueuedEvents: async () => [],
-	clearQueuedEventsThrough: async () => {},
+	requestThreadStop: async () => false,
+	threadStopRequested: async () => false,
+	takeQueuedEvents: async () => [],
+	completeHandBack: async () => {},
+	abandonHandBack: async () => {},
 	renderThreadMemory: () => "",
 }));
 mock.module("./process-automation-event/normalizeSlackDelivery", () => ({

@@ -18,6 +18,7 @@ import { eq } from "drizzle-orm";
 import type { HostDb } from "../../db";
 import { projects, workspaces } from "../../db/schema";
 import { runAgentInWorkspace } from "../../trpc/router/agents/agents";
+import { importCloudAttachments } from "../../trpc/router/attachments/attachments";
 import { seedDefaultsIfEmpty } from "../../trpc/router/settings/agent-configs";
 import type { HostServiceContext } from "../../types";
 import {
@@ -111,10 +112,45 @@ export function readSandboxIdentity(
 
 const START_HOOK_MARKER = join(SANDBOX_PATHS.run, "start-hook.pid");
 const START_HOOK_LOG = join(SANDBOX_PATHS.logs, "start-hook.log");
+/** Long enough for exec to fail, short enough that boot does not wait on it. */
+const START_HOOK_SETTLE_MS = 3_000;
 
 export type StartHookOutcome =
 	| { started: true; pid: number; command: string }
-	| { started: false; reason: "already-started" | "no-hook" };
+	| {
+			started: false;
+			reason: "already-started" | "no-hook" | "failed";
+			command?: string;
+			exitCode?: number | null;
+			log?: string;
+	  };
+
+/** What the hook is doing now, for `sandbox.status`. */
+export type StartHookState =
+	| { state: "none" }
+	| { state: "running"; command: string; pid: number; since: number }
+	| {
+			state: "exited";
+			command: string;
+			exitCode: number | null;
+			since: number;
+			log: string;
+	  };
+
+let startHookState: StartHookState = { state: "none" };
+
+export function getStartHookState(): StartHookState {
+	return startHookState;
+}
+
+/** The tail of a hook's log, for a failure a person has to read. */
+function readTail(path: string): string {
+	try {
+		return readFileSync(path, "utf8").slice(-4000);
+	} catch {
+		return "";
+	}
+}
 
 /**
  * Runs the repository's `start` hook: the services a workspace needs on
@@ -124,9 +160,9 @@ export type StartHookOutcome =
  * variables never leave it. Once per boot: the marker lives in the run
  * directory the boot runner clears.
  */
-export function runSandboxStartHook(
+export async function runSandboxStartHook(
 	identity: SandboxIdentity,
-): StartHookOutcome {
+): Promise<StartHookOutcome> {
 	if (existsSync(START_HOOK_MARKER))
 		return { started: false, reason: "already-started" };
 	const resolved = resolveScript("start", {
@@ -139,21 +175,61 @@ export function runSandboxStartHook(
 			? resolved.commands
 			: [`bash ${shellSingleQuote(resolved.scriptPath)}`];
 	if (!commands?.length) return { started: false, reason: "no-hook" };
-	const command = commands.join(" && ");
+	// A repository lists steps; running them as one `&&` chain made a step that
+	// failed take the rest with it. Each is its own process, and the services
+	// still come up when something earlier had nothing to do.
 	const configured = resolved?.cwd
 		? resolve(identity.hooksPath, resolved.cwd)
 		: identity.hooksPath;
 	const log = openSync(START_HOOK_LOG, "a");
-	const child = spawn("bash", ["-lc", command], {
-		cwd: existsSync(configured) ? configured : identity.hooksPath,
-		env: { ...process.env, ...getManagedEnv(), IS_SANDBOX: "1" },
-		stdio: ["ignore", log, log],
-		detached: true,
-	});
+	const command = commands.join("; ");
+	const child = spawn(
+		"bash",
+		["-lc", commands.map((one) => `{ ${one}; }`).join("\n")],
+		{
+			cwd: existsSync(configured) ? configured : identity.hooksPath,
+			env: { ...process.env, ...getManagedEnv(), IS_SANDBOX: "1" },
+			stdio: ["ignore", log, log],
+			detached: true,
+		},
+	);
 	child.unref();
-	writeFileSync(START_HOOK_MARKER, `${child.pid ?? 0}\n`);
-	console.log(`[sandbox] start hook running (pid ${child.pid}): ${command}`);
-	return { started: true, pid: child.pid ?? 0, command };
+	const pid = child.pid ?? 0;
+	startHookState = { state: "running", command, pid, since: Date.now() };
+	child.on("exit", (code) => {
+		startHookState = {
+			state: "exited",
+			command,
+			exitCode: code,
+			since: Date.now(),
+			log: readTail(START_HOOK_LOG),
+		};
+	});
+
+	// A command that daemonizes (tmux new-session -d) also exits at once, so
+	// only a non-zero exit inside this window counts as a failure to start.
+	const failure = await new Promise<number | null>((resolve) => {
+		const timer = setTimeout(() => resolve(null), START_HOOK_SETTLE_MS);
+		child.once("exit", (code) => {
+			clearTimeout(timer);
+			resolve(code ?? null);
+		});
+	});
+	if (failure !== null && failure !== 0) {
+		console.error(`[sandbox] start hook failed (exit ${failure}): ${command}`);
+		return {
+			started: false,
+			reason: "failed",
+			command,
+			exitCode: failure,
+			log: readTail(START_HOOK_LOG),
+		};
+	}
+	// Written only now: a hook that failed to start must be runnable again on
+	// this boot, and the marker is what makes the next call a no-op.
+	writeFileSync(START_HOOK_MARKER, `${pid}\n`);
+	console.log(`[sandbox] start hook running (pid ${pid}): ${command}`);
+	return { started: true, pid, command };
 }
 
 /**
@@ -216,7 +292,8 @@ export async function launchSandboxAgentOnce(
 ): Promise<void> {
 	if (!identity.launch) return;
 	if (existsSync(identity.launchMarkerPath)) return;
-	const { agent, prompt, model, effort, mode } = identity.launch;
+	const { agent, prompt, model, effort, mode, attachmentFileIds } =
+		identity.launch;
 	// The agent needs the environment the control plane pushes after boot and
 	// the branch the boot runner is checking out beside us; both are seconds.
 	const [pushed, checkedOut] = await Promise.all([
@@ -239,6 +316,18 @@ export async function launchSandboxAgentOnce(
 		// not in its table; the launch resolves the agent through that table.
 		seedDefaultsIfEmpty(ctx.db);
 		if (agent === "claude") approveClaudeApiKey();
+		// Images the composer sent with the prompt: the bytes live in cloud
+		// storage because this box did not exist when they were uploaded.
+		// A download that fails must not cost the launch its prompt.
+		let attachmentIds: string[] | undefined;
+		if (attachmentFileIds?.length) {
+			try {
+				const imported = await importCloudAttachments(ctx, attachmentFileIds);
+				attachmentIds = imported.map((item) => item.attachmentId);
+			} catch (error) {
+				console.error("[sandbox] could not import prompt attachments", error);
+			}
+		}
 		await runAgentInWorkspace(ctx, {
 			workspaceId: identity.workspaceId,
 			agent,
@@ -246,6 +335,7 @@ export async function launchSandboxAgentOnce(
 			model,
 			effort,
 			mode,
+			...(attachmentIds?.length ? { attachmentIds } : {}),
 		});
 		console.log(
 			`[sandbox] launched ${agent} for workspace ${identity.workspaceId}`,

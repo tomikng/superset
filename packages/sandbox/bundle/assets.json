@@ -7,6 +7,13 @@
 		"source": "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb",
 		"version": "153.0.8010.36"
 	},
+	"cli": {
+		"sha256": "66be5ff609582623dc943c2a6405553268c9b57d8ad215d2056cde9f746186ab",
+		"suffix": "",
+		"dest": "/usr/local/share/superset/media/superset-1.29.0",
+		"mode": "0755",
+		"version": "1.29.0"
+	},
 	"font-bold": {
 		"sha256": "e490660ad75e0b152c93b1604c2ea1a4ea675f1b8a3fe0d005b1998568f99f1f",
 		"suffix": ".ttf",

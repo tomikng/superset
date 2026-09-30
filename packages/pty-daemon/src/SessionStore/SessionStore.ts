@@ -1,11 +1,15 @@
 import type { Pty } from "../Pty/index.ts";
 import type { SessionInfo } from "../protocol/index.ts";
+import { TerminalModes } from "../TerminalModes/index.ts";
+import { TerminalColors } from "./TerminalColors/index.ts";
 
 const DEFAULT_BUFFER_BYTES = 64 * 1024;
 
 export interface Session {
 	id: string;
 	pty: Pty;
+	modes: TerminalModes;
+	colors: TerminalColors;
 	/** ring buffer for replay-on-attach; in-memory only, never persisted. */
 	buffer: Buffer[];
 	bufferBytes: number;
@@ -48,6 +52,12 @@ export class SessionStore {
 		const session: Session = {
 			id,
 			pty,
+			modes: new TerminalModes(),
+			colors: new TerminalColors(
+				pty.meta.colors,
+				pty.meta.env?.TERM_THEME === "light" ||
+					pty.meta.env?.COLORFGBG === "0;15",
+			),
 			buffer: [],
 			bufferBytes: 0,
 			bufferCap: this.bufferCap,
@@ -91,6 +101,7 @@ export class SessionStore {
 
 	/** Append output to a session's ring buffer; evict oldest chunks past the cap. */
 	appendOutput(session: Session, chunk: Buffer): void {
+		session.modes.feed(chunk);
 		session.buffer.push(chunk);
 		session.bufferBytes += chunk.byteLength;
 		while (

@@ -1,10 +1,12 @@
+import "./globals.css";
+import "./styles/bundled-fonts.css";
 import { initSentry } from "./lib/sentry";
 
 initSentry();
 
-import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { createRouter } from "@tanstack/react-router";
 import ReactDom from "react-dom/client";
-import { BootErrorBoundary } from "./components/BootErrorBoundary";
+import { RendererRouter } from "./components/RendererRouter";
 import {
 	cleanupBootErrorHandling,
 	initBootErrorHandling,
@@ -19,9 +21,6 @@ import { pruneExpiredTerminalState } from "./lib/terminal/terminal-buffer-gc";
 import { electronQueryClient } from "./providers/ElectronTRPCProvider";
 import { NotFound } from "./routes/not-found";
 import { routeTree } from "./routeTree.gen";
-
-import "./globals.css";
-import "./styles/bundled-fonts.css";
 
 const rootElement = document.querySelector("app");
 initBootErrorHandling(rootElement);
@@ -81,12 +80,6 @@ declare module "@tanstack/react-router" {
 if (!rootElement) {
 	reportBootError("Missing <app> root element");
 } else if (!isBootErrorReported()) {
-	ReactDom.createRoot(rootElement).render(
-		<BootErrorBoundary
-			onError={(error) => reportBootError("Render failed", error)}
-		>
-			<RouterProvider router={router} />
-		</BootErrorBoundary>,
-	);
+	ReactDom.createRoot(rootElement).render(<RendererRouter router={router} />);
 	markBootMounted();
 }

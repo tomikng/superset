@@ -26,7 +26,6 @@ import {
 import { env } from "../../env";
 
 export const HOST_SERVICE_PORT = SANDBOX_PORTS.hostService;
-export const DESKTOP_PORT = SANDBOX_PORTS.desktop;
 /**
  * A session ends after this long; the workspace's files survive and the next
  * open resumes it. A workspace someone has open is extended before it gets
@@ -41,6 +40,7 @@ const WORKSPACE_SNAPSHOT_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000;
 const IMAGE_SANDBOX_VCPUS = 8;
 const GOLDEN_SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 const BOOT_COMMAND = "/usr/local/bin/superset-boot";
+const HOST_PROBE_TIMEOUT_MS = 1_500;
 
 function credentials() {
 	return {
@@ -87,6 +87,7 @@ async function getSandbox(name: string): Promise<Sandbox | null> {
 export interface SandboxEnvironment {
 	sourceKind: "image" | "fork";
 	sourceRef: string;
+	region: string;
 }
 
 /** Everything the box needs to become one workspace; nothing of it is a create-time env. */
@@ -160,7 +161,6 @@ export async function provisionSandbox(args: {
 	providerSandboxId: string;
 	sandboxUrl: string;
 	hostTarget: string;
-	desktopTarget: string;
 }> {
 	const kind = args.kind ?? "workspace";
 	const config = {
@@ -188,7 +188,7 @@ export async function provisionSandbox(args: {
 			: await Sandbox.create({
 					...config,
 					image: args.environment.sourceRef,
-					region: env.VERCEL_SANDBOX_REGION as SandboxRegion,
+					region: args.environment.region as SandboxRegion,
 					resources: { vcpus: IMAGE_SANDBOX_VCPUS },
 				}));
 	await writeIdentity(sandbox, args.claim.identity);
@@ -197,7 +197,6 @@ export async function provisionSandbox(args: {
 		providerSandboxId: args.name,
 		sandboxUrl: sandbox.domain(HOST_SERVICE_PORT),
 		hostTarget: sandbox.domain(HOST_SERVICE_PORT),
-		desktopTarget: sandbox.domain(DESKTOP_PORT),
 	};
 }
 
@@ -295,7 +294,6 @@ export async function applySandboxPolicy(args: {
 /** The sandbox's addresses and whether a session is running, waking nothing. */
 export async function describeSandbox(providerSandboxId: string): Promise<{
 	hostTarget: string;
-	desktopTarget: string;
 	running: boolean;
 }> {
 	try {
@@ -306,13 +304,24 @@ export async function describeSandbox(providerSandboxId: string): Promise<{
 		});
 		return {
 			hostTarget: sandbox.domain(HOST_SERVICE_PORT),
-			desktopTarget: sandbox.domain(DESKTOP_PORT),
 			running: sandbox.status === "running",
 		};
 	} catch (error) {
 		if (isUnavailable(error))
 			throw new SandboxUnavailableError(providerSandboxId, error);
 		throw error;
+	}
+}
+
+/** Whether host-service is already serving, so a wake can skip the boot. */
+async function hostServiceAnswers(hostTarget: string): Promise<boolean> {
+	try {
+		const response = await fetch(`${hostTarget}/trpc/health.check`, {
+			signal: AbortSignal.timeout(HOST_PROBE_TIMEOUT_MS),
+		});
+		return response.ok;
+	} catch {
+		return false;
 	}
 }
 
@@ -330,7 +339,6 @@ export async function wakeSandbox(args: {
 	claim: SandboxClaim;
 }): Promise<{
 	hostTarget: string;
-	desktopTarget: string;
 	wasRunning: boolean;
 }> {
 	try {
@@ -340,7 +348,6 @@ export async function wakeSandbox(args: {
 			resume: false,
 		});
 		const hostTarget = sandbox.domain(HOST_SERVICE_PORT);
-		const desktopTarget = sandbox.domain(DESKTOP_PORT);
 		const wasRunning = sandbox.status === "running";
 		if (wasRunning) {
 			const remaining = (sandbox.expiresAt?.getTime() ?? 0) - Date.now();
@@ -350,9 +357,9 @@ export async function wakeSandbox(args: {
 				await sandbox.extendTimeout(SESSION_TIMEOUT_MS).catch(() => {});
 			}
 		}
-		// The policy goes out alongside the identity write: the first call to
-		// touch a stopped session pays the resume, and the rules are in place
-		// long before anything on the box makes a request.
+		// A box that is already serving needs neither a fresh identity file nor
+		// another boot. The policy still goes out: a credential may have aged.
+		const serving = wasRunning && (await hostServiceAnswers(hostTarget));
 		await Promise.all([
 			sandbox
 				.update({ networkPolicy: args.claim.networkPolicy })
@@ -362,15 +369,15 @@ export async function wakeSandbox(args: {
 						error,
 					),
 				),
-			writeIdentity(sandbox, args.claim.identity),
+			serving ? null : writeIdentity(sandbox, args.claim.identity),
 		]);
-		await runBoot(sandbox, args.claim.hostSecret);
+		if (!serving) await runBoot(sandbox, args.claim.hostSecret);
 		await settleSandbox({
 			providerSandboxId: args.providerSandboxId,
 			hostTarget,
 			claim: args.claim,
 		});
-		return { hostTarget, desktopTarget, wasRunning };
+		return { hostTarget, wasRunning };
 	} catch (error) {
 		if (isUnavailable(error))
 			throw new SandboxUnavailableError(args.providerSandboxId, error);
@@ -429,7 +436,7 @@ export async function promoteSandboxToEnvironment(args: {
 	goldenName: string;
 	/** What restarts the source: it boots the same way a wake does. */
 	claim: SandboxClaim;
-}): Promise<string> {
+}): Promise<{ goldenName: string; region: string }> {
 	const source = await Sandbox.get({
 		...credentials(),
 		name: args.sourceSandbox,
@@ -459,7 +466,7 @@ export async function promoteSandboxToEnvironment(args: {
 		await writeIdentity(source, args.claim.identity);
 		await runBoot(source, args.claim.hostSecret);
 	}
-	return args.goldenName;
+	return { goldenName: args.goldenName, region: source.region };
 }
 
 /**

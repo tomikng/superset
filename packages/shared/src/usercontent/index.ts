@@ -22,6 +22,7 @@ export {
 	type PageManifestVersion,
 	type PageVisibility,
 	parsePageManifest,
+	publiclyReadable,
 	servedVersionOf,
 } from "./manifest";
 export { PAGE_THEME_CSS } from "./theme";
@@ -35,6 +36,8 @@ export {
 } from "./ticket";
 export {
 	fileUrl,
+	PAGE_THUMBNAIL_HEIGHT,
+	PAGE_THUMBNAIL_WIDTH,
 	pageIdFromHost,
 	pageOrigin,
 	pageThumbnailUrl,

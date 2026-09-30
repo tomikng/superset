@@ -49,7 +49,6 @@ export const SANDBOX_PORTS = {
 /** Ports the platform publishes for every workspace; a repo's `ports` add to these. */
 export const SANDBOX_PUBLISHED_PORTS: readonly number[] = [
 	SANDBOX_PORTS.hostService,
-	SANDBOX_PORTS.desktop,
 ];
 
 export const SANDBOX_DISPLAY = {
@@ -110,6 +109,8 @@ export const sandboxIdentitySchema = z.object({
 	SUPERSET_SANDBOX_AGENT_MODEL: z.string().optional(),
 	SUPERSET_SANDBOX_AGENT_EFFORT: z.string().optional(),
 	SUPERSET_SANDBOX_AGENT_MODE: z.string().optional(),
+	/** Comma-separated cloud upload ids the box pulls before launching. */
+	SUPERSET_SANDBOX_AGENT_ATTACHMENTS: z.string().optional(),
 });
 
 export type SandboxIdentity = z.infer<typeof sandboxIdentitySchema>;
@@ -123,7 +124,13 @@ export const SANDBOX_ROOT_CHECKOUT = ".";
  */
 export const sandboxRepositorySchema = z.object({
 	url: z.string().url(),
+	/** The branch the checkout ends up on: work happens here, never on the base. */
 	branch: z.string().min(1),
+	/**
+	 * The remote branch `branch` is cut from. Absent means `branch` is itself
+	 * the base, and the checkout tracks it instead of branching off it.
+	 */
+	baseBranch: z.string().min(1).optional(),
 	path: z.string().regex(/^(\.|[A-Za-z0-9_-][A-Za-z0-9._-]*)$/),
 	/** True for the repository whose `.superset/config.json` the box acts on. */
 	hooks: z.boolean().optional(),

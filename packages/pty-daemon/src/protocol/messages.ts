@@ -1,3 +1,6 @@
+import type { TerminalColors } from "@superset/shared/terminal-colors";
+import type { TerminalModesSnapshot } from "../TerminalModes/index.ts";
+
 // Message schemas for the pty-daemon Unix socket protocol.
 //
 // Wire format (v2): see ./framing.ts. Each frame carries a JSON header
@@ -7,6 +10,7 @@
 // See ../README.md and ../../../../apps/desktop/plans/20260429-pty-daemon-implementation.md
 
 export interface SessionMeta {
+	colors?: TerminalColors;
 	shell: string;
 	argv: string[];
 	cwd?: string;
@@ -48,6 +52,8 @@ export interface HelloAckMessage {
 	 * its own healthy context. Absent from pre-probe daemon versions.
 	 */
 	trustdHealthy?: boolean;
+	supportsModeSnapshots?: boolean;
+	supportsColorQueries?: boolean;
 }
 
 // ---------- Client -> Daemon ----------
@@ -62,6 +68,13 @@ export interface OpenMessage {
 export interface InputMessage {
 	type: "input";
 	id: string;
+}
+
+export interface ColorsMessage {
+	type: "colors";
+	id: string;
+	colors: TerminalColors;
+	resetOverrides?: boolean;
 }
 
 export interface ResizeMessage {
@@ -86,6 +99,7 @@ export interface SubscribeMessage {
 	id: string;
 	/** if true, replay buffered output before live streaming */
 	replay: boolean;
+	modeSnapshot?: boolean;
 }
 
 export interface UnsubscribeMessage {
@@ -118,6 +132,12 @@ export interface OpenOkMessage {
 export interface OutputMessage {
 	type: "output";
 	id: string;
+}
+
+export interface ReplayCompleteMessage {
+	type: "replay-complete";
+	id: string;
+	modes: TerminalModesSnapshot;
 }
 
 export interface ExitMessage {
@@ -160,6 +180,7 @@ export type ClientMessage =
 	| HelloMessage
 	| OpenMessage
 	| InputMessage
+	| ColorsMessage
 	| ResizeMessage
 	| CloseMessage
 	| ListMessage
@@ -171,6 +192,7 @@ export type ServerMessage =
 	| HelloAckMessage
 	| OpenOkMessage
 	| OutputMessage
+	| ReplayCompleteMessage
 	| ExitMessage
 	| ClosedMessage
 	| ListReplyMessage

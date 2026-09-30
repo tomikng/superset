@@ -13,6 +13,7 @@ import {
 	encodeFrame,
 	FrameDecoder,
 } from "@superset/pty-daemon/protocol";
+import { TerminalModes } from "@superset/pty-daemon/terminal-modes";
 import { DaemonClient, DaemonUnavailableError } from "./DaemonClient.ts";
 
 const sockPath = path.join(
@@ -40,6 +41,139 @@ test("connect + handshake exposes daemon version", async () => {
 	assert.equal(c.protocol, CURRENT_PROTOCOL_VERSION);
 	assert.ok(c.isConnected);
 	await c.dispose();
+});
+
+test("replay waits through silence, restores modes before readiness, and refreshes late subscribers", async () => {
+	const localPath = path.join(
+		os.tmpdir(),
+		`host-mode-replay-${process.pid}.sock`,
+	);
+	const sockets: net.Socket[] = [];
+	const modes = new TerminalModes();
+	modes.feed(Buffer.from("\x1b[?2004h"));
+	let subscriptions = 0;
+	const fake = net.createServer((socket) => {
+		sockets.push(socket);
+		const decoder = new FrameDecoder();
+		socket.on("data", (chunk) => {
+			decoder.push(chunk);
+			for (const frame of decoder.drain()) {
+				const msg = frame.message as {
+					type: string;
+					id: string;
+					replay?: boolean;
+					modeSnapshot?: boolean;
+				};
+				if (msg.type === "hello")
+					socket.write(
+						encodeFrame({
+							type: "hello-ack",
+							protocol: CURRENT_PROTOCOL_VERSION,
+							daemonVersion: "test",
+							supportsModeSnapshots: true,
+						}),
+					);
+				if (msg.type === "subscribe") {
+					subscriptions++;
+					assert.equal(msg.modeSnapshot, true);
+					if (subscriptions === 1)
+						socket.write(
+							encodeFrame(
+								{ type: "output", id: msg.id },
+								Buffer.from("retained output"),
+							),
+						);
+					else {
+						assert.equal(msg.replay, false);
+						socket.write(
+							encodeFrame({
+								type: "replay-complete",
+								id: msg.id,
+								modes: modes.snapshot(),
+							}),
+						);
+					}
+				}
+			}
+		});
+	});
+	await new Promise<void>((resolve) => fake.listen(localPath, resolve));
+	const c = new DaemonClient({ socketPath: localPath });
+	try {
+		await c.connect();
+		const output: string[] = [];
+		let restored = false;
+		c.subscribe(
+			"s",
+			{ replay: true },
+			{
+				onOutput: (chunk) => output.push(chunk.toString()),
+				onExit() {},
+				onReplayComplete(snapshot) {
+					restored = snapshot.decModes.includes(2004);
+				},
+			},
+		);
+		let ready = false;
+		const pending = c.waitForReplay("s").then(() => {
+			assert.equal(restored, true);
+			ready = true;
+		});
+		await new Promise((resolve) => setTimeout(resolve, 650));
+		assert.deepEqual(output, ["retained output"]);
+		assert.equal(ready, false);
+		sockets[0]?.write(
+			encodeFrame({
+				type: "replay-complete",
+				id: "s",
+				modes: modes.snapshot(),
+			}),
+		);
+		await pending;
+		let lateRestored = false;
+		c.subscribe(
+			"s",
+			{ replay: false },
+			{
+				onOutput() {},
+				onExit() {},
+				onReplayComplete(snapshot) {
+					lateRestored = snapshot.decModes.includes(2004);
+				},
+			},
+		);
+		await c.waitForReplay("s");
+		assert.equal(lateRestored, true);
+		assert.deepEqual(output, ["retained output"]);
+		c.subscribe("pending", { replay: false }, { onOutput() {}, onExit() {} });
+		const interrupted = c.waitForReplay("pending");
+		const rejected = assert.rejects(interrupted, DaemonUnavailableError);
+		await c.dispose();
+		await rejected;
+	} finally {
+		await c.dispose();
+		for (const socket of sockets) socket.destroy();
+		await new Promise<void>((resolve) => fake.close(() => resolve()));
+	}
+});
+
+test("a rejected subscription fails replay with the daemon error", async () => {
+	const c = new DaemonClient({ socketPath: sockPath });
+	await c.connect();
+	const unsubscribe = c.subscribe(
+		"missing-mode-session",
+		{ replay: true },
+		{ onOutput() {}, onExit() {} },
+	);
+	try {
+		await assert.rejects(
+			c.waitForReplay("missing-mode-session"),
+			/unknown session/,
+		);
+	} finally {
+		unsubscribe();
+		await c.dispose();
+	}
 });
 
 test("open + subscribe + receive output + close", async () => {
@@ -385,3 +519,122 @@ async function waitFor(predicate: () => boolean, ms: number): Promise<void> {
 		await new Promise((r) => setTimeout(r, 25));
 	}
 }
+
+test("color queries complete on a real PTY before delayed renderer attachment", async () => {
+	const client = new DaemonClient({ socketPath: sockPath });
+	await client.connect();
+	const script = [
+		"import os, select, time, tty",
+		"tty.setraw(0)",
+		"os.write(1, b'\\x1b]11;?\\x1b\\\\')",
+		"deadline = time.monotonic() + 0.150",
+		"reply = b''",
+		"while not reply.endswith(b'\\x1b\\\\') and time.monotonic() < deadline:",
+		"    if select.select([0], [], [], max(0, deadline-time.monotonic()))[0]: reply += os.read(0, 1024)",
+		"os.write(1, b'PROBE=' + reply.hex().encode() + b'\\n')",
+		"draft = b''",
+		"while not draft.endswith(b'\\n'): draft += os.read(0, 1024)",
+		"os.write(1, b'DRAFT=' + draft)",
+		"time.sleep(0.2)",
+	].join("\n");
+	const id = `colors-${crypto.randomUUID()}`;
+	try {
+		assert.equal(client.supportsColorQueries, true);
+		await client.open(id, {
+			shell: "/usr/bin/python3",
+			argv: ["-u", "-c", script],
+			cols: 80,
+			rows: 24,
+			env: { COLORFGBG: "15;0" },
+			colors: {
+				foreground: "#eeeeee",
+				background: "#151110",
+				cursor: "#ffffff",
+			},
+		});
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+		let output = "";
+		client.subscribe(
+			id,
+			{ replay: true },
+			{
+				onOutput: (bytes) => {
+					output += bytes.toString();
+				},
+				onExit() {},
+			},
+		);
+		await client.waitForReplay(id);
+		assert.ok(
+			output.includes(
+				`PROBE=${Buffer.from("\x1b]11;rgb:1515/1111/1010\x1b\\").toString("hex")}`,
+			),
+			output,
+		);
+		assert.ok(!output.includes("\x1b]11;?"), output);
+		client.input(id, Buffer.from("user-marker\n"));
+		await waitFor(() => output.includes("DRAFT="), 3000);
+		assert.ok(output.includes("DRAFT=user-marker\n"), output);
+	} finally {
+		await client.close(id).catch(() => {});
+		await client.dispose();
+	}
+});
+
+test("color updates are sent only when the daemon advertises ownership", async () => {
+	for (const capable of [false, true]) {
+		const socketPath = path.join(
+			os.tmpdir(),
+			`color-cap-${crypto.randomUUID()}.sock`,
+		);
+		const received: string[] = [];
+		const colorResets: boolean[] = [];
+		const fake = net.createServer((socket) => {
+			const decoder = new FrameDecoder();
+			socket.on("data", (bytes) => {
+				decoder.push(bytes);
+				for (const frame of decoder.drain()) {
+					const msg = frame.message as {
+						type: string;
+						resetOverrides?: boolean;
+					};
+					received.push(msg.type);
+					if (msg.type === "colors")
+						colorResets.push(msg.resetOverrides === true);
+					if (msg.type === "hello")
+						socket.write(
+							encodeFrame({
+								type: "hello-ack",
+								protocol: 2,
+								daemonVersion: "test",
+								...(capable ? { supportsColorQueries: true } : {}),
+							}),
+						);
+					if (msg.type === "list")
+						socket.write(encodeFrame({ type: "list-reply", sessions: [] }));
+				}
+			});
+		});
+		await new Promise<void>((resolve) => fake.listen(socketPath, resolve));
+		const client = new DaemonClient({ socketPath });
+		try {
+			await client.connect();
+			client.setColors("t", {
+				foreground: "#ffffff",
+				background: "#000000",
+				cursor: "#ffffff",
+			});
+			client.setColors(
+				"t",
+				{ foreground: "#ffffff", background: "#000000", cursor: "#ffffff" },
+				true,
+			);
+			await client.list();
+			assert.equal(received.includes("colors"), capable);
+			assert.deepEqual(colorResets, capable ? [false, true] : []);
+		} finally {
+			await client.dispose();
+			await new Promise<void>((resolve) => fake.close(() => resolve()));
+		}
+	}
+});

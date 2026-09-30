@@ -11,15 +11,6 @@ export default defineConfig({
 	outfile: "./dist/superset",
 	plugins: [linguiMacroPlugin],
 	define: {
-		"process.env.RELAY_URL": JSON.stringify(
-			process.env.RELAY_URL ?? "https://relay.superset.sh",
-		),
-		"process.env.SUPERSET_API_URL": JSON.stringify(
-			process.env.SUPERSET_API_URL ?? "https://api.superset.sh",
-		),
-		"process.env.SUPERSET_WEB_URL": JSON.stringify(
-			process.env.SUPERSET_WEB_URL ?? "https://app.superset.sh",
-		),
 		"process.env.SUPERSET_VERSION": JSON.stringify(VERSION),
 		"process.env.SUPERSET_CLI_CHANNEL": JSON.stringify(
 			process.env.SUPERSET_CLI_CHANNEL ?? "standalone",
@@ -32,6 +23,12 @@ export default defineConfig({
 			.env("SUPERSET_API_KEY")
 			.desc("Use a Superset API key (sk_live_…) instead of OAuth login"),
 	},
+	audiences: () =>
+		process.env.SUPERSET_CLI_AUDIENCE === "internal" ||
+		process.env.SUPERSET_SANDBOX_WORKSPACE_ID
+			? ["internal", "public"]
+			: ["public"],
+	sandbox: () => Boolean(process.env.SUPERSET_SANDBOX_WORKSPACE_ID),
 	help: {
 		tagline: "Command your fleet of coding agents from any shell.",
 		docsUrl: "https://docs.superset.sh/cli",
@@ -53,7 +50,15 @@ export default defineConfig({
 			},
 			{
 				title: "Account & app",
-				commands: ["auth", "organization", "settings", "update", "feedback"],
+				commands: [
+					"auth",
+					"connections",
+					"integrations",
+					"organization",
+					"settings",
+					"update",
+					"feedback",
+				],
 			},
 		],
 		examples: [

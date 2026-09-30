@@ -31,5 +31,6 @@
 			"/home/ubuntu/.claude.json"
 		]
 	},
-	{ "name": "install-host", "assets": ["host-service"] }
+	{ "name": "install-host", "assets": ["host-service"] },
+	{ "name": "install-cli", "assets": ["cli"] }
 ]

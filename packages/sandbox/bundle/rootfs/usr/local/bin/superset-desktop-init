@@ -54,9 +54,11 @@ else
 	log "X NOT ready after 30s"; tail -n 20 "${SUPERSET_LOG_DIR}/xvnc.log" 2>/dev/null; exit 1
 fi
 
-# The stream to the pane: websockify on the published desktop port, bridging
-# to the VNC socket. No auth here; the gate checks a per-port ticket.
-websockify --web /usr/share/novnc "$SUPERSET_DESKTOP_PORT" "127.0.0.1:${SUPERSET_VNC_PORT}" \
+# The stream to the pane: websockify bridging to the VNC socket, on loopback
+# because nothing here checks a credential — the pane reaches it through
+# host-service's /desktop/websockify, which does. No --web: the renderer
+# brings its own noVNC client.
+websockify 127.0.0.1:"$SUPERSET_DESKTOP_PORT" "127.0.0.1:${SUPERSET_VNC_PORT}" \
 	>"${SUPERSET_LOG_DIR}/websockify.log" 2>&1 &
 log "websockify on ${SUPERSET_DESKTOP_PORT} pid=$!"
 

@@ -1,14 +1,13 @@
 import {
-	CatchBoundary,
 	createFileRoute,
 	Outlet,
-	useLocation,
 	useMatchRoute,
 	useNavigate,
 } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { CommandPaletteHost } from "renderer/commandPalette";
 import { Redirect } from "renderer/components/Redirect";
+import { useWorkspaceNamingFailedToast } from "renderer/hooks/host-service/useWorkspaceNamingFailedToast";
 import { useIsV2CloudEnabled } from "renderer/hooks/useIsV2CloudEnabled";
 import { useOpenNewWorkspace } from "renderer/hooks/useOpenNewWorkspace";
 import { useQuickCreateWorkspace } from "renderer/hooks/useQuickCreateWorkspace";
@@ -35,9 +34,9 @@ import {
 	MAX_WORKSPACE_SIDEBAR_WIDTH,
 	useWorkspaceSidebarStore,
 } from "renderer/stores/workspace-sidebar-state";
+import { ContentBoundary } from "../components/ContentBoundary";
 import { AddRepositoryModals } from "./components/AddRepositoryModals";
 import { CrossVersionMismatchState } from "./components/CrossVersionMismatchState";
-import { DashboardContentError } from "./components/DashboardContentError";
 import { RemotePortForwarder } from "./components/RemotePortForwarder";
 import { TopBar } from "./components/TopBar";
 
@@ -55,7 +54,7 @@ type DeleteTarget = {
 
 function DashboardLayout() {
 	const navigate = useNavigate();
-	const location = useLocation();
+
 	const openNewWorkspace = useOpenNewWorkspace();
 	const isV2CloudEnabled = useIsV2CloudEnabled();
 	const portsDisplayMode = usePortsDisplayMode();
@@ -122,6 +121,7 @@ function DashboardLayout() {
 		[hostWorkspaces, currentV2WorkspaceId],
 	);
 	const { machineId: localMachineId } = useLocalHostService();
+	useWorkspaceNamingFailedToast();
 	// Forwarding needs port data only for a workspace on another machine;
 	// a local selection must not switch on cross-host port polling.
 	// machineId is "" until the device query answers; treat unknown as local
@@ -294,18 +294,9 @@ function DashboardLayout() {
 										<CrossVersionMismatchState />
 									)
 								) : (
-									// Contain content-route crashes to this pane: without a
-									// boundary they bubble to the root and unmount the whole
-									// app, which reads as Superset restarting itself
-									// (SUPER-1814). Resets on navigation.
-									<CatchBoundary
-										// Full href, not just pathname: a same-path search/hash
-										// change (filter, tab) must also clear a stuck error pane.
-										getResetKey={() => location.href}
-										errorComponent={DashboardContentError}
-									>
+									<ContentBoundary>
 										<Outlet />
-									</CatchBoundary>
+									</ContentBoundary>
 								)}
 							</div>
 						</div>

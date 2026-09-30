@@ -9,12 +9,12 @@ import { useTerminalTheme } from "renderer/stores/theme";
 type Status = "connecting" | "connected" | "unavailable" | "error";
 
 interface DesktopPaneProps {
-	/** The gate address of the sandbox's desktop port, where websockify bridges the display. */
+	/** The gate address of the sandbox's host-service, which serves the display. */
 	desktopUrl: string | null;
 }
 
 function buildSocketUrl(desktopUrl: string): string {
-	const url = new URL("/websockify", desktopUrl);
+	const url = new URL("/desktop/websockify", desktopUrl);
 	url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
 	const token = getHostServiceWsToken(desktopUrl);
 	if (token) url.searchParams.set("token", token);

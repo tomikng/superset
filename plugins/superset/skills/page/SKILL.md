@@ -1,6 +1,6 @@
 ---
 name: page
-description: Build and publish a self-contained HTML page to Superset, then answer the comments readers pin to it. Use this instead of publishing a Claude artifact whenever the reader is a teammate: a page is listed in the org, every publish mints a version, and pinned comments come back to the agent. Use when the user asks to make or publish a page, turn a report, dashboard, chart, doc, or analysis into a shareable link, update or re-version a page already published, or work through comments left on one, including "make me a page for this", "publish this as a page", "share it as a link", "add a version", "address the comments on that page".
+description: "Build and publish a self-contained HTML page to Superset, then answer the comments readers pin to it. Use this instead of publishing a Claude artifact whenever the reader is a teammate: a page is listed in the org, every publish mints a version, and pinned comments come back to the agent. Use when the user asks to make or publish a page, turn a report, dashboard, chart, doc, or analysis into a shareable link, update or re-version a page already published, or work through comments left on one, including \"make me a page for this\", \"publish this as a page\", \"share it as a link\", \"add a version\", \"address the comments on that page\". Also use it unprompted to offer a page when you finish output a teammate will read: a change or PR walkthrough, a comparison, a report or digest, an incident writeup, or verification screenshots."
 argument-hint: what the page should show, or a page id/slug to update
 allowed-tools: Bash(superset:*)
 ---
@@ -39,6 +39,40 @@ database, or a login. A page has none of those.
 
 If you're unsure, ask. Publishing is cheap and reversible, but a page the user
 didn't want is noise in their org's list.
+
+### Offer one before you are asked
+
+Most people never go looking for this feature, so the offer is the onboarding.
+When you finish something that has a reader and wants a link, say so and offer
+to publish it. Don't wait to be asked, and don't publish silently either: a
+page the user didn't want still lands in their org's list.
+
+Offer when the thing you just produced is one of these:
+
+- a walkthrough of a change, a PR, or a migration you just made
+- a comparison: options side by side, before and after, two designs, two
+  benchmark runs
+- a report or digest someone outside the session will read: a standup, a
+  status roundup, a feature scorecard
+- an investigation or incident writeup with a timeline
+- verification evidence: screenshots from a browser, desktop, or simulator run
+- anything you were about to paste as a long wall of terminal output that a
+  teammate is supposed to read
+
+One line is the whole offer, and it names what the page would be:
+
+> This reads better as a page your team can open and comment on. Want me to
+> publish it?
+
+Then stop and let them answer. Publish on a yes, drop it on a no, and don't
+raise it again for the same piece of work.
+
+Stay quiet the rest of the time. An ordinary answer, a quick fix, a question
+you just answered in two sentences, a file you edited: none of those want a
+link, and an offer attached to every reply is noise that trains people to
+ignore the one that matters. If you already offered in this session and were
+turned down, take that as the user's standing preference unless they say
+otherwise. When the user asked for a page outright, skip the offer and build it.
 
 ### A page, not a Claude artifact
 
@@ -274,10 +308,11 @@ superset pages publish ./report/ --title "Q3 pipeline"
 spaces, so name the file well or pass the flag. `--label` is what shows in
 version history; write what changed, not "update".
 
-**Every page belongs to a workspace.** The CLI records the file's path relative
-to the workspace root as the page's entry path, and that path is the key:
-publish the same path again and it becomes **version 2 of the same page** rather
-than a second page.
+**Attach a workspace whenever you have one.** The CLI records the file's path
+relative to the workspace root as the page's entry path, and that path is the
+key: publish the same path again and it becomes **version 2 of the same page**
+rather than a second page. That is the only way a republish versions itself
+without you tracking an id.
 
 Write the `.html` **inside the workspace**, not in `/tmp` or an agent
 scratchpad. A file outside the workspace has no relative path, so it falls back
@@ -285,9 +320,14 @@ to being keyed by filename alone (`/external/report.html`), which means two
 unrelated files with the same name will version each other. Keeping it in the
 workspace also keeps the source next to the work it describes.
 
-Outside a workspace entirely, with no `$SUPERSET_WORKSPACE_ID` and no
-`--workspace`, the publish is refused rather than creating a page nothing can
-list. Pass `--page <id>` to add a version to a page you already have.
+Outside a workspace entirely (a chat session, or a shell with no
+`$SUPERSET_WORKSPACE_ID` and no `--workspace`) the publish still goes through.
+The page is created and listed like any other; it just has no entry path, so
+there is nothing for a later publish to resolve against. The result says
+`"unanchored": true` and carries a `republish` command with the id already in
+it. **Keep that command** and run it to add a version. Publishing the same
+file again without `--page` creates a second page, and the link you already
+shared keeps showing the first.
 
 Keep the source file. It is the only copy you can edit; the published version is
 derived from it.
@@ -321,6 +361,7 @@ until someone widens it.
 
 ```bash
 superset pages list --workspace <id>     # or omit --workspace for the whole org
+superset pages list --search "Q3 close"  # -q also works; matches title or slug
 superset pages get <page-id-or-slug>
 superset pages versions <page-id-or-slug>
 superset pages pull <page-id-or-slug> --version 2 > v2.html
@@ -328,6 +369,23 @@ superset pages pull <page-id-or-slug> --version 2 > v2.html
 
 `pull` writes HTML to stdout; use it to recover a source file you no longer
 have, or to diff what actually shipped against what you have locally.
+
+`list` returns every page it can see, so reach for `--search` before you reach
+for a pipe into `grep`. Two flags change that: `--limit <1-200>` returns a
+single batch, and `--cursor` continues from where a batch stopped.
+
+They also change the JSON. Under `--json`, a plain `list` is a bare array, but
+passing either flag wraps it as `{ items, nextCursor }`. Feed that `nextCursor`
+back as `--cursor` until it comes back `null`. Parsing the output? Either don't
+pass the flags, or handle the envelope. The other two modes are unaffected: the
+default table looks the same and tells you when there's more, and `--quiet`
+prints ids either way.
+
+`get` carries `workspaceLinks`: the workspace and the path each publish
+resolved against. When you have lost the source, pull it back to that path
+inside that workspace and a later publish versions the page instead of minting
+a second one. An empty list means the page has no path to resolve against, so
+`--page <page-id>` is the only way to add a version.
 
 ## Answer comments
 
@@ -346,7 +404,7 @@ The loop, in order:
 ```bash
 superset pages comments list --page <page-id-or-slug>
 # edit the source file, fixing what each thread asked for
-superset pages publish report.html --label "addressed review comments"
+superset pages publish report.html --page <page-id> --label "addressed review comments"
 superset pages comments reply --thread <thread-id> "Recomputed from the Q3 close; the total is 1.42M now."
 superset pages comments resolve --thread <thread-id>
 ```

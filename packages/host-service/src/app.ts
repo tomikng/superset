@@ -2,6 +2,12 @@ import { createNodeWebSocket } from "@hono/node-ws";
 import { trpcServer } from "@hono/trpc-server";
 import { Octokit } from "@octokit/rest";
 import { SUPERSET_USER_ID_HEADER } from "@superset/shared/host-routing";
+import { SANDBOX_PORTS } from "@superset/shared/sandbox-contract";
+
+/** One frame of a 1920x1200 display is ~9 MB; this is a stalled reader, not a burst. */
+const MAX_DISPLAY_BUFFER_BYTES = 32 * 1024 * 1024;
+const MAX_DISPLAY_PENDING = 64;
+
 import { TRPCError } from "@trpc/server";
 import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
@@ -13,6 +19,10 @@ import { EventBus, GitWatcher, registerEventBusRoute } from "./events";
 import { agentIsBusy, PageWatchManager } from "./page-watch/index.ts";
 import { registerForwardMuxRoute } from "./ports/forward-mux-route";
 import { portManager } from "./ports/port-manager";
+import {
+	PROJECT_PURGE_INTERVAL_MS,
+	purgeExpiredProjects,
+} from "./projects/project-deletion";
 import type { ApiAuthProvider } from "./providers/auth";
 import type { HostAuthProvider } from "./providers/host-auth";
 import { runArchivedWorkspaceReconcile } from "./runtime/archived-workspace-reconcile";
@@ -28,9 +38,9 @@ import {
 	runSandboxSelfSeed,
 } from "./runtime/sandbox-self-seed";
 import {
-	isLiveTerminalSession,
+	isAgentTerminalAlive,
 	registerWorkspaceTerminalRoute,
-	writeFramedInputToSession,
+	sendAgentMessage,
 } from "./terminal/terminal";
 import {
 	SqliteTerminalAgentBindingPersistence,
@@ -38,6 +48,10 @@ import {
 } from "./terminal-agents";
 import { appRouter } from "./trpc/router";
 import { gitStatusStore } from "./trpc/router/git/utils/git-status-store";
+import {
+	resumeCrashedAgentSessions,
+	resumeSessionDepsFor,
+} from "./trpc/router/terminal-agents/terminal-agents";
 import { provisionSelectedAccounts } from "./trpc/router/usage/account-provisioning";
 import {
 	execGh as defaultExecGh,
@@ -50,6 +64,7 @@ import type {
 } from "./types";
 import { getHostWorkerPool } from "./workers/host-worker-pool";
 import { gitWorkspaceRefsTask } from "./workers/tasks/git";
+import { disposeWorkspaceTitleJobs } from "./workspaces/workspace-title-jobs";
 
 export interface CreateAppOptions {
 	config: {
@@ -97,6 +112,8 @@ export interface CreateAppResult {
 	 * the first.
 	 */
 	launchSandboxAgent: () => Promise<void>;
+	resumeCrashedAgents: () => Promise<void>;
+	terminalAgentStore: TerminalAgentStore;
 	dispose: () => Promise<void>;
 }
 
@@ -220,30 +237,46 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 	const pageWatch = new PageWatchManager({
 		api: {
 			listThreads: (pageId) => api.pageComment.list.query({ pageId }),
-			setWatch: async (pageId, agentId) => {
-				await api.page.setWatch.mutate({ id: pageId, agentId });
-			},
-			clearWatch: async (pageId) => {
-				await api.page.clearWatch.mutate({ id: pageId });
-			},
+			claimWatch: (input) => api.page.claimWatch.mutate(input),
+			renewWatch: (input) => api.page.renewWatch.mutate(input),
+			releaseWatch: (input) => api.page.releaseWatch.mutate(input),
+			reserveWatchDelivery: (input) =>
+				api.page.reserveWatchDelivery.mutate(input),
+			finishWatchDelivery: (input) =>
+				api.page.finishWatchDelivery.mutate(input),
 		},
-		sendToTerminal: async ({ workspaceId, terminalId, text }) => {
-			const result = await writeFramedInputToSession({
+		sendToTerminal: async ({
+			workspaceId,
+			terminalId,
+			expectedAgent,
+			acquireDelivery,
+			text,
+			signal,
+		}) => {
+			const result = await sendAgentMessage({
 				terminalId,
 				workspaceId,
 				text,
 				submit: true,
+				expectedAgent,
+				acquireDelivery,
+				signal,
+				terminalAgentStore,
 				db,
 				eventBus,
 			});
-			if ("error" in result) throw new Error(result.error);
+			if ("error" in result) {
+				if (result.inputStaged) return { inputStaged: true } as const;
+				throw new Error(result.error);
+			}
 		},
-		isTerminalAlive: isLiveTerminalSession,
+		isTerminalAlive: (terminalId, workspaceId) =>
+			isAgentTerminalAlive({ terminalId, workspaceId, db, eventBus }),
 		isAgentBusy: (terminalId) =>
 			agentIsBusy(terminalAgentStore.get(terminalId)?.lastEventType),
-		hasAgent: (terminalId) => {
+		getAgent: (terminalId) => {
 			const binding = terminalAgentStore.get(terminalId);
-			return binding !== undefined && binding.endedAt === undefined;
+			return binding?.endedAt === undefined ? binding : undefined;
 		},
 	});
 	pageWatch.subscribeToTerminalEvents(eventBus);
@@ -262,6 +295,24 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 	// process crashed out of — and a sandbox is provisioned fresh with exactly
 	// one project and one workspace, seeded by us, that no earlier build ever
 	// touched. There is nothing to recover, so the sweeps can only invent.
+	const purgeContext = {
+		credentials: providers.credentials,
+		api,
+		db,
+		eventBus,
+		organizationId: config.organizationId,
+	};
+	const runProjectPurge = () =>
+		purgeExpiredProjects(purgeContext).catch((err) => {
+			console.warn("[host-service] project purge failed:", err);
+			return 0;
+		});
+	const projectPurgeTimer =
+		process.env.SUPERSET_HOST_RUN_MODE === "sandbox"
+			? null
+			: setInterval(() => void runProjectPurge(), PROJECT_PURGE_INTERVAL_MS);
+	projectPurgeTimer?.unref?.();
+
 	void (async () => {
 		if (process.env.SUPERSET_HOST_RUN_MODE === "sandbox") return;
 		await runProjectBackfill({
@@ -287,6 +338,7 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 		}).catch((err) => {
 			console.warn("[host-service] archived-workspace reconcile failed:", err);
 		});
+		await runProjectPurge();
 		// Re-share the default account's Claude/Codex config into the selected
 		// provider profiles. Last: it touches no host state the sweeps above
 		// repair, and a slow filesystem must not delay them.
@@ -309,6 +361,54 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 	app.use("/browser/*", wsAuth);
 	app.use("/desktop/*", wsAuth);
 	app.use("/fwd", wsAuth);
+
+	// websockify listens on loopback with no credential of its own, so the
+	// check that admits a pane is this route's. Sandboxes only: on a laptop
+	// this would forward a caller's bytes to whatever holds port 6080.
+	app.get(
+		"/desktop/websockify",
+		async (c, next) => {
+			if (process.env.SUPERSET_HOST_RUN_MODE !== "sandbox") {
+				return c.json({ error: "Not found" }, 404);
+			}
+			return next();
+		},
+		upgradeWebSocket(() => {
+			let upstream: WebSocket | null = null;
+			const pending: (string | ArrayBuffer)[] = [];
+			return {
+				onOpen: (_event, ws) => {
+					upstream = new WebSocket(
+						`ws://127.0.0.1:${SANDBOX_PORTS.desktop}/websockify`,
+						["binary"],
+					);
+					upstream.binaryType = "arraybuffer";
+					upstream.onopen = () => {
+						for (const message of pending.splice(0)) upstream?.send(message);
+					};
+					upstream.onmessage = (event) => {
+						// A pane that stopped reading (a laptop asleep, a stalled
+						// renderer) would otherwise grow this buffer without limit.
+						const raw = ws.raw as { bufferedAmount?: number } | undefined;
+						if ((raw?.bufferedAmount ?? 0) > MAX_DISPLAY_BUFFER_BYTES) {
+							ws.close(1013, "display backlog");
+							return;
+						}
+						ws.send(event.data as string | ArrayBuffer);
+					};
+					upstream.onclose = () => ws.close();
+					upstream.onerror = () => ws.close(1011, "display unreachable");
+				},
+				onMessage: (event) => {
+					const data = event.data as string | ArrayBuffer;
+					if (upstream?.readyState === WebSocket.OPEN) upstream.send(data);
+					else if (pending.length < MAX_DISPLAY_PENDING) pending.push(data);
+				},
+				onClose: () => upstream?.close(),
+				onError: () => upstream?.close(),
+			};
+		}),
+	);
 
 	registerEventBusRoute({ app, eventBus, upgradeWebSocket });
 	registerBrowserCdpRoute({
@@ -367,6 +467,8 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 
 	const ownsDb = options.db === undefined;
 	const dispose = async (): Promise<void> => {
+		if (projectPurgeTimer) clearInterval(projectPurgeTimer);
+		await disposeWorkspaceTitleJobs(db);
 		// Each step is best-effort and isolated: a throw in one cleanup must
 		// not skip the others, otherwise a flaky `.stop()` could leak the
 		// open SQLite handle for the rest of the process lifetime.
@@ -435,6 +537,25 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 		);
 	};
 
+	/** Same context the launcher above builds: a resume runs an agent. */
+	const resumeCrashedAgents = async () => {
+		const ctx = {
+			git,
+			credentials: providers.credentials,
+			github,
+			execGh,
+			api,
+			db,
+			runtime,
+			eventBus,
+			terminalAgentStore,
+			organizationId: config.organizationId,
+			isAuthenticated: true,
+			browserBridge: config.browserBridge,
+		} as HostServiceContext;
+		await resumeCrashedAgentSessions(resumeSessionDepsFor(ctx));
+	};
+
 	return {
 		app,
 		injectWebSocket,
@@ -442,6 +563,8 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 		db,
 		eventBus,
 		launchSandboxAgent,
+		resumeCrashedAgents,
+		terminalAgentStore,
 		dispose,
 	};
 }

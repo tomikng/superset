@@ -13,6 +13,7 @@ import { provisionAgentIntegrations } from "./runtime/agent-provisioning";
 import { processStartedAt, recordBootStamp } from "./runtime/boot-stamps";
 import { resolveBrowserBridgeFromEnv } from "./runtime/browser-bridge/env";
 import { applyLoginShellEnvToProcess } from "./runtime/login-shell-env";
+import { startSandboxAgentStatusReporter } from "./runtime/sandbox-agent-status";
 import { startSandboxCredentialRefresh } from "./runtime/sandbox-credential-refresh";
 import { detachFromLaunchDirectory } from "./runtime/working-directory";
 import { installProcessSafetyNet, installUpgradeSocketGuard } from "./safety";
@@ -76,7 +77,15 @@ async function main(): Promise<void> {
 		apiUrl: env.SUPERSET_API_URL,
 	});
 
-	const { app, injectWebSocket, api, db, launchSandboxAgent } = createApp({
+	const {
+		app,
+		injectWebSocket,
+		api,
+		db,
+		launchSandboxAgent,
+		resumeCrashedAgents,
+		terminalAgentStore,
+	} = createApp({
 		config: {
 			organizationId: env.ORGANIZATION_ID,
 			dbPath: env.HOST_DB_PATH,
@@ -143,12 +152,21 @@ async function main(): Promise<void> {
 		// and event bus are up, and a person opening the workspace sees the
 		// agent's terminal the way they would on their own machine.
 		void launchSandboxAgent();
+		// A stop keeps the disk and drops every process, so nothing else on the
+		// box will notice that its agents are gone.
+		if (env.SUPERSET_HOST_RUN_MODE === "sandbox") void resumeCrashedAgents();
 		const sandboxWorkspaceId = process.env.SUPERSET_SANDBOX_WORKSPACE_ID;
 		if (env.SUPERSET_HOST_RUN_MODE === "sandbox" && sandboxWorkspaceId) {
 			startSandboxCredentialRefresh({
 				apiUrl: env.SUPERSET_API_URL,
 				workspaceId: sandboxWorkspaceId,
 				hostSecret: env.HOST_SERVICE_SECRET,
+			});
+			startSandboxAgentStatusReporter({
+				apiUrl: env.SUPERSET_API_URL,
+				workspaceId: sandboxWorkspaceId,
+				hostSecret: env.HOST_SERVICE_SECRET,
+				store: terminalAgentStore,
 			});
 		}
 
@@ -170,7 +188,7 @@ async function main(): Promise<void> {
 	// Standalone only: this process owns its listener and relay socket, so it
 	// can hand the port to a successor build (system.update). The desktop
 	// entry never registers this and its host-service stays non-updatable.
-	configureSelfUpdater({
+	const selfUpdater = configureSelfUpdater({
 		stopServing: async () => {
 			// Cancel registration retries before replacing this process.
 			relayAbort.abort();
@@ -190,6 +208,13 @@ async function main(): Promise<void> {
 			]);
 		},
 	});
+	if (env.SUPERSET_HOST_AUTO_UPDATE && selfUpdater.status().updatable) {
+		const timer = setInterval(
+			() => void selfUpdater.checkForUpdates(),
+			60 * 60_000,
+		);
+		timer.unref();
+	}
 }
 
 void main().catch(async (error) => {

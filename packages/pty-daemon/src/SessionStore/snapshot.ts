@@ -1,3 +1,4 @@
+import type { TerminalColorsSnapshot } from "./TerminalColors/index.ts";
 // Handoff snapshot — on-disk serialization of the SessionStore that the
 // successor daemon reads on startup to rebuild its in-memory state.
 //
@@ -24,6 +25,7 @@
 import * as fs from "node:fs";
 import { encodeFrame, FrameDecoder } from "../protocol/framing.ts";
 import type { SessionMeta } from "../protocol/index.ts";
+import type { TerminalModesSnapshot } from "../TerminalModes/index.ts";
 import type { Session } from "./SessionStore.ts";
 
 export const SNAPSHOT_VERSION = 1;
@@ -45,6 +47,8 @@ interface HandoffSessionMessage {
 	 * fd was placed. Successor uses this to map sessions → inherited fds.
 	 */
 	fdIndex: number;
+	modes?: TerminalModesSnapshot;
+	colors?: TerminalColorsSnapshot;
 }
 
 export interface SerializedSession {
@@ -52,6 +56,8 @@ export interface SerializedSession {
 	pid: number;
 	meta: SessionMeta;
 	fdIndex: number;
+	modes?: TerminalModesSnapshot;
+	colors?: TerminalColorsSnapshot;
 	/** Live ring buffer bytes — empty Uint8Array when there's no replay. */
 	buffer: Uint8Array;
 }
@@ -88,6 +94,8 @@ export function serializeSessions(opts: SerializeOptions): HandoffSnapshot {
 			meta: s.pty.meta,
 			fdIndex,
 			buffer: Buffer.concat(s.buffer),
+			modes: s.modes.snapshot(),
+			colors: s.colors.snapshot(),
 		});
 	}
 	return {
@@ -117,6 +125,8 @@ export function writeSnapshot(path: string, snapshot: HandoffSnapshot): void {
 			pid: s.pid,
 			meta: s.meta,
 			fdIndex: s.fdIndex,
+			modes: s.modes,
+			colors: s.colors,
 		};
 		parts.push(
 			encodeFrame(msg, s.buffer.byteLength > 0 ? s.buffer : undefined),
@@ -180,6 +190,8 @@ export function readSnapshot(path: string): HandoffSnapshot {
 			pid: m.pid,
 			meta: m.meta as SessionMeta,
 			fdIndex: m.fdIndex,
+			modes: m.modes,
+			colors: m.colors,
 			buffer: frame.payload ?? new Uint8Array(0),
 		});
 	}

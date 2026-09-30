@@ -27,6 +27,7 @@ interface DocumentEntry {
 	byteSize: number | null;
 	refCount: number;
 	version: number;
+	loadGeneration: number;
 	subscribers: Set<() => void>;
 }
 
@@ -34,6 +35,22 @@ const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
 const BINARY_CHECK_SIZE = 8192;
 
 const entries = new Map<string, DocumentEntry>();
+const documentListeners = new Set<() => void>();
+
+export function subscribeDocuments(listener: () => void): () => void {
+	documentListeners.add(listener);
+	return () => {
+		documentListeners.delete(listener);
+	};
+}
+
+export function getDocuments(): SharedFileDocument[] {
+	return Array.from(entries.values(), createHandle);
+}
+
+function notifyDocuments(): void {
+	for (const listener of documentListeners) listener();
+}
 
 function key(workspaceId: string, absolutePath: string): string {
 	return `${workspaceId}:${absolutePath}`;
@@ -44,6 +61,16 @@ function notify(entry: DocumentEntry): void {
 	for (const listener of entry.subscribers) {
 		listener();
 	}
+	if (
+		entry.refCount <= 0 &&
+		!computeDirty(entry) &&
+		!entry.orphaned &&
+		!entry.pendingSave &&
+		entries.get(key(entry.workspaceId, entry.absolutePath)) === entry
+	) {
+		entries.delete(key(entry.workspaceId, entry.absolutePath));
+	}
+	notifyDocuments();
 }
 
 function computeDirty(entry: DocumentEntry): boolean {
@@ -90,6 +117,16 @@ async function loadEntry(
 	entry: DocumentEntry,
 	options: { unlimited?: boolean } = {},
 ): Promise<void> {
+	const generation = ++entry.loadGeneration;
+	const canApplyResult = () => {
+		if (generation !== entry.loadGeneration) return false;
+		if (computeDirty(entry)) {
+			entry.hasExternalChange = true;
+			notify(entry);
+			return false;
+		}
+		return true;
+	};
 	const client = entry.trpcClient;
 	const readAsBinary =
 		isImageFile(entry.absolutePath) ||
@@ -103,6 +140,7 @@ async function loadEntry(
 			encoding: readAsBinary ? undefined : "utf-8",
 			maxBytes,
 		});
+		if (!canApplyResult()) return;
 
 		entry.byteSize = result.byteLength;
 		entry.isBinary = readAsBinary ? true : entry.isBinary;
@@ -135,6 +173,7 @@ async function loadEntry(
 		entry.savedContentText = result.content;
 		notify(entry);
 	} catch (error) {
+		if (!canApplyResult()) return;
 		const isNotFound = isEnoentLikeError(error);
 		entry.content = isNotFound
 			? { kind: "not-found" }
@@ -171,6 +210,23 @@ async function fetchCurrentDiskContent(
 		return result.content;
 	} catch {
 		return null;
+	}
+}
+
+// A rename onto an open document is either the watcher's copy of a move the
+// document already followed, or a real replacement such as an atomic save.
+// Only the disk content tells them apart.
+async function reconcileRenameOnto(entry: DocumentEntry): Promise<void> {
+	const generation = entry.loadGeneration;
+	const diskContent = await fetchCurrentDiskContent(entry);
+	if (generation !== entry.loadGeneration) return;
+	if (diskContent !== null && diskContent === entry.savedContentText) return;
+	if (computeDirty(entry)) {
+		entry.loadGeneration += 1;
+		entry.hasExternalChange = true;
+		notify(entry);
+	} else {
+		void loadEntry(entry);
 	}
 }
 
@@ -228,6 +284,7 @@ function createHandle(entry: DocumentEntry): SharedFileDocument {
 			const client = entry.trpcClient;
 			const currentValue = entry.content.value;
 			const currentRevision = entry.content.revision;
+			entry.loadGeneration += 1;
 			entry.pendingSave = true;
 			entry.saveError = null;
 			notify(entry);
@@ -274,6 +331,13 @@ function createHandle(entry: DocumentEntry): SharedFileDocument {
 				notify(entry);
 				return { status: "error", error: error as Error };
 			}
+		},
+		async compareWithDisk() {
+			const generation = entry.loadGeneration;
+			const diskContent = await fetchCurrentDiskContent(entry);
+			if (generation !== entry.loadGeneration) return;
+			entry.conflict = { diskContent };
+			notify(entry);
 		},
 		async reload() {
 			resetForLoad(entry);
@@ -342,12 +406,14 @@ export function acquireDocument(
 			byteSize: null,
 			refCount: 0,
 			version: 0,
+			loadGeneration: 0,
 			subscribers: new Set(),
 		};
 		entries.set(k, entry);
 		void loadEntry(entry);
 	}
 	entry.refCount += 1;
+	notifyDocuments();
 	return createHandle(entry);
 }
 
@@ -359,8 +425,15 @@ export function releaseDocument(
 	const entry = entries.get(k);
 	if (!entry) return;
 	entry.refCount -= 1;
-	if (entry.refCount <= 0 && !computeDirty(entry) && !entry.orphaned) {
+	if (
+		entry.refCount <= 0 &&
+		!computeDirty(entry) &&
+		!entry.orphaned &&
+		!entry.pendingSave &&
+		entries.get(k) === entry
+	) {
 		entries.delete(k);
+		notifyDocuments();
 	}
 }
 
@@ -391,31 +464,44 @@ export function dispatchFsEvent(
 	// mid-iteration, which would revisit the same entry and loop forever.
 	for (const entry of Array.from(entries.values())) {
 		if (entry.workspaceId !== workspaceId) continue;
+		const renamedSource =
+			event.kind === "rename" &&
+			event.oldAbsolutePath !== undefined &&
+			(entry.absolutePath === event.oldAbsolutePath ||
+				(event.isDirectory === true &&
+					entry.absolutePath.startsWith(`${event.oldAbsolutePath}/`)));
+		if (renamedSource && event.oldAbsolutePath) {
+			entry.loadGeneration += 1;
+			const oldKey = key(entry.workspaceId, entry.absolutePath);
+			entries.delete(oldKey);
+			entry.absolutePath =
+				event.absolutePath +
+				entry.absolutePath.slice(event.oldAbsolutePath.length);
+			entries.set(key(entry.workspaceId, entry.absolutePath), entry);
+			entry.orphaned = false;
+			if (!computeDirty(entry)) void loadEntry(entry);
+			notify(entry);
+			continue;
+		}
 		const affects =
+			event.kind === "overflow" ||
 			entry.absolutePath === event.absolutePath ||
-			(event.kind === "rename" && event.oldAbsolutePath === entry.absolutePath);
+			renamedSource;
 		if (!affects) continue;
+		if (event.kind === "rename") {
+			if (entry.orphaned) entry.orphaned = false;
+			void reconcileRenameOnto(entry);
+			continue;
+		}
 
 		const isContentMutation =
 			event.kind === "create" ||
 			event.kind === "update" ||
-			event.kind === "overflow" ||
-			(event.kind === "rename" && event.absolutePath === entry.absolutePath);
+			event.kind === "overflow";
 
 		if (event.kind === "delete") {
+			entry.loadGeneration += 1;
 			entry.orphaned = true;
-			notify(entry);
-			continue;
-		}
-
-		if (
-			event.kind === "rename" &&
-			event.oldAbsolutePath === entry.absolutePath
-		) {
-			const oldKey = key(entry.workspaceId, entry.absolutePath);
-			entries.delete(oldKey);
-			entry.absolutePath = event.absolutePath;
-			entries.set(key(entry.workspaceId, entry.absolutePath), entry);
 			notify(entry);
 			continue;
 		}
@@ -423,6 +509,7 @@ export function dispatchFsEvent(
 		if (isContentMutation) {
 			if (entry.orphaned) entry.orphaned = false;
 			if (computeDirty(entry)) {
+				entry.loadGeneration += 1;
 				entry.hasExternalChange = true;
 				notify(entry);
 			} else {

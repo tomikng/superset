@@ -1,5 +1,4 @@
 import type {
-	FileTree,
 	FileTreeDirectoryHandle,
 	FileTreeItemHandle,
 } from "@pierre/trees";
@@ -36,6 +35,16 @@ export function basename(rel: string): string {
 	return i < 0 ? trimmed : trimmed.slice(i + 1);
 }
 
+export function moveDestinationPath(
+	sourcePath: string,
+	directoryPath: string | null,
+): string {
+	const directory = stripTrailingSlash(directoryPath ?? "");
+	const name = basename(sourcePath);
+	const destination = directory ? `${directory}/${name}` : name;
+	return sourcePath.endsWith("/") ? `${destination}/` : destination;
+}
+
 /** Resolve a watcher deletion to Pierre's canonical path and entry type. */
 export function resolveDeleteTreePath(
 	known: Set<string>,
@@ -62,26 +71,4 @@ export function asDirectoryHandle(
 	handle: FileTreeItemHandle | null,
 ): FileTreeDirectoryHandle | null {
 	return handle?.isDirectory() ? (handle as FileTreeDirectoryHandle) : null;
-}
-
-/**
- * The directory handle for `treePath`, or null when Pierre can't produce one.
- *
- * `getItem` is typed to return null for a path Pierre doesn't hold, but it
- * throws instead when the lookup walks through a node with no child index —
- * a path whose ancestor Pierre holds as a file. That happens when the watcher
- * loses a stat race and reports a directory with `isDirectory: false`, so the
- * fs-event handler adds it as a file and every later lookup beneath it throws.
- * Callers use the handle only to ask whether a directory is already expanded,
- * and not being able to ask is the same answer as "not expanded".
- */
-export function lookupDirectory(
-	model: Pick<FileTree, "getItem">,
-	treePath: string,
-): FileTreeDirectoryHandle | null {
-	try {
-		return asDirectoryHandle(model.getItem(treePath));
-	} catch {
-		return null;
-	}
 }

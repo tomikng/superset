@@ -13,6 +13,12 @@ export interface CloudAgentLaunch {
 	model?: string;
 	effort?: string;
 	mode?: string;
+	/**
+	 * Cloud uploads the agent is launched with. A sandbox has no host to write
+	 * them to at create time, so the ids travel and the box pulls the bytes
+	 * itself once host-service is up.
+	 */
+	attachmentFileIds?: string[];
 }
 
 /**
@@ -26,6 +32,9 @@ export const CLOUD_AGENT_IDS: readonly string[] = HOST_AGENT_PRESETS.filter(
 	(preset) => INSTALLED_IN_SANDBOX.has(preset.presetId),
 ).map((preset) => preset.presetId);
 
+/** The prompt reaches host-service as one command-line argument, and the kernel limits its size. */
+export const CLOUD_AGENT_PROMPT_MAX_LENGTH = 20_000;
+
 export function isCloudAgentId(id: string): boolean {
 	return CLOUD_AGENT_IDS.includes(id);
 }
@@ -36,6 +45,7 @@ const ENV = {
 	model: "SUPERSET_SANDBOX_AGENT_MODEL",
 	effort: "SUPERSET_SANDBOX_AGENT_EFFORT",
 	mode: "SUPERSET_SANDBOX_AGENT_MODE",
+	attachments: "SUPERSET_SANDBOX_AGENT_ATTACHMENTS",
 } as const;
 
 /** Every variable the launch travels in; stripped when a sandbox is promoted. */
@@ -52,6 +62,9 @@ export function cloudAgentLaunchToEnv(
 		...(launch.model ? { [ENV.model]: launch.model } : {}),
 		...(launch.effort ? { [ENV.effort]: launch.effort } : {}),
 		...(launch.mode ? { [ENV.mode]: launch.mode } : {}),
+		...(launch.attachmentFileIds?.length
+			? { [ENV.attachments]: launch.attachmentFileIds.join(",") }
+			: {}),
 	};
 }
 
@@ -66,7 +79,16 @@ export function readCloudAgentLaunch(
 		model: env[ENV.model] || undefined,
 		effort: env[ENV.effort] || undefined,
 		mode: env[ENV.mode] || undefined,
+		attachmentFileIds: splitAttachmentIds(env[ENV.attachments]),
 	};
+}
+
+function splitAttachmentIds(value: string | undefined): string[] | undefined {
+	const ids = (value ?? "")
+		.split(",")
+		.map((id) => id.trim())
+		.filter(Boolean);
+	return ids.length > 0 ? ids : undefined;
 }
 
 /**

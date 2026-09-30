@@ -12,7 +12,9 @@ const removeReaction = mock(async (_args: unknown) => ({}));
 const runAgent = mock(async (_args: Record<string, unknown>) => ({
 	text: "**Completed**",
 	actions: [],
+	unconnectedPlugins: [] as { name: string; displayName: string }[],
 }));
+const linearPlugin = { name: "linear", displayName: "Linear", capability: "" };
 type Claim =
 	| { status: "claimed"; id: string }
 	| { status: "duplicate" }
@@ -39,18 +41,23 @@ const findLink = mock(
 mock.module("@superset/db/client", () => ({
 	db: {
 		query: {
-			integrationConnections: {
-				findFirst: async () => ({
-					organizationId: "org",
-					accessToken: "token",
-				}),
-			},
 			subscriptions: { findFirst: async () => ({ id: "subscription" }) },
 		},
 	},
 }));
+// `mock.module` is process-wide, so every export the real module has must be
+// here: another file's import of one of these resolves against this stub too.
+mock.module("@superset/trpc/connectors", () => ({
+	accountConnection: async () => ({ organizationId: "org" }),
+	accountConnections: async () => [{ organizationId: "org" }],
+	connectionBotToken: async () => "token",
+}));
 mock.module("@/env", () => ({
-	env: { NEXT_PUBLIC_WEB_URL: "https://app.superset.sh" },
+	env: {
+		NEXT_PUBLIC_WEB_URL: "https://app.superset.sh",
+		NEXT_PUBLIC_API_URL: "https://api.test",
+		QSTASH_TOKEN: "qstash-token",
+	},
 }));
 mock.module("@/lib/analytics", () => ({ posthog: { capture: () => {} } }));
 mock.module("../../lib/find-slack-user-link", () => ({
@@ -63,6 +70,8 @@ mock.module("../utils/run-agent", () => ({
 	runSlackAgent: runAgent,
 	resolveUserMentions: async () => (text: string) => text,
 	formatErrorForSlack: async () => "Unable to finish",
+	mentionsPlugin: (text: string, plugin: { displayName: string }) =>
+		text.toLowerCase().includes(plugin.displayName.toLowerCase()),
 	SlackAgentError: class extends Error {},
 }));
 mock.module("../utils/agent-delivery", () => ({
@@ -82,25 +91,34 @@ const beginThread = mock(
 	async (
 		_args: unknown,
 	): Promise<
-		{ status: "running"; session: typeof session } | { status: "queued" }
+		| { status: "running"; session: typeof session }
+		| { status: "queued" }
+		| { status: "covered" }
 	> => ({ status: "running", session }),
 );
 const finishThread = mock(async (_args: unknown) => {});
 const setQuiet = mock(async (_args: unknown) => {});
 const followUpsEnabled = mock(async (_teamId: string) => true);
-const readQueued = mock(
+const requestStop = mock(async (_key: unknown, _ts: string) => true);
+const stopRequested = mock(async (_id: string, _ts: string) => false);
+const takeQueued = mock(
 	async (
 		_id: string,
+		_handoff: string,
 	): Promise<{ ts: string; user: string; text: string }[]> => [],
 );
-const clearQueued = mock(async (_id: string, _ts: string) => {});
+const completeHandoff = mock(async (_id: string, _handoff: string) => {});
+const abandonHandoff = mock(async (_id: string, _handoff: string) => {});
 mock.module("../utils/thread-sessions", () => ({
 	beginThreadRun: beginThread,
 	finishThreadRun: finishThread,
 	setThreadQuiet: setQuiet,
 	threadFollowUpsEnabled: followUpsEnabled,
-	readQueuedEvents: readQueued,
-	clearQueuedEventsThrough: clearQueued,
+	requestThreadStop: requestStop,
+	threadStopRequested: stopRequested,
+	takeQueuedEvents: takeQueued,
+	completeHandBack: completeHandoff,
+	abandonHandBack: abandonHandoff,
 	parseThreadCommand: (text: string) => {
 		const t = text
 			.replace(/<@[A-Z0-9]+>/g, "")
@@ -108,6 +126,7 @@ mock.module("../utils/thread-sessions", () => ({
 			.toLowerCase();
 		if (t.startsWith("!mute")) return "mute";
 		if (t.startsWith("!unmute")) return "unmute";
+		if (t.startsWith("!stop")) return "stop";
 		return null;
 	},
 	renderThreadMemory: (entities: { label: string }[]) =>
@@ -117,11 +136,25 @@ const { slackRateLimitRetryAfterMs } = await import(
 	"../utils/slack-client/request-bounds"
 );
 mock.module("../utils/slack-client", () => ({
-	createSlackClient: () => ({
-		chat: { postMessage, update: updateMessage, delete: deleteMessage },
-		assistant: { threads: { setStatus } },
-		reactions: { add: addReaction, remove: removeReaction },
-	}),
+	createSlackClient: (_token: string, options: { deadline?: number } = {}) => {
+		const bounded =
+			<A, R>(call: (args: A) => Promise<R>) =>
+			async (args: A) => {
+				if (options.deadline !== undefined && Date.now() >= options.deadline) {
+					throw new Error("Slack request started after the run deadline");
+				}
+				return call(args);
+			};
+		return {
+			chat: {
+				postMessage: bounded(postMessage),
+				update: bounded(updateMessage),
+				delete: bounded(deleteMessage),
+			},
+			assistant: { threads: { setStatus: bounded(setStatus) } },
+			reactions: { add: bounded(addReaction), remove: bounded(removeReaction) },
+		};
+	},
 	isUnpostableChannelError: () => false,
 	slackRateLimitRetryAfterMs,
 }));
@@ -162,19 +195,22 @@ beforeEach(() => {
 	beginThread.mockClear();
 	finishThread.mockClear();
 	setQuiet.mockClear();
+	requestStop.mockClear();
+	stopRequested.mockClear();
 	followUpsEnabled.mockReset();
 	followUpsEnabled.mockImplementation(async () => true);
 	release.mockClear();
 	publishJSON.mockClear();
-	readQueued.mockReset();
-	readQueued.mockImplementation(async () => []);
-	clearQueued.mockClear();
+	takeQueued.mockReset();
+	takeQueued.mockImplementation(async () => []);
+	completeHandoff.mockClear();
+	abandonHandoff.mockClear();
 });
 
 test("with the flag off, nothing is queued and nothing is handed back", async () => {
 	followUpsEnabled.mockImplementationOnce(async () => false);
 	await processAgentMessage(params);
-	expect(readQueued).not.toHaveBeenCalled();
+	expect(takeQueued).not.toHaveBeenCalled();
 	expect(publishJSON).not.toHaveBeenCalled();
 });
 
@@ -196,6 +232,62 @@ test("with the flag off, !mute is an ordinary message", async () => {
 	});
 	expect(setQuiet).not.toHaveBeenCalled();
 	expect(runAgent).toHaveBeenCalledTimes(1);
+});
+
+test("!stop asks the running turn to stop and confirms", async () => {
+	await processAgentMessage({
+		...params,
+		event: { ...params.event, text: "<@UBOT> !stop" },
+	});
+	expect(requestStop).toHaveBeenCalledWith(
+		expect.objectContaining({ threadTs: "1.0" }),
+		"10.0",
+	);
+	expect(runAgent).not.toHaveBeenCalled();
+	expect(postMessage.mock.calls[0]?.[0].text).toBe("Stopping.");
+	requestStop.mockImplementationOnce(async () => false);
+	await processAgentMessage({
+		...params,
+		event: { ...params.event, text: "<@UBOT> !stop" },
+	});
+	expect(postMessage.mock.calls.at(-1)?.[0].text).toBe(
+		"Nothing is running in this thread.",
+	);
+});
+
+test("!stop works in a DM; !mute there stays ordinary text", async () => {
+	await processAgentMessage({
+		...params,
+		event: {
+			...params.event,
+			type: "message",
+			channel_type: "im",
+			text: "!stop",
+		},
+	});
+	expect(requestStop).toHaveBeenCalledTimes(1);
+	expect(runAgent).not.toHaveBeenCalled();
+	await processAgentMessage({
+		...params,
+		event: {
+			...params.event,
+			type: "message",
+			channel_type: "im",
+			text: "!mute",
+		},
+	});
+	expect(setQuiet).not.toHaveBeenCalled();
+	expect(runAgent).toHaveBeenCalledTimes(1);
+});
+
+test("the agent is given a way to check for a stop request", async () => {
+	stopRequested.mockImplementationOnce(async () => true);
+	await processAgentMessage(params);
+	const args = runAgent.mock.calls[0]?.[0] as {
+		shouldStop: () => Promise<boolean>;
+	};
+	expect(await args.shouldStop()).toBe(true);
+	expect(stopRequested).toHaveBeenCalledWith("thread-session", "10.0");
 });
 
 test("!unmute reopens the thread without running the agent", async () => {
@@ -241,18 +333,18 @@ test("a reply that arrives mid-turn is queued: no run, claim released, reaction 
 });
 
 test("after a turn, queued replies are handed back by re-delivering the newest one", async () => {
-	readQueued.mockImplementationOnce(async () => [
+	takeQueued.mockImplementationOnce(async () => [
 		{ ts: "11.0", user: "U2", text: "first" },
 		{ ts: "12.0", user: "U3", text: "second" },
 	]);
 	await processAgentMessage(params);
 	expect(publishJSON).toHaveBeenCalledTimes(1);
 	expect(publishJSON.mock.calls[0]?.[0]).toMatchObject({
-		url: expect.stringContaining("/jobs/process-mention"),
-		deduplicationId: "queued:T1:12.0:10.0",
+		url: "https://api.test/api/integrations/slack/jobs/process-mention",
+		deduplicationId: "queued-T1-10-0",
 		body: {
 			teamId: "T1",
-			eventId: "queued:T1:12.0:10.0",
+			eventId: "queued-T1-10-0",
 			event: {
 				channel_type: "channel",
 				ts: "12.0",
@@ -264,7 +356,17 @@ test("after a turn, queued replies are handed back by re-delivering the newest o
 		},
 	});
 	expect(publishJSON.mock.calls[0]?.[0]).not.toHaveProperty("body.event.files");
-	expect(clearQueued).toHaveBeenCalledWith("thread-session", "12.0");
+	expect(takeQueued).toHaveBeenCalledWith("thread-session", "queued-T1-10-0");
+	// QStash rejects ":" in a deduplication id with a 400.
+	expect(
+		(publishJSON.mock.calls[0]?.[0] as { deduplicationId: string })
+			.deduplicationId,
+	).not.toMatch(/:/);
+	expect(completeHandoff).toHaveBeenCalledWith(
+		"thread-session",
+		"queued-T1-10-0",
+	);
+	expect(abandonHandoff).not.toHaveBeenCalled();
 });
 
 test("a reply queued mid-turn keeps its attachments through the hand-back", async () => {
@@ -277,7 +379,7 @@ test("a reply queued mid-turn keeps its attachments through the hand-back", asyn
 	expect(beginThread.mock.calls[0]?.[0]).toMatchObject({
 		event: { ts: "10.0", files: [file] },
 	});
-	readQueued.mockImplementationOnce(async () => [
+	takeQueued.mockImplementationOnce(async () => [
 		{ ts: "11.0", user: "U2", text: "see this", files: [file] },
 		{ ts: "12.0", user: "U3", text: "and this" },
 	]);
@@ -290,7 +392,7 @@ test("a reply queued mid-turn keeps its attachments through the hand-back", asyn
 test("a handed-back reply claims a delivery of its own, so a second hand-back can still run it", async () => {
 	await processAgentMessage({
 		...params,
-		eventId: "queued:T1:10.0:9.0",
+		eventId: "queued-T1-9-0",
 		event: {
 			...params.event,
 			type: "message",
@@ -300,26 +402,71 @@ test("a handed-back reply claims a delivery of its own, so a second hand-back ca
 	});
 	expect(claim.mock.calls[0]?.[0]).toMatchObject({
 		messageTs: "10.0",
-		handoff: "queued:T1:10.0:9.0",
+		handoff: "queued-T1-9-0",
 	});
 	await processAgentMessage(params);
 	expect(claim.mock.calls[1]?.[0]).toMatchObject({ handoff: undefined });
 });
 
 test("a failed hand-back leaves the queue for the next turn", async () => {
-	readQueued.mockImplementationOnce(async () => [
+	takeQueued.mockImplementationOnce(async () => [
 		{ ts: "11.0", user: "U2", text: "first" },
 	]);
 	publishJSON.mockImplementationOnce(async () => {
 		throw new Error("qstash down");
 	});
 	await processAgentMessage(params);
-	expect(clearQueued).not.toHaveBeenCalled();
+	expect(abandonHandoff).toHaveBeenCalledWith(
+		"thread-session",
+		"queued-T1-10-0",
+	);
+	expect(completeHandoff).not.toHaveBeenCalled();
 	expect(postMessage.mock.calls.at(-1)?.[0].text).toBe("**Completed**");
 });
 
+test("a handed-back reply a finished turn already covered stands down and clears its eyes", async () => {
+	beginThread.mockImplementationOnce(async () => ({ status: "covered" }));
+	await processAgentMessage({
+		...params,
+		eventId: "queued-T1-9-0",
+		event: {
+			...params.event,
+			type: "message",
+			channel_type: "channel",
+			queued_ts: ["8.0"],
+		},
+	});
+	expect(beginThread.mock.calls[0]?.[0]).toMatchObject({ handBack: true });
+	expect(runAgent).not.toHaveBeenCalled();
+	expect(finish).toHaveBeenCalledWith("delivery", true);
+	expect(
+		removeReaction.mock.calls.map(
+			([a]) => (a as { timestamp: string }).timestamp,
+		),
+	).toEqual(["10.0", "8.0"]);
+	expect(
+		postMessage.mock.calls.every(([a]) => a.text !== "**Completed**"),
+	).toBe(true);
+});
+
+test("a handed-back reply does not re-ask the flag", async () => {
+	followUpsEnabled.mockImplementationOnce(async () => false);
+	await processAgentMessage({
+		...params,
+		eventId: "queued-T1-9-0",
+		event: {
+			...params.event,
+			type: "message",
+			channel_type: "channel",
+			queued_ts: [],
+		},
+	});
+	expect(followUpsEnabled).not.toHaveBeenCalled();
+	expect(runAgent).toHaveBeenCalledTimes(1);
+});
+
 test("a DM's queued replies go back through the assistant job as a DM", async () => {
-	readQueued.mockImplementationOnce(async () => [
+	takeQueued.mockImplementationOnce(async () => [
 		{ ts: "11.0", user: "U2", text: "more" },
 	]);
 	await processAgentMessage({
@@ -327,7 +474,7 @@ test("a DM's queued replies go back through the assistant job as a DM", async ()
 		event: { ...params.event, type: "message", channel_type: "im" },
 	});
 	expect(publishJSON.mock.calls[0]?.[0]).toMatchObject({
-		url: expect.stringContaining("/jobs/process-assistant-message"),
+		url: "https://api.test/api/integrations/slack/jobs/process-assistant-message",
 		body: { event: { channel_type: "im", ts: "11.0", queued_ts: [] } },
 	});
 });
@@ -364,14 +511,16 @@ test("a run opens the thread session, hands its memory to the agent, and records
 		],
 	}));
 	await processAgentMessage(params);
-	expect(beginThread).toHaveBeenCalledWith({
-		organizationId: "org",
-		teamId: "T1",
-		channelId: "C1",
-		threadTs: "1.0",
-		userId: "linked-user",
-		event: { ts: "10.0", user: "U1", text: "Help" },
-	});
+	expect(beginThread).toHaveBeenCalledWith(
+		expect.objectContaining({
+			organizationId: "org",
+			teamId: "T1",
+			channelId: "C1",
+			threadTs: "1.0",
+			userId: "linked-user",
+			event: { ts: "10.0", user: "U1", text: "Help" },
+		}),
+	);
 	expect(runAgent.mock.calls[0]?.[0]).toMatchObject({
 		threadMemory: "fix-login (feat/login)",
 	});
@@ -385,7 +534,7 @@ test("a run opens the thread session, hands its memory to the agent, and records
 		],
 		lastContextTs: "10.0",
 	});
-	expect(readQueued).toHaveBeenCalledWith("thread-session");
+	expect(takeQueued).toHaveBeenCalledWith("thread-session", "queued-T1-10-0");
 	expect(publishJSON).not.toHaveBeenCalled();
 });
 
@@ -527,10 +676,28 @@ test("a rate limit that outlives the budget is not waited on", async () => {
 	expect(postMessage.mock.calls.at(-1)?.[0].text).toBe("Unable to finish");
 });
 
+test("a run that spends its whole budget still posts its reply and clears its indicators", async () => {
+	const realNow = Date.now;
+	runAgent.mockImplementationOnce(async (args) => {
+		const pastDeadline = (args.deadline as number) + 1;
+		Date.now = () => pastDeadline;
+		return { text: "I ran out of time", actions: [] };
+	});
+	try {
+		await processAgentMessage(params);
+	} finally {
+		Date.now = realNow;
+	}
+	expect(postMessage.mock.calls.at(-1)?.[0].text).toBe("I ran out of time");
+	expect(deleteMessage).toHaveBeenCalledWith({ channel: "C1", ts: "msg-1" });
+	expect(removeReaction).toHaveBeenCalledTimes(1);
+	expect(finish).toHaveBeenCalledWith("delivery", true);
+});
+
 test("channel progress updates edit the placeholder instead of posting", async () => {
 	runAgent.mockImplementationOnce(async (args) => {
 		await (args.onProgress as (s: string) => Promise<void>)("Creating task...");
-		return { text: "Done", actions: [] };
+		return { text: "Done", actions: [], unconnectedPlugins: [] };
 	});
 	await processAgentMessage(params);
 	expect(updateMessage).toHaveBeenCalledWith({
@@ -595,4 +762,42 @@ test("DMs use the same guarded path with assistant status instead of a placehold
 	expect(postMessage).toHaveBeenCalledTimes(1);
 	expect(postMessage.mock.calls[0]?.[0].text).toBe("**Completed**");
 	expect(deleteMessage).not.toHaveBeenCalled();
+});
+
+test("a reply that names an unconnected plugin gets a Connect button after it", async () => {
+	runAgent.mockImplementationOnce(async () => ({
+		text: "Linear isn't connected to your account, so I can't file that yet.",
+		actions: [],
+		unconnectedPlugins: [linearPlugin],
+	}));
+	await processAgentMessage(params);
+	expect(postMessage).toHaveBeenCalledTimes(3);
+	expect(postMessage.mock.calls[2]?.[0]).toMatchObject({
+		thread_ts: "1.0",
+		text: "Linear isn't connected to your Superset account yet.",
+		blocks: [
+			{ type: "section" },
+			{
+				type: "actions",
+				elements: [
+					{
+						type: "button",
+						text: { type: "plain_text", text: "Connect Linear" },
+						url: "https://app.superset.sh/plugins",
+					},
+				],
+			},
+		],
+	});
+	expect(finish).toHaveBeenCalledWith("delivery", true);
+});
+
+test("no Connect button when the reply never mentions the unconnected plugin", async () => {
+	runAgent.mockImplementationOnce(async () => ({
+		text: "**Completed**",
+		actions: [],
+		unconnectedPlugins: [linearPlugin],
+	}));
+	await processAgentMessage(params);
+	expect(postMessage).toHaveBeenCalledTimes(2);
 });

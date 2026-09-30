@@ -14,7 +14,9 @@ bucket name — one mechanism means one place to look when a value goes missing.
 Add `--env Production` / `--env Preview` only when the two need different
 values. Without it, both environments get the same one. Scoping works because
 every deploy job declares `environment: production` / `preview`; a job that
-does not will read an environment secret as empty.
+does not will read an environment secret as empty. It is also why a one-off
+script that needs a production secret has to run as a workflow; see
+`docs/deploy-workflows.md`.
 
 Give both environments the **same name** and different values. A separate
 `MY_VAR_DEV` variable is easy to reference in a workflow and forget to create,
@@ -96,3 +98,5 @@ or the value arrives empty.
 `SUPERSET_AGENT_LAUNCH_ID` is set by the outer agent wrapper to a process-and-start-time identifier. Hook children inherit it so a new launch in the same terminal cannot inherit the previous login attribution. It is runtime metadata, not a deployment secret or user setting; it does not belong in `.env` templates or deploy workflows.
 
 `SUPERSET_ACCOUNT_ATTRIBUTION_TOKEN` is issued by the host for each new terminal and authorizes only that terminal’s login-attribution hook metadata. It is not the host authentication token. Tokens expire when the host process restarts; open a new terminal to restore verified login attribution. The host injects it at PTY creation, so it does not belong in deployment configuration.
+
+`SUPERSET_HOST_AUTO_UPDATE` is a standalone host runtime preference, set to `true` by `superset start --auto-update` and `false` otherwise. Direct service launchers may set it explicitly. It defaults to `false`, is excluded from login-shell imports, and is inherited by update/rollback successors. Like install provenance, it does not belong in deployment secrets or shared environment templates.

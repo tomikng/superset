@@ -4,6 +4,7 @@
  * check talks to the box the way a client would (its published ports) or
  * the way the boot runner left it (its log and run directory).
  */
+import { SANDBOX_CREDENTIAL_PLACEHOLDER } from "@superset/shared/constants";
 import {
 	SANDBOX_PATHS,
 	SANDBOX_PORTS,
@@ -38,7 +39,6 @@ export async function probeBox(args: ProbeArgs): Promise<number> {
 		resume: false,
 	});
 	const host = sandbox.domain(SANDBOX_PORTS.hostService);
-	const desktop = sandbox.domain(SANDBOX_PORTS.desktop);
 	let failed = 0;
 	const check = (label: string, ok: boolean, detail = "") => {
 		log(`${ok ? "ok  " : "FAIL"} ${label}${detail ? `: ${detail}` : ""}`);
@@ -142,19 +142,25 @@ export async function probeBox(args: ProbeArgs): Promise<number> {
 		/up/,
 		90,
 	);
-	const rfb = await rfbHandshake(desktop);
+	const rfb = await rfbHandshake(host, args.hostSecret);
 	check(
-		"desktop stream answers RFB over websockify",
+		"desktop stream answers RFB through host-service",
 		rfb.startsWith("RFB "),
 		JSON.stringify(rfb),
 	);
 	if (args.expectAnthropicRule) {
-		const code = (
-			await run(
-				"curl -s -o /dev/null -w '%{http_code}' --max-time 15 -H 'x-api-key: placeholder' -H 'anthropic-version: 2023-06-01' https://api.anthropic.com/v1/models",
-			)
-		).trim();
-		check("firewall swaps the Anthropic header", code === "200", code);
+		const models = (key: string) =>
+			run(
+				`curl -s -o /dev/null -w '%{http_code}' --max-time 15 -H 'x-api-key: ${key}' -H 'anthropic-version: 2023-06-01' https://api.anthropic.com/v1/models`,
+			).then((code) => code.trim());
+		const swapped = await models(SANDBOX_CREDENTIAL_PLACEHOLDER);
+		check(
+			"firewall swaps the Anthropic placeholder",
+			swapped === "200",
+			swapped,
+		);
+		const passed = await models("not-the-placeholder");
+		check("firewall leaves another key alone", passed === "401", passed);
 	}
 	if (args.gate) {
 		const access = await mintSandboxGateAccess({
@@ -182,33 +188,6 @@ export async function probeBox(args: ProbeArgs): Promise<number> {
 		);
 	}
 	return failed;
-}
-
-/** The first bytes websockify relays from the VNC server, or why it did not. */
-function rfbHandshake(desktopOrigin: string): Promise<string> {
-	const url = new URL("/websockify", desktopOrigin);
-	url.protocol = "wss:";
-	return new Promise<string>((resolve) => {
-		const ws = new WebSocket(url.toString());
-		ws.binaryType = "arraybuffer";
-		const timer = setTimeout(() => {
-			resolve("timeout");
-			ws.close();
-		}, 30_000);
-		ws.onmessage = (event) => {
-			clearTimeout(timer);
-			resolve(
-				new TextDecoder().decode(
-					new Uint8Array(event.data as ArrayBuffer).slice(0, 12),
-				),
-			);
-			ws.close();
-		};
-		ws.onerror = () => {
-			clearTimeout(timer);
-			resolve("error");
-		};
-	});
 }
 
 /** The second boot of a box: what a wake looks like in its log. */
@@ -241,4 +220,37 @@ export async function checkWakeLog(args: {
 	check("wake: checkout kept", /checkout\.skipped/.test(last));
 	check("wake: host-service ready", /host\.ready/.test(last));
 	return failed;
+}
+
+/**
+ * The first bytes the VNC server sends, read the way a pane reads them: the
+ * display is not published, so it is host-service's route, with the secret the
+ * gate presents on a person's behalf.
+ */
+function rfbHandshake(hostOrigin: string, hostSecret: string): Promise<string> {
+	const url = new URL("/desktop/websockify", hostOrigin);
+	url.protocol = "wss:";
+	url.searchParams.set("token", hostSecret);
+	return new Promise<string>((resolve) => {
+		const ws = new WebSocket(url.toString());
+		ws.binaryType = "arraybuffer";
+		const timer = setTimeout(() => {
+			resolve("timeout");
+			ws.close();
+		}, 30_000);
+		ws.onmessage = (event) => {
+			clearTimeout(timer);
+			resolve(
+				new TextDecoder().decode(
+					new Uint8Array(event.data as ArrayBuffer).slice(0, 12),
+				),
+			);
+			ws.close();
+		};
+		ws.onerror = () => {
+			clearTimeout(timer);
+			resolve("error");
+			ws.close();
+		};
+	});
 }

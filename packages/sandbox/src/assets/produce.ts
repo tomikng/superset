@@ -366,6 +366,38 @@ async function go(): Promise<void> {
 	writeFileSync(file, src);
 }
 
+// --- the CLI ---------------------------------------------------------------
+/**
+ * `superset` for the box. Its own asset rather than part of the host-service
+ * tarball: that tarball is one hash, so a CLI patch would invalidate the
+ * runtime and every box would re-download it on the next boot.
+ */
+function cli(): void {
+	const pkg = JSON.parse(
+		readFileSync(join(REPO_ROOT, "packages", "cli", "package.json"), "utf8"),
+	) as { version: string };
+	const build = Bun.spawnSync(
+		["bun", "run", "--cwd", "packages/cli", "build:linux-x64"],
+		{ cwd: REPO_ROOT, stdout: "ignore", stderr: "inherit" },
+	);
+	if (build.exitCode !== 0)
+		throw new Error("packages/cli build:linux-x64 failed");
+	const binary = readFileSync(
+		join(REPO_ROOT, "packages", "cli", "dist", "superset-linux-x64"),
+	);
+	const { sha256: hash } = cache(binary, "");
+	rewriteRows({
+		cli: {
+			sha256: hash,
+			suffix: "",
+			dest: `${SANDBOX_PATHS.media}/superset-${pkg.version}`,
+			mode: "0755",
+			version: pkg.version,
+		},
+	});
+	console.log(`cli ${pkg.version} sha256 ${hash}`);
+}
+
 export const producers: Record<string, () => Promise<void> | void> = {
 	chrome,
 	fonts,
@@ -373,6 +405,7 @@ export const producers: Record<string, () => Promise<void> | void> = {
 	wallpapers,
 	"host-service": hostService,
 	go,
+	cli,
 };
 
 if (import.meta.main) {

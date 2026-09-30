@@ -1,5 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { FEATURE_FLAGS } from "@superset/shared/constants";
+import { CLOUD_HOST_ID } from "@superset/shared/host-routing";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import { useLiveQuery } from "@tanstack/react-db";
 import { useFeatureFlagEnabled } from "posthog-js/react";
@@ -9,7 +10,6 @@ import { useActiveOrganizationId } from "renderer/hooks/useActiveOrganizationId"
 import { useCloudWorkspaces } from "renderer/hooks/useCloudWorkspaces";
 import { useOpenNewWorkspaceForHost } from "renderer/hooks/useOpenNewWorkspace";
 import { cloudTrpc } from "renderer/lib/cloud-trpc";
-import { CLOUD_HOST_ID } from "renderer/routes/_authenticated/components/DashboardNewWorkspaceModal/components/DashboardNewWorkspaceForm/components/DevicePicker/DevicePicker";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import { useHostWorkspaces } from "renderer/routes/_authenticated/providers/HostWorkspacesProvider";
 import { useSidebarSectionsCollapseStore } from "renderer/stores/sidebar-sections-collapse";

@@ -5,6 +5,11 @@ const isFeatureEnabled = mock(
 );
 mock.module("@superset/db/client", () => ({ db: {} }));
 mock.module("@/lib/analytics", () => ({ posthog: { isFeatureEnabled } }));
+mock.module("@superset/trpc/connectors", () => ({
+	accountConnection: async () => ({ organizationId: "org" }),
+	accountConnections: async () => [{ organizationId: "org" }],
+	connectionBotToken: async () => "token",
+}));
 const {
 	parseThreadCommand,
 	renderThreadMemory,
@@ -41,6 +46,8 @@ describe("parseThreadCommand", () => {
 		expect(parseThreadCommand("<@UBOT> !unmute")).toBe("unmute");
 		expect(parseThreadCommand("<@UBOT|superset> !unmute")).toBe("unmute");
 		expect(parseThreadCommand("  !Quiet please")).toBe("mute");
+		expect(parseThreadCommand("<@UBOT> !stop")).toBe("stop");
+		expect(parseThreadCommand("!cancel that")).toBe("stop");
 	});
 	test("leaves prose to the model", () => {
 		expect(parseThreadCommand("only respond when I mention you")).toBeNull();
@@ -48,6 +55,7 @@ describe("parseThreadCommand", () => {
 			parseThreadCommand("build a bot that should only respond when mentioned"),
 		).toBeNull();
 		expect(parseThreadCommand("mute the alerts channel")).toBeNull();
+		expect(parseThreadCommand("stop the deploy automation")).toBeNull();
 	});
 });
 

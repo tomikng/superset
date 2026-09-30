@@ -3,6 +3,7 @@ import type { SearchAddon } from "@xterm/addon-search";
 import { DEFAULT_TERMINAL_PARKED_RUNTIME_CAP } from "shared/constants";
 import type { TerminalAppearance } from "./appearance";
 import { runWhenParserIdle } from "./parser-idle-gate";
+import { getTerminalSelectionForCopy } from "./terminal-copy";
 import type { ImagePasteOverride } from "./terminal-image-paste-fallback";
 import {
 	type LinkHoverInfo,
@@ -36,8 +37,8 @@ import {
 	getPersistableSeqAnchor,
 	park,
 	reconnect,
+	sendColors,
 	sendDispose,
-	sendInput,
 	sendResize,
 	setVisible,
 	type TerminalLogEntry,
@@ -49,6 +50,7 @@ interface RegistryEntry {
 	terminalId: string;
 	instanceId: string;
 	runtime: TerminalRuntime | null;
+	initialBuffer?: string;
 	transport: TerminalTransport;
 	linkManager: TerminalLinkManager | null;
 	/** Stored until linkManager is created (mount called after setLinkHandlers). */
@@ -197,8 +199,11 @@ class TerminalRuntimeRegistryImpl {
 
 		if (!entry.runtime) {
 			entry.runtime = createRuntime(terminalId, appearance, {
-				initialBuffer: this.serializeExistingRuntime(terminalId, instanceId),
+				initialBuffer:
+					entry.initialBuffer ??
+					this.serializeExistingRuntime(terminalId, instanceId),
 			});
+			entry.initialBuffer = undefined;
 			// Pair the transport's stream position with what the fresh xterm
 			// actually contains: the persisted anchor belongs to the persisted
 			// snapshot only; sibling-seeded content has no known position.
@@ -440,6 +445,11 @@ class TerminalRuntimeRegistryImpl {
 
 		// The refit may defer until the parser drains; the callback reports it.
 		const transport = entry.transport;
+		sendColors(
+			entry.transport,
+			appearance.theme,
+			entry.runtime.terminal.options.theme !== appearance.theme,
+		);
 		updateRuntimeAppearance(entry.runtime, appearance, () => {
 			const runtime = entry.runtime;
 			if (!runtime) return;
@@ -451,6 +461,11 @@ class TerminalRuntimeRegistryImpl {
 	updateAllAppearances(appearance: TerminalAppearance) {
 		for (const entry of this.entries.values()) {
 			if (!entry.runtime) continue;
+			sendColors(
+				entry.transport,
+				appearance.theme,
+				entry.runtime.terminal.options.theme !== appearance.theme,
+			);
 			updateRuntimeAppearance(entry.runtime, appearance, () => {
 				const runtime = entry.runtime;
 				if (!runtime) return;
@@ -543,7 +558,9 @@ class TerminalRuntimeRegistryImpl {
 
 	getSelection(terminalId: string, instanceId?: string): string {
 		const entry = this.getEntry(terminalId, instanceId);
-		return entry?.runtime?.terminal.getSelection() ?? "";
+		return entry?.runtime
+			? getTerminalSelectionForCopy(entry.runtime.terminal)
+			: "";
 	}
 
 	clear(terminalId: string, instanceId?: string): void {
@@ -559,13 +576,6 @@ class TerminalRuntimeRegistryImpl {
 	paste(terminalId: string, text: string, instanceId?: string): void {
 		const entry = this.getEntry(terminalId, instanceId);
 		entry?.runtime?.terminal.paste(text);
-	}
-
-	/** Send raw input to the terminal via the WebSocket transport (bypasses xterm). */
-	writeInput(terminalId: string, data: string, instanceId?: string): void {
-		const entry = this.getEntry(terminalId, instanceId);
-		if (!entry) return;
-		sendInput(entry.transport, data);
 	}
 
 	findNext(terminalId: string, query: string, instanceId?: string): boolean {
@@ -662,6 +672,41 @@ class TerminalRuntimeRegistryImpl {
 		return (
 			this.getEntry(terminalId, instanceId)?.transport._terminated ?? false
 		);
+	}
+
+	isSessionEnded(terminalId: string, instanceId?: string): boolean {
+		return (
+			this.getEntry(terminalId, instanceId)?.transport.sessionEnded ?? false
+		);
+	}
+
+	prepareReplacement(
+		terminalId: string,
+		instanceId: string,
+		notice: string,
+	): (replacementId: string) => void {
+		const previous = this.getEntry(terminalId, instanceId);
+		let initialBuffer: string | undefined;
+		if (previous?.transport.sessionEnded && previous.runtime) {
+			try {
+				const history = previous.runtime.serializeAddon.serialize({
+					scrollback: 1000,
+					excludeAltBuffer: true,
+					excludeModes: true,
+				});
+				initialBuffer = `${history}\r\n\x1b[0m${notice}\r\n`;
+			} catch (error) {
+				console.warn(
+					"Failed to retain terminal history for replacement",
+					error,
+				);
+			}
+		}
+		return (replacementId) => {
+			if (initialBuffer !== undefined)
+				this.getOrCreateEntry(replacementId, instanceId).initialBuffer =
+					initialBuffer;
+		};
 	}
 
 	clearLogs(terminalId: string, instanceId?: string): void {

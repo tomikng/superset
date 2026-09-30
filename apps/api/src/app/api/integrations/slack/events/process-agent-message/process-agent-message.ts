@@ -1,7 +1,11 @@
 import { db } from "@superset/db/client";
-import { integrationConnections, subscriptions } from "@superset/db/schema";
+import { subscriptions } from "@superset/db/schema";
+import {
+	accountConnection,
+	connectionBotToken,
+} from "@superset/trpc/connectors";
 import { Client as QStash } from "@upstash/qstash";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { env } from "@/env";
 import { posthog } from "@/lib/analytics";
 import { findSlackUserLink } from "../../lib/find-slack-user-link";
@@ -13,6 +17,7 @@ import {
 import { generateConnectUrl } from "../utils/generate-connect-url";
 import {
 	formatErrorForSlack,
+	mentionsPlugin,
 	resolveUserMentions,
 	runSlackAgent,
 	SlackAgentError,
@@ -31,26 +36,37 @@ import {
 	SlackImageAssetError,
 } from "../utils/slack-image-assets";
 import {
+	abandonHandBack,
 	beginThreadRun,
-	clearQueuedEventsThrough,
+	completeHandBack,
 	finishThreadRun,
 	parseThreadCommand,
-	readQueuedEvents,
 	renderThreadMemory,
+	requestThreadStop,
 	setThreadQuiet,
+	takeQueuedEvents,
 	threadFollowUpsEnabled,
+	threadStopRequested,
 } from "../utils/thread-sessions";
 
 import { splitMarkdown } from "./utils/split-markdown";
 
 /** Everything after the claim — preflight, model calls, tools — shares this. */
 const RUN_BUDGET_MS = 240_000;
+const WORKER_FLAG_TIMEOUT_MS = 5_000;
+/**
+ * The reply, or why there is none, is posted after the run budget is spent,
+ * in what remains of the job route's 300s maxDuration.
+ */
+const REPLY_BUDGET_MS = 45_000;
 
 const LOST_TRACK_TEXT =
 	"I lost track of this request partway through. Anything listed as changed in this thread did happen; ask again for the rest.";
 const QUIETED_TEXT =
 	"Got it. I'll stay out of this thread unless someone mentions me.";
 const UNQUIETED_TEXT = "Got it. I'll answer replies in this thread again.";
+const STOPPING_TEXT = "Stopping.";
+const NOTHING_RUNNING_TEXT = "Nothing is running in this thread.";
 const JOB_URLS = {
 	mention: `${env.NEXT_PUBLIC_API_URL}/api/integrations/slack/jobs/process-mention`,
 	assistant: `${env.NEXT_PUBLIC_API_URL}/api/integrations/slack/jobs/process-assistant-message`,
@@ -97,17 +113,7 @@ export async function processAgentMessage({
 		user: event.user,
 	});
 
-	const connection = await db.query.integrationConnections.findFirst({
-		where: and(
-			eq(integrationConnections.provider, "slack"),
-			eq(integrationConnections.externalOrgId, teamId),
-			isNull(integrationConnections.disconnectedAt),
-		),
-		orderBy: [
-			desc(integrationConnections.updatedAt),
-			desc(integrationConnections.id),
-		],
-	});
+	const connection = await accountConnection("slack", teamId);
 
 	if (!connection) {
 		console.error(
@@ -117,7 +123,8 @@ export async function processAgentMessage({
 		return;
 	}
 
-	const slack = createSlackClient(connection.accessToken);
+	const botToken = await connectionBotToken(connection);
+	const slack = createSlackClient(botToken);
 
 	const [slackUserLink, activeSubscription] = await Promise.all([
 		event.user
@@ -225,7 +232,13 @@ export async function processAgentMessage({
 	const isDm = event.channel_type === "im";
 	// Thread sessions (memory, quieting, follow-ups) are one feature; a team
 	// without the flag runs the Phase 0 path untouched.
-	const sessions = await threadFollowUpsEnabled(teamId);
+	// A hand-back was queued while the flag was on, so it does not re-ask;
+	// the events route already answered Slack, so this worker can wait longer.
+	const sessions =
+		event.queued_ts !== undefined ||
+		(await threadFollowUpsEnabled(teamId, {
+			timeoutMs: WORKER_FLAG_TIMEOUT_MS,
+		}));
 	const threadKey = {
 		organizationId: connection.organizationId,
 		teamId,
@@ -239,33 +252,38 @@ export async function processAgentMessage({
 	// closed since, and the unflagged path never runs the agent for one.
 	const isFollowUp = event.type === "message" && !isDm;
 	if (isFollowUp && !sessions) return;
-	// Every DM already reaches the agent, so quieting means nothing there.
-	const command =
-		sessions && !isDm ? parseThreadCommand(event.text ?? "") : null;
+	// Every DM already reaches the agent, so quieting means nothing there;
+	// stopping a turn does.
+	const parsed = sessions ? parseThreadCommand(event.text ?? "") : null;
+	const command = isDm && parsed !== "stop" ? null : parsed;
 	// assistant.threads.setStatus only works in assistant (DM) threads; Slack
 	// answers method_not_supported_for_channel_type anywhere else. Channels get
 	// a placeholder message that carries progress and is removed once the final
 	// reply exists, so the thread ends with one notifying message.
 	const deadline = Date.now() + RUN_BUDGET_MS;
-	const run = createSlackClient(connection.accessToken, { deadline });
+	const run = createSlackClient(botToken, { deadline });
+	const replyDeadline = deadline + REPLY_BUDGET_MS;
+	const reply = createSlackClient(botToken, {
+		deadline: replyDeadline,
+	});
 	let placeholderTs: string | undefined;
 
 	const showProgress = async (status: string) => {
 		try {
 			if (isDm) {
-				await run.assistant.threads.setStatus({
+				await reply.assistant.threads.setStatus({
 					channel_id: event.channel,
 					thread_ts: threadTs,
 					status,
 				});
 			} else if (placeholderTs) {
-				await run.chat.update({
+				await reply.chat.update({
 					channel: event.channel,
 					ts: placeholderTs,
 					text: status,
 				});
 			} else {
-				const posted = await run.chat.postMessage({
+				const posted = await reply.chat.postMessage({
 					channel: event.channel,
 					thread_ts: threadTs,
 					text: status,
@@ -279,13 +297,13 @@ export async function processAgentMessage({
 	const clearProgress = async () => {
 		try {
 			if (isDm) {
-				await run.assistant.threads.setStatus({
+				await reply.assistant.threads.setStatus({
 					channel_id: event.channel,
 					thread_ts: threadTs,
 					status: "",
 				});
 			} else if (placeholderTs) {
-				await run.chat.delete({ channel: event.channel, ts: placeholderTs });
+				await reply.chat.delete({ channel: event.channel, ts: placeholderTs });
 				placeholderTs = undefined;
 			}
 		} catch {
@@ -295,7 +313,7 @@ export async function processAgentMessage({
 	const removeEyes = async () => {
 		for (const timestamp of [event.ts, ...(event.queued_ts ?? [])]) {
 			try {
-				await run.reactions.remove({
+				await reply.reactions.remove({
 					channel: event.channel,
 					timestamp,
 					name: "eyes",
@@ -314,7 +332,7 @@ export async function processAgentMessage({
 	});
 	if (claim.status === "duplicate") return;
 	if (claim.status === "stale") {
-		await run.chat.postMessage({
+		await reply.chat.postMessage({
 			channel: event.channel,
 			thread_ts: threadTs,
 			text: LOST_TRACK_TEXT,
@@ -327,11 +345,19 @@ export async function processAgentMessage({
 	if (command) {
 		let applied = false;
 		try {
-			await setThreadQuiet({ ...threadKey, quiet: command === "mute" });
-			await run.chat.postMessage({
+			let text: string;
+			if (command === "stop") {
+				text = (await requestThreadStop(threadKey, event.ts))
+					? STOPPING_TEXT
+					: NOTHING_RUNNING_TEXT;
+			} else {
+				await setThreadQuiet({ ...threadKey, quiet: command === "mute" });
+				text = command === "mute" ? QUIETED_TEXT : UNQUIETED_TEXT;
+			}
+			await reply.chat.postMessage({
 				channel: event.channel,
 				thread_ts: threadTs,
-				text: command === "mute" ? QUIETED_TEXT : UNQUIETED_TEXT,
+				text,
 			});
 			applied = true;
 		} finally {
@@ -347,7 +373,7 @@ export async function processAgentMessage({
 
 	try {
 		try {
-			await run.reactions.add({
+			await reply.reactions.add({
 				channel: event.channel,
 				timestamp: event.ts,
 				name: "eyes",
@@ -363,7 +389,7 @@ export async function processAgentMessage({
 		const imageAssets = await extractSlackImageAssets({
 			eventFiles: event.files,
 			slack: run,
-			slackToken: connection.accessToken,
+			slackToken: botToken,
 			deadline,
 		});
 
@@ -381,8 +407,13 @@ export async function processAgentMessage({
 						text: event.text ?? "",
 						files: event.files,
 					},
+					handBack: event.queued_ts !== undefined,
 				})
 			: null;
+		if (claimedThread?.status === "covered") {
+			delivered = true;
+			return;
+		}
 		if (claimedThread?.status === "queued") {
 			// The running turn hands this back when it finishes; the 👀 stays
 			// on the message until that later turn clears it.
@@ -401,7 +432,7 @@ export async function processAgentMessage({
 			messageTs: event.ts,
 			organizationId: connection.organizationId,
 			userId: slackUserLink.userId,
-			slackToken: connection.accessToken,
+			slackToken: botToken,
 			model: slackUserLink.modelPreference ?? undefined,
 			images: imageAssets,
 			deadline,
@@ -409,6 +440,7 @@ export async function processAgentMessage({
 				? {
 						threadMemory: renderThreadMemory(threadSession.entityLog),
 						lastContextTs: threadSession.lastContextTs ?? undefined,
+						shouldStop: () => threadStopRequested(threadSession.id, event.ts),
 						...(isDm
 							? {}
 							: {
@@ -428,7 +460,7 @@ export async function processAgentMessage({
 		// silently would not. Model output goes in Slack's Markdown block.
 		for (const text of splitMarkdown(result.text)) {
 			const post = () =>
-				run.chat.postMessage({
+				reply.chat.postMessage({
 					channel: event.channel,
 					thread_ts: threadTs,
 					text,
@@ -438,7 +470,8 @@ export async function processAgentMessage({
 				await post();
 			} catch (error) {
 				const wait = slackRateLimitRetryAfterMs(error);
-				if (wait === undefined || Date.now() + wait >= deadline) throw error;
+				if (wait === undefined || Date.now() + wait >= replyDeadline)
+					throw error;
 				await new Promise((resolve) => setTimeout(resolve, wait));
 				await post();
 			}
@@ -459,7 +492,7 @@ export async function processAgentMessage({
 		// Post side effects as a separate message
 		if (result.actions.length > 0) {
 			try {
-				await run.chat.postMessage({
+				await reply.chat.postMessage({
 					channel: event.channel,
 					thread_ts: threadTs,
 					text: formatSideEffectsMessage(result.actions),
@@ -467,6 +500,42 @@ export async function processAgentMessage({
 			} catch (err) {
 				console.error(
 					"[slack/process-agent-message] Failed to post side effects:",
+					err,
+				);
+			}
+		}
+
+		const toConnect = (result.unconnectedPlugins ?? []).filter((plugin) =>
+			mentionsPlugin(result.text, plugin),
+		);
+		if (toConnect.length > 0) {
+			const names = toConnect.map((plugin) => plugin.displayName).join(" and ");
+			const text = `${names} ${toConnect.length === 1 ? "isn't" : "aren't"} connected to your Superset account yet.`;
+			try {
+				await reply.chat.postMessage({
+					channel: event.channel,
+					thread_ts: threadTs,
+					text,
+					blocks: [
+						{ type: "section", text: { type: "mrkdwn", text } },
+						{
+							type: "actions",
+							elements: toConnect.map((plugin) => ({
+								type: "button",
+								text: {
+									type: "plain_text",
+									text: `Connect ${plugin.displayName}`,
+									emoji: true,
+								},
+								url: `${env.NEXT_PUBLIC_WEB_URL}/plugins`,
+								style: "primary",
+							})),
+						},
+					],
+				});
+			} catch (err) {
+				console.error(
+					"[slack/process-agent-message] Failed to post connect prompt:",
 					err,
 				);
 			}
@@ -480,7 +549,7 @@ export async function processAgentMessage({
 				: err instanceof SlackAgentError
 					? err.message
 					: await formatErrorForSlack(err, deadline);
-		await run.chat.postMessage({
+		await reply.chat.postMessage({
 			channel: event.channel,
 			thread_ts: threadTs,
 			text: errorText,
@@ -493,10 +562,17 @@ export async function processAgentMessage({
 					actions,
 					lastContextTs: event.ts,
 				});
-				await handBackQueued({ threadSessionId, teamId, event });
 			} catch (error) {
 				console.error(
 					"[slack/process-agent-message] Failed to finish thread session",
+					error,
+				);
+			}
+			try {
+				await handBackQueued({ threadSessionId, teamId, event });
+			} catch (error) {
+				console.error(
+					"[slack/process-agent-message] Failed to hand back queued replies",
 					error,
 				);
 			}
@@ -531,16 +607,59 @@ async function handBackQueued({
 	teamId: string;
 	event: SlackAgentMessageEvent;
 }): Promise<void> {
-	const pending = await readQueuedEvents(threadSessionId);
-	const newest = pending.at(-1);
-	if (!newest) return;
-	const isDm = event.channel_type === "im";
 	// One id per hand-off, not per message: the same reply can be handed
 	// back again if another turn takes the thread before its job arrives,
 	// and QStash would swallow a repeat of the first id for ten minutes.
-	const handoffId = `queued:${teamId}:${newest.ts}:${event.ts}`;
+	// QStash rejects a deduplication id containing ":" with a 400, which is
+	// what silently lost the first queued reply in production.
+	const handoffId = `queued-${teamId}-${event.ts.replace(".", "-")}`;
+	const pending = await takeQueuedEvents(threadSessionId, handoffId);
+	const newest = pending.at(-1);
+	if (!newest) return;
+	const isDm = event.channel_type === "im";
 	const files = pending.flatMap((e) => e.files ?? []);
 	const qstash = new QStash({ token: env.QSTASH_TOKEN });
+	try {
+		await publishHandBack({
+			qstash,
+			isDm,
+			event,
+			teamId,
+			pending,
+			newest,
+			handoffId,
+			files,
+		});
+	} catch (error) {
+		await abandonHandBack(threadSessionId, handoffId);
+		throw error;
+	}
+	await completeHandBack(threadSessionId, handoffId);
+	console.log("[slack/process-agent-message] Handed back queued replies:", {
+		handoffId,
+		count: pending.length,
+	});
+}
+
+async function publishHandBack({
+	qstash,
+	isDm,
+	event,
+	teamId,
+	pending,
+	newest,
+	handoffId,
+	files,
+}: {
+	qstash: QStash;
+	isDm: boolean;
+	event: SlackAgentMessageEvent;
+	teamId: string;
+	pending: { ts: string; user: string; text: string }[];
+	newest: { ts: string; user: string; text: string };
+	handoffId: string;
+	files: SlackEventFile[];
+}): Promise<void> {
 	await qstash.publishJSON({
 		url: isDm ? JOB_URLS.assistant : JOB_URLS.mention,
 		body: {
@@ -562,5 +681,4 @@ async function handBackQueued({
 		deduplicationId: handoffId,
 		retries: 3,
 	});
-	await clearQueuedEventsThrough(threadSessionId, newest.ts);
 }

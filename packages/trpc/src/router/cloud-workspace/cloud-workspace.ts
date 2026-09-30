@@ -5,56 +5,31 @@ import {
 	environments,
 	githubRepositories,
 } from "@superset/db/schema";
-import { isCloudAgentId } from "@superset/shared/cloud-agent-launch";
-import { SHARED_ENVIRONMENT_ORGANIZATION_ID } from "@superset/shared/constants";
+import {
+	CLOUD_AGENT_PROMPT_MAX_LENGTH,
+	isCloudAgentId,
+} from "@superset/shared/cloud-agent-launch";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
-import { Client } from "@upstash/qstash";
-import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { z } from "zod";
-import { env } from "../../env";
 import { assertCloudAccess, assertMember } from "../../lib/cloud-guards";
-import {
-	githubRepositoriesOutOfReach,
-	githubUserTokenFor,
-} from "../../lib/github-user";
 import { nudge } from "../../lib/realtime";
 import {
-	buildSandboxClaim,
-	DESKTOP_PORT,
 	deleteSandbox,
 	describeSandbox,
-	environmentRepositoryRows,
 	HOST_SERVICE_PORT,
 	listRemoteBranches,
 	loadRepositories,
 	mintSandboxGateAccess,
 	primaryRepository,
-	recordWorkspaceRepositories,
 	SandboxNotReadyError,
 	SandboxUnavailableError,
-	wakeSandbox,
 } from "../../lib/sandbox";
 import { jwtProcedure, userError } from "../../trpc";
-import {
-	FALLBACK_NAME,
-	provisionCloudWorkspace,
-	sandboxNameFor,
-} from "./provision";
+import { startCloudWorkspace } from "./start";
 import { transitionCloudWorkspace } from "./transition";
-
-const qstash = new Client({ token: env.QSTASH_TOKEN });
-
-const PROVISION_JOB_URL = `${env.NEXT_PUBLIC_API_URL}/api/cloud-workspaces/provision`;
-
-/**
- * QStash only calls public URLs, so a local API would queue a job nothing ever
- * delivers. Run it in-process there instead — still detached, so the create
- * returns as fast as it does in production and the UI behaves the same.
- */
-const isLocalApi = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(
-	env.NEXT_PUBLIC_API_URL,
-);
+import { markSandboxUnavailable, wakeCloudWorkspace } from "./wake";
 
 /** The caller's cloud workspace, refused unless it exists, they may use it, and it is ready. */
 async function loadReadyWorkspace(
@@ -187,25 +162,14 @@ export const cloudWorkspaceRouter = {
 			return listRemoteBranches(repo, input.query);
 		}),
 
-	/**
-	 * Records a cloud workspace and hands the sandbox off to a background job.
-	 *
-	 * Returns as soon as the row exists — in `provisioning`, with no sandbox
-	 * behind it yet — because the client opens the workspace on this id and
-	 * shows the provisioning screen itself. Nobody should watch a spinner on a
-	 * submit button while a sandbox and a naming model call happen behind it.
-	 *
-	 * The row is still written **before** anything is provisioned, so a crash
-	 * mid-provision leaves a `provisioning` row we can reconcile, rather than
-	 * an orphaned sandbox nothing references.
-	 */
+	/** See {@link startCloudWorkspace}. */
 	create: jwtProcedure
 		.input(
 			z.object({
 				organizationId: z.string().uuid(),
 				/** Omitted when the user didn't type one; then `prompt` names it. */
 				name: z.string().min(1).max(200).optional(),
-				prompt: z.string().max(20000).optional(),
+				prompt: z.string().max(CLOUD_AGENT_PROMPT_MAX_LENGTH).optional(),
 				/** Omitted = the repo's default branch, resolved here — a client
 				 * whose branch query hadn't answered must not guess "main". */
 				branch: z.string().min(1).max(300).optional(),
@@ -218,6 +182,12 @@ export const cloudWorkspaceRouter = {
 				model: z.string().min(1).optional(),
 				effort: z.string().min(1).optional(),
 				mode: z.string().min(1).optional(),
+				/**
+				 * Cloud uploads to hand the agent with `prompt`. The box pulls the
+				 * bytes once it is up; the same cap `attachments.importFromCloud`
+				 * takes, since that is what runs in there.
+				 */
+				attachmentFileIds: z.array(z.string().uuid()).max(10).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -232,97 +202,13 @@ export const cloudWorkspaceRouter = {
 				});
 			}
 
-			const environment = await db.query.environments.findFirst({
-				where: and(
-					eq(environments.id, input.environmentId),
-					inArray(environments.organizationId, [
-						input.organizationId,
-						SHARED_ENVIRONMENT_ORGANIZATION_ID,
-					]),
-					isNull(environments.archivedAt),
-				),
-			});
-			if (
-				!environment ||
-				(environment.scope === "personal" &&
-					environment.createdByUserId !== ctx.userId)
-			) {
-				throw userError({
-					code: "NOT_FOUND",
-					message: "Environment not found in this organization",
-					i18nKey: "serverError.cloudWorkspace.environmentNotFound",
-				});
-			}
-
-			// A workspace is started from an environment, and the environment's
-			// repositories are its checkouts.
-			const repositories = await environmentRepositoryRows(environment.id);
-			if (repositories.length === 0) {
-				throw userError({
-					code: "BAD_REQUEST",
-					message:
-						"This environment has no repositories. Create an environment with repositories in Settings, then start the workspace from it",
-					i18nKey: "serverError.cloudWorkspace.environmentHasNoRepositories",
-				});
-			}
-			const primary = primaryRepository(
-				repositories,
-				environment.hooksRepositoryId,
-			) as (typeof repositories)[number];
-			const branch = input.branch ?? primary.defaultBranch;
-			// A connected person's workspace acts as them on GitHub, so a
-			// repository they cannot see would fail to clone later; say so now.
-			const githubToken = await githubUserTokenFor(ctx.userId);
-			if (githubToken) {
-				const outOfReach = await githubRepositoriesOutOfReach({
-					token: githubToken,
-					repositories,
-				});
-				if (outOfReach.length > 0) {
-					throw userError({
-						code: "FORBIDDEN",
-						message: `Your GitHub account cannot reach ${outOfReach.join(", ")}`,
-						i18nKey: "serverError.cloudWorkspace.githubRepositoryOutOfReach",
-					});
-				}
-			}
-
-			// The id is generated here rather than by the database so the sandbox
-			// name can be derived before the insert. A placeholder would briefly
-			// leave two rows sharing ("vercel", ""), which the unique constraint
-			// rejects whenever two creates overlap.
-			const id = crypto.randomUUID();
-			const providerSandboxId = sandboxNameFor(id);
-			const [row] = await db
-				.insert(cloudWorkspaces)
-				.values({
-					id,
-					organizationId: input.organizationId,
-					name: input.name ?? FALLBACK_NAME,
-					branch,
-					provider: "vercel",
-					providerSandboxId,
-					status: "provisioning",
-					environmentId: environment.id,
-					createdByUserId: ctx.userId,
-				})
-				.returning();
-			if (!row) {
-				throw userError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Could not record cloud workspace",
-					i18nKey: "serverError.cloudWorkspace.couldNotRecordCloudWorkspace",
-				});
-			}
-			await recordWorkspaceRepositories({
-				cloudWorkspaceId: row.id,
-				repositories,
-			});
-
-			// Naming reads the prompt, and only when the user didn't type a name.
-			const job = {
-				cloudWorkspaceId: row.id,
-				...(input.name ? {} : { namingPrompt: input.prompt ?? "" }),
+			return startCloudWorkspace({
+				organizationId: input.organizationId,
+				userId: ctx.userId,
+				environmentId: input.environmentId,
+				name: input.name,
+				prompt: input.prompt,
+				branch: input.branch,
 				...(input.agent
 					? {
 							launch: {
@@ -331,54 +217,11 @@ export const cloudWorkspaceRouter = {
 								model: input.model,
 								effort: input.effort,
 								mode: input.mode,
+								attachmentFileIds: input.attachmentFileIds,
 							},
 						}
 					: {}),
-			};
-
-			nudge(row.organizationId, "cloud_workspaces");
-			if (isLocalApi) {
-				void provisionCloudWorkspace(job).catch((error) => {
-					console.error(
-						`[cloud-workspace] provisioning threw for ${row.id}`,
-						error,
-					);
-				});
-				return row;
-			}
-
-			try {
-				// Queued rather than fired off after the response: this runs on
-				// Vercel, where the function is frozen the moment it replies, and
-				// an unawaited promise dies with it. QStash also retries a delivery
-				// the function never finished, which is exactly the failure that
-				// stranded a row in `provisioning` when create still ran inline.
-				await qstash.publishJSON({
-					url: PROVISION_JOB_URL,
-					body: job,
-					retries: 2,
-				});
-			} catch (error) {
-				// Nothing was provisioned, so there is no sandbox to tear down —
-				// but the row must not sit in `provisioning` with no job coming.
-				await transitionCloudWorkspace({
-					id: row.id,
-					from: ["provisioning"],
-					to: "failed",
-				});
-				console.error(
-					`[cloud-workspace] could not queue provisioning for ${row.id}`,
-					error,
-				);
-				throw userError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Could not start cloud workspace provisioning",
-					i18nKey:
-						"serverError.cloudWorkspace.couldNotStartCloudWorkspaceProvisioning",
-				});
-			}
-
-			return row;
+			});
 		}),
 
 	/**
@@ -434,26 +277,12 @@ export const cloudWorkspaceRouter = {
 			const row = await loadReadyWorkspace(ctx, input.id);
 			let address: {
 				hostTarget: string;
-				desktopTarget: string;
 				running: boolean;
 			};
 			try {
-				if (input.wake) {
-					const { claim } = await buildSandboxClaim({ row });
-					const woken = await wakeSandbox({
-						providerSandboxId: row.providerSandboxId,
-						claim,
-					});
-					if (woken.hostTarget !== row.sandboxUrl) {
-						await db
-							.update(cloudWorkspaces)
-							.set({ sandboxUrl: woken.hostTarget })
-							.where(eq(cloudWorkspaces.id, row.id));
-					}
-					address = { ...woken, running: true };
-				} else {
-					address = await describeSandbox(row.providerSandboxId);
-				}
+				address = input.wake
+					? { hostTarget: await wakeCloudWorkspace(row), running: true }
+					: await describeSandbox(row.providerSandboxId);
 			} catch (error) {
 				if (error instanceof SandboxNotReadyError) {
 					throw new TRPCError({
@@ -463,43 +292,27 @@ export const cloudWorkspaceRouter = {
 					});
 				}
 				if (!(error instanceof SandboxUnavailableError)) throw error;
-				// The sandbox is gone or can never resume. A `ready` row nothing
-				// can open would sit in the sidebar forever; failed is the state
-				// the client already renders with a way out.
-				await transitionCloudWorkspace({
-					id: row.id,
-					from: ["ready"],
-					to: "failed",
-					set: { sandboxUrl: null },
-				});
-				nudge(row.organizationId, "cloud_workspaces");
-				console.error(`[cloud-workspace] ${row.id} sandbox unavailable`, error);
+				await markSandboxUnavailable(row, error);
 				throw new TRPCError({
 					code: "PRECONDITION_FAILED",
 					message: "Cloud workspace is failed",
 					cause: { kind: "CLOUD_WORKSPACE_NOT_READY", status: "failed" },
 				});
 			}
-			const [host, desktop] = await Promise.all([
-				mintSandboxGateAccess({
-					workspaceId: row.id,
-					userId: ctx.userId,
-					port: HOST_SERVICE_PORT,
-					target: address.hostTarget,
-				}),
-				mintSandboxGateAccess({
-					workspaceId: row.id,
-					userId: ctx.userId,
-					port: DESKTOP_PORT,
-					target: address.desktopTarget,
-				}),
-			]);
+			const host = await mintSandboxGateAccess({
+				workspaceId: row.id,
+				userId: ctx.userId,
+				port: HOST_SERVICE_PORT,
+				target: address.hostTarget,
+			});
 			return {
 				url: host.url,
 				token: host.token,
 				expiresAt: host.expiresAt,
 				running: address.running,
-				desktop: { url: desktop.url, token: desktop.token },
+				// The display is served by host-service too: same address, same
+				// ticket. The sandbox's own desktop port is not published.
+				desktop: { url: host.url, token: host.token },
 			};
 		}),
 
