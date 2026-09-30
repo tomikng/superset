@@ -142,6 +142,26 @@ const config: Configuration = {
 	// fpm's default xz takes ~15 minutes on the 2 GB tree; gzip takes about
 	// one and costs roughly a tenth in download size.
 	deb: { compression: "gz" },
+	pacman: {
+		compression: "gz",
+		// electron-builder's default list includes http-parser and
+		// libappindicator-gtk3, which aren't in Arch's official repos, so
+		// `pacman -U` refuses the package. This is that list without them.
+		depends: [
+			"c-ares",
+			"ffmpeg",
+			"gtk3",
+			"libevent",
+			"libvpx",
+			"libxslt",
+			"libxss",
+			"minizip",
+			"nss",
+			"re2",
+			"snappy",
+			"libnotify",
+		],
+	},
 
 	// Deep linking protocol
 	protocols: {
@@ -160,7 +180,9 @@ const config: Configuration = {
 		// The AppImage runtime needs libfuse2, which Debian 12 / Ubuntu 22.04+
 		// no longer install by default; the deb needs nothing extra and installs
 		// the desktop entry and icon that the dock and deep links resolve.
-		target: ["AppImage", "deb"],
+		// pacman is the same for Arch (and Arch-based distros like Omarchy):
+		// install with `sudo pacman -U superset-<version>-x64.pacman`.
+		target: ["AppImage", "deb", "pacman"],
 		artifactName: `superset-\${version}-\${arch}.\${ext}`,
 		// GNOME's app menus only show their heuristic "New Window" item
 		// intermittently for running apps; an explicit desktop action (the
