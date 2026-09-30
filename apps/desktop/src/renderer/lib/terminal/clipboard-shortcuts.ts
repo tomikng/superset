@@ -67,6 +67,9 @@ export function shouldBubbleClipboardShortcut(
 	return (
 		(event.code === "KeyV" && ctrlShiftOnly) ||
 		(event.code === "Insert" && onlyShift) ||
+		// Ctrl+Insert is the xterm copy chord (and what Omarchy's Super+C sends
+		// to terminals); like Ctrl+C on Windows, it only copies with a selection.
+		(event.code === "Insert" && onlyCtrl && hasSelection) ||
 		(event.code === "KeyC" && ctrlShiftOnly)
 	);
 }

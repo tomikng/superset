@@ -140,6 +140,12 @@ describe("shouldBubbleClipboardShortcut", () => {
 				options: { isMac: false, isWindows: false, hasSelection: false },
 				expected: false,
 			},
+			{
+				name: "Linux Ctrl+Insert with selection copies",
+				event: makeEvent({ code: "Insert", ctrlKey: true }),
+				options: { isMac: false, isWindows: false, hasSelection: true },
+				expected: true,
+			},
 		];
 
 		for (const { name, event, options, expected } of cases) {
