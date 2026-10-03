@@ -41,6 +41,9 @@ const RULES: Rule[] = [
 		allowedCounts: {
 			// Cold daemon-recovery path only (connect failure / respawn).
 			"main/lib/terminal-host/client.ts": 2,
+			// Runs before the app boots and exits right after; there is no event
+			// loop to keep serving yet, and blocking is what stops the app booting.
+			"main/cli-passthrough.ts": 2,
 		},
 		advice:
 			"Sync subprocesses freeze the Electron main process until the child exits — every electronTrpc response and IPC event queues behind it, so the whole app feels hung. Prefer async spawn/execFile: the caller awaits the same result, but main keeps serving while the child runs.",
