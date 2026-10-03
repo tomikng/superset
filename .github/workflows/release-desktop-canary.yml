@@ -18,6 +18,9 @@ permissions:
 jobs:
   check-changes:
     name: Check for changes
+    # Upstream's canary: the fork has no signing secrets for GitHub-hosted
+    # Macs, and self-host releases go through release-desktop-selfhost.yml.
+    if: github.repository == 'superset-sh/superset'
     runs-on: ubuntu-latest
     outputs:
       should_build: ${{ steps.check.outputs.should_build }}

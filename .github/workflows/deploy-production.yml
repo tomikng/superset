@@ -691,6 +691,7 @@ jobs:
 
   deploy-content:
     name: Deploy Usercontent Worker to Cloudflare
+    if: github.repository == 'superset-sh/superset'
     runs-on: ubuntu-latest
     environment: production
 
