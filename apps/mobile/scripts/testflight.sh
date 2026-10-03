@@ -104,6 +104,10 @@ AUTH=(-allowProvisioningUpdates
       -authenticationKeyPath "$KEY_PATH"
       -authenticationKeyID "$ASC_KEY_ID"
       -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+# XCODE_SIGNING=account: sign with the Apple ID signed in to Xcode instead of
+# the API key (on ms4 the key is refused for provisioning while the account
+# works). The upload below still uses the API key.
+[ "${XCODE_SIGNING:-key}" = account ] && AUTH=(-allowProvisioningUpdates)
 
 xcodebuild -workspace ios/Superset.xcworkspace -scheme Superset \
   -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \

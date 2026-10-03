@@ -178,6 +178,9 @@ jobs:
       # The launchd runner has no locale; CocoaPods and Ruby need UTF-8.
       LANG: en_US.UTF-8
       LC_ALL: en_US.UTF-8
+      # Archive/export sign with the Apple ID signed in to Xcode on ms4; the
+      # API key is refused for provisioning there (the upload still uses it).
+      XCODE_SIGNING: account
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
