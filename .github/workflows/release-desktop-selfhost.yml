@@ -184,6 +184,17 @@ jobs:
           ref: ${{ needs.plan.outputs.sha }}
           clean: false
 
+      # Cloud signing stores the identity it mints in the login keychain and
+      # codesign reads it back, so the keychain must be unlocked here too.
+      - name: Unlock the login keychain if needed
+        run: |
+          set -a; . "$HOME/.superset-selfhost.env"; set +a
+          kc="$HOME/Library/Keychains/login.keychain-db"
+          if [ -n "${KEYCHAIN_PASSWORD:-}" ]; then
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$kc"
+            security set-keychain-settings "$kc"
+          fi
+
       - name: TestFlight
         run: |
           export PATH="$HOME/.bun/bin:$HOME/.nvm/versions/node/v22.16.0/bin:/opt/homebrew/bin:$PATH"
