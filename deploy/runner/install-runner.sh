@@ -37,8 +37,11 @@ DEFAULT_SHA256="5a2cd92908a93d7276a194e1de6008099f3e7946f3f8e14aa7a1a7b4a31fdec2
 REPO_OWNER="tomikng"
 REPO_NAME="superset"
 REPO_URL="https://github.com/$REPO_OWNER/$REPO_NAME"
-RUNNER_NAME="ms1"
-RUNNER_LABELS="ms1"
+# Override per host, e.g. RUNNER_NAME=ms4 for the Mac release builder, or
+# RUNNER_NAME=<laptop> RUNNER_LABELS=<laptop>,linux-build for the Linux one
+# (.github/workflows/release-desktop-selfhost.yml).
+RUNNER_NAME="${RUNNER_NAME:-ms1}"
+RUNNER_LABELS="${RUNNER_LABELS:-$RUNNER_NAME}"
 RUNNER_DIR="$HOME/actions-runner"
 
 # --- args ---------------------------------------------------------------------
@@ -56,12 +59,15 @@ for arg in "$@"; do
 done
 
 # --- sanity -------------------------------------------------------------------
-[ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ] \
-  || { echo "this installer only knows osx-arm64 (got $(uname -s)/$(uname -m))" >&2; exit 1; }
+case "$(uname -s)/$(uname -m)" in
+  Darwin/arm64)  PLATFORM=osx-arm64 ;;
+  Linux/x86_64)  PLATFORM=linux-x64 ;;   # svc.sh installs a systemd unit: run with sudo access
+  *) echo "this installer only knows osx-arm64 and linux-x64 (got $(uname -s)/$(uname -m))" >&2; exit 1 ;;
+esac
 command -v curl >/dev/null   || { echo "curl not found" >&2; exit 1; }
-command -v shasum >/dev/null || { echo "shasum not found" >&2; exit 1; }
+command -v shasum >/dev/null || command -v sha256sum >/dev/null || { echo "shasum not found" >&2; exit 1; }
 
-TARBALL="actions-runner-osx-arm64-$VERSION.tar.gz"
+TARBALL="actions-runner-$PLATFORM-$VERSION.tar.gz"
 URL="https://github.com/actions/runner/releases/download/v$VERSION/$TARBALL"
 
 mkdir -p "$RUNNER_DIR"
@@ -86,10 +92,10 @@ else
   EXPECTED_SHA=""
   if command -v gh >/dev/null 2>&1; then
     EXPECTED_SHA="$(gh api "repos/actions/runner/releases/tags/v$VERSION" -q .body 2>/dev/null \
-      | sed -n 's/.*<!-- BEGIN SHA osx-arm64 -->\([0-9a-f]\{64\}\)<!-- END SHA osx-arm64 -->.*/\1/p' \
+      | sed -n "s/.*<!-- BEGIN SHA $PLATFORM -->\([0-9a-f]\{64\}\)<!-- END SHA $PLATFORM -->.*/\1/p" \
       | head -n1 || true)"
   fi
-  if [ -z "$EXPECTED_SHA" ] && [ "$VERSION" = "$DEFAULT_VERSION" ]; then
+  if [ -z "$EXPECTED_SHA" ] && [ "$VERSION" = "$DEFAULT_VERSION" ] && [ "$PLATFORM" = osx-arm64 ]; then
     EXPECTED_SHA="$DEFAULT_SHA256"
   fi
   if [ -z "$EXPECTED_SHA" ]; then
@@ -97,7 +103,7 @@ else
     echo "install gh, or check https://github.com/actions/runner/releases/tag/v$VERSION" >&2
     exit 1
   fi
-  ACTUAL_SHA="$(shasum -a 256 "$TARBALL" | cut -d' ' -f1)"
+  ACTUAL_SHA="$( { command -v shasum >/dev/null && shasum -a 256 "$TARBALL" || sha256sum "$TARBALL"; } | cut -d' ' -f1)"
   if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
     echo "sha256 mismatch for $TARBALL" >&2
     echo "  expected $EXPECTED_SHA" >&2
@@ -152,13 +158,15 @@ fi
 if [ -f .service ]; then
   echo "service already installed ($(cat .service))"
 else
-  ./svc.sh install
+  # macOS: a LaunchAgent in the user's GUI session. Linux: a systemd unit.
+  if [ "$PLATFORM" = linux-x64 ]; then sudo ./svc.sh install "$USER"; else ./svc.sh install; fi
 fi
+SVC=./svc.sh; [ "$PLATFORM" = linux-x64 ] && SVC="sudo ./svc.sh"
 # start is idempotent: a running job just reports "already started".
-./svc.sh start
+$SVC start
 
 echo
-./svc.sh status
+$SVC status
 echo
 echo "logs:    $RUNNER_DIR/_diag/"
 echo "confirm: $REPO_URL/settings/actions/runners  (expect '$RUNNER_NAME' Idle, labels self-hosted macOS ARM64 $RUNNER_LABELS)"

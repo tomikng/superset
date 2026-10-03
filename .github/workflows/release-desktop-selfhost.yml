@@ -1,0 +1,195 @@
+# Self-host release: build the desktop apps on our own runners and publish
+# them to the self-host update feed, then ship mobile to TestFlight + OTA.
+#
+# Runs after every successful Deploy Self-host (so clients follow the server)
+# and by hand. A run only builds what the feed doesn't already serve at this
+# version — electron-updater ignores same-version re-cuts anyway — unless
+# `force` is set.
+#
+# Runners (deploy/runner/install-runner.sh):
+#   [self-hosted, macOS, ms4]        signed + notarized Mac build, TestFlight.
+#                                    Must be logged in at the GUI (auto-login):
+#                                    codesign needs the unlocked login keychain,
+#                                    which an ssh/daemon session never has.
+#   [self-hosted, Linux, linux-build] pacman build. Needs ~12 GB RAM, so not
+#                                    ms3. Set repo variable LINUX_BUILD_ENABLED
+#                                    to "false" while no such runner is online,
+#                                    or automatic runs queue until one is.
+#
+# Credentials stay on the runners, never in GitHub:
+#   ~/.superset-selfhost.env  URLs, DESKTOP_UPDATE_FEED_URL, CSC_NAME,
+#                             APPLE_TEAM_ID, ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_P8,
+#                             optional KEYCHAIN_PASSWORD (unlocks the login
+#                             keychain if the session is locked)
+#   ~/.superset-mobile.env    (ms4) apps/mobile/selfhost.env + EXPO_TOKEN
+# Each build host publishes straight to the feed host over ssh (alias ms3):
+# GitHub artifact storage is too small for ~1.5 GB of installers.
+name: Release Self-host Apps
+
+on:
+  workflow_run:
+    workflows: [Deploy Self-host]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      mac:
+        description: Build and publish the Mac app
+        type: boolean
+        default: true
+      linux:
+        description: Build and publish the Linux (pacman) app
+        type: boolean
+        default: true
+      mobile:
+        description: TestFlight build + OTA update
+        type: boolean
+        default: true
+      force:
+        description: Rebuild even if the feed already serves this version
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-selfhost
+  cancel-in-progress: false
+
+env:
+  FEED_URL: ${{ vars.DESKTOP_UPDATE_FEED_URL || 'https://superset-app.tom-nguyen.dev/releases' }}
+
+jobs:
+  plan:
+    name: Plan
+    if: >-
+      github.repository == 'tomikng/superset' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.plan.outputs.sha }}
+      version: ${{ steps.plan.outputs.version }}
+      mac: ${{ steps.plan.outputs.mac }}
+      linux: ${{ steps.plan.outputs.linux }}
+      mobile: ${{ steps.plan.outputs.mobile }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || 'selfhost' }}
+          sparse-checkout: apps/desktop/package.json
+          sparse-checkout-cone-mode: false
+
+      - name: Decide what to build
+        id: plan
+        env:
+          IS_DISPATCH: ${{ github.event_name == 'workflow_dispatch' }}
+          IN_MAC: ${{ inputs.mac }}
+          IN_LINUX: ${{ inputs.linux }}
+          IN_MOBILE: ${{ inputs.mobile }}
+          IN_FORCE: ${{ inputs.force }}
+          LINUX_ENABLED: ${{ vars.LINUX_BUILD_ENABLED || 'true' }}
+        run: |
+          ver=$(jq -r .version apps/desktop/package.json)
+          feed() { curl -fsS "$FEED_URL/$1" 2>/dev/null | sed -n 's/^version: //p'; }
+          mac_feed=$(feed latest-mac.yml); linux_feed=$(feed latest-linux.yml)
+          echo "version $ver — feed serves mac ${mac_feed:-?}, linux ${linux_feed:-?}"
+          want() {  # want <input> <feed-version>
+            if [ "$IS_DISPATCH" = true ]; then
+              [ "$1" = true ] && { [ "$IN_FORCE" = true ] || [ "$2" != "$ver" ]; }
+            else
+              [ "$2" != "$ver" ]
+            fi
+          }
+          mac=false; linux=false; mobile=false
+          want "$IN_MAC" "$mac_feed" && mac=true
+          want "$IN_LINUX" "$linux_feed" && [ "$LINUX_ENABLED" = true ] && linux=true
+          # Mobile ships with each new version, or on an explicit request.
+          if [ "$IS_DISPATCH" = true ]; then mobile=$IN_MOBILE; else mobile=$mac; fi
+          {
+            echo "sha=$(git rev-parse HEAD)"
+            echo "version=$ver"
+            echo "mac=$mac"; echo "linux=$linux"; echo "mobile=$mobile"
+          } >> "$GITHUB_OUTPUT"
+          echo "plan: mac=$mac linux=$linux mobile=$mobile" | tee -a "$GITHUB_STEP_SUMMARY"
+
+  mac:
+    name: Mac (sign, notarize, publish)
+    needs: plan
+    if: needs.plan.outputs.mac == 'true'
+    runs-on: [self-hosted, macOS, ms4]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          clean: false   # keep node_modules between runs; the build cleans its own outputs
+
+      - name: Unlock the login keychain if needed
+        run: |
+          set -a; . "$HOME/.superset-selfhost.env"; set +a
+          kc="$HOME/Library/Keychains/login.keychain-db"
+          if [ -n "${KEYCHAIN_PASSWORD:-}" ]; then
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$kc"
+            security set-keychain-settings "$kc"   # no auto-lock mid-build
+          fi
+          security find-identity -v -p codesigning | grep -q "Developer ID Application: $CSC_NAME" \
+            || { echo "::error::Developer ID identity for CSC_NAME not in the login keychain"; exit 1; }
+
+      - name: Build, sign, notarize
+        run: |
+          export PATH="$HOME/.bun/bin:$HOME/.nvm/versions/node/v22.16.0/bin:/opt/homebrew/bin:$PATH"
+          deploy/release-desktop-local.sh --run
+
+      - name: Publish to the feed
+        run: |
+          export PATH="$HOME/.nvm/versions/node/v22.16.0/bin:$PATH"
+          deploy/publish-desktop-feed.sh mac
+
+  linux:
+    name: Linux (pacman, publish)
+    needs: plan
+    if: needs.plan.outputs.linux == 'true'
+    runs-on: [self-hosted, Linux, linux-build]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          clean: false
+
+      - name: Build
+        run: deploy/release-desktop-linux.sh
+
+      - name: Publish to the feed
+        run: deploy/publish-desktop-feed.sh linux
+
+  mobile:
+    name: Mobile (TestFlight + OTA)
+    needs: [plan, mac]
+    # After the Mac job so the two never fight over ms4; still runs if the Mac
+    # build was skipped.
+    if: >-
+      always() && needs.plan.outputs.mobile == 'true' &&
+      (needs.mac.result == 'success' || needs.mac.result == 'skipped')
+    runs-on: [self-hosted, macOS, ms4]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          clean: false
+
+      - name: TestFlight
+        run: |
+          export PATH="$HOME/.bun/bin:$HOME/.nvm/versions/node/v22.16.0/bin:/opt/homebrew/bin:$PATH"
+          set -a; . "$HOME/.superset-selfhost.env"
+          [ -f "$HOME/.superset-mobile.env" ] && . "$HOME/.superset-mobile.env"; set +a
+          bun install --frozen
+          # run_number is monotonic per workflow; offset it so it can never
+          # collide with the timestamp-style numbers of local uploads.
+          export MOBILE_BUILD_NUMBER=$((310000000000 + GITHUB_RUN_NUMBER))
+          apps/mobile/scripts/testflight.sh
+
+      - name: OTA update
+        run: |
+          export PATH="$HOME/.bun/bin:$HOME/.nvm/versions/node/v22.16.0/bin:/opt/homebrew/bin:$PATH"
+          set -a; . "$HOME/.superset-selfhost.env"
+          [ -f "$HOME/.superset-mobile.env" ] && . "$HOME/.superset-mobile.env"; set +a
+          apps/mobile/scripts/ota.sh "Superset ${{ needs.plan.outputs.version }}"
