@@ -24,5 +24,8 @@ export PATH="$HOME/.bun/bin:$PATH"
 export NODE_OPTIONS="${NODE_OPTIONS:-} --experimental-strip-types"
 
 msg="${1:-$(git log -1 --pretty=%s)}"
-eas update --channel selfhost --platform ios --message "$msg" --non-interactive 2>&1 \
+# eas-cli >= 22 requires --environment with --non-interactive. The project
+# keeps no EAS environment variables, so this only labels the update.
+eas update --channel selfhost --platform ios --message "$msg" --non-interactive \
+  --environment "${EAS_ENVIRONMENT:-production}" 2>&1 \
   | grep -vE "eas-cli@|To upgrade|npm install -g|Proceeding with outdated"
