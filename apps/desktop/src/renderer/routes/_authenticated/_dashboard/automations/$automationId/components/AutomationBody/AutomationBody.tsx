@@ -1,5 +1,4 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { SelectAutomationRun } from "@superset/db/schema";
 import { errorMessage } from "@superset/i18n/errors";
 import type { DraftTrigger } from "@superset/shared/automation-triggers";
 import { isCloudAgentId } from "@superset/shared/cloud-agent-launch";
@@ -13,7 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { EmojiTextInput } from "renderer/components/EmojiTextInput";
-import { MarkdownEditor } from "renderer/components/MarkdownEditor";
+import { RichText } from "renderer/components/RichText";
 import { CLOUD_AGENT_CHOICES } from "renderer/hooks/useV2AgentChoices/cloud-agent-choices";
 import { apiTrpcClient } from "renderer/lib/api-trpc-client";
 import { useWorkspaceHostOptions } from "renderer/routes/_authenticated/components/DashboardNewWorkspaceModal/components/DashboardNewWorkspaceForm/components/DevicePicker/hooks/useWorkspaceHostOptions/useWorkspaceHostOptions";
@@ -35,6 +34,9 @@ type DetailTab = "settings" | "runs";
 export function AutomationBody({
 	automation,
 	recentRuns,
+	hasMoreRuns,
+	isLoadingMoreRuns,
+	onLoadMoreRuns,
 	ownerName,
 	readOnly,
 	onToggleEnabled,
@@ -42,7 +44,10 @@ export function AutomationBody({
 }: {
 	/** `get` output plus the prompt body, which rides its own procedure. */
 	automation: RouterOutputs["automation"]["get"] & { prompt: string };
-	recentRuns: SelectAutomationRun[];
+	recentRuns: RouterOutputs["automation"]["listOrgRuns"]["runs"];
+	hasMoreRuns: boolean;
+	isLoadingMoreRuns: boolean;
+	onLoadMoreRuns: () => void;
 	ownerName?: string | null;
 	readOnly?: boolean;
 	onToggleEnabled: (enabled: boolean) => void;
@@ -291,8 +296,8 @@ export function AutomationBody({
 						</span>
 						<div className="flex flex-col rounded-xl border border-border bg-card/40">
 							<div className="min-h-[240px] px-4 py-3">
-								<MarkdownEditor
-									content={draft.prompt}
+								<RichText
+									value={draft.prompt}
 									// No onSave: it fires on blur, which would save twice.
 									onChange={(next: string) => edit({ prompt: next })}
 									editable={!readOnly}
@@ -334,7 +339,12 @@ export function AutomationBody({
 						)}
 					</fieldset>
 				) : (
-					<PreviousRunsList runs={recentRuns} />
+					<PreviousRunsList
+						runs={recentRuns}
+						hasMore={hasMoreRuns}
+						isLoadingMore={isLoadingMoreRuns}
+						onLoadMore={onLoadMoreRuns}
+					/>
 				)}
 			</div>
 		</div>

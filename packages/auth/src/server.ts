@@ -3,7 +3,12 @@ import { expo } from "@better-auth/expo";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { stripe } from "@better-auth/stripe";
 import { db } from "@superset/db/client";
-import { members, subscriptions } from "@superset/db/schema";
+import {
+	connections,
+	githubInstallations,
+	members,
+	subscriptions,
+} from "@superset/db/schema";
 import type { sessions } from "@superset/db/schema/auth";
 import * as authSchema from "@superset/db/schema/auth";
 import { seedDefaultStatuses } from "@superset/db/seed-default-statuses";
@@ -29,7 +34,17 @@ import {
 } from "better-auth/api";
 import { bearer, customSession, organization } from "better-auth/plugins";
 import { jwt } from "better-auth/plugins/jwt";
-import { and, asc, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	inArray,
+	isNull,
+	ne,
+	sql,
+} from "drizzle-orm";
 import type Stripe from "stripe";
 import { env } from "./env";
 import { acceptInvitationEndpoint } from "./lib/accept-invitation-endpoint";
@@ -83,6 +98,60 @@ const PENDING_DELETION_ALLOWED_PATH_PREFIXES = [
 ];
 
 const NOTIFY_SLACK_URL = `${env.NEXT_PUBLIC_API_URL}/api/integrations/stripe/jobs/notify-slack`;
+
+/**
+ * Backfills the integrations that only sync for a paying organization.
+ * GitHub and Linear deliveries are dropped at the webhook while an org is on
+ * the free plan, so whatever changed in the gap is missing until these jobs
+ * replay it.
+ */
+async function resumeGatedSyncs(organizationId: string): Promise<void> {
+	const [installation, linearConnections] = await Promise.all([
+		db.query.githubInstallations.findFirst({
+			where: eq(githubInstallations.organizationId, organizationId),
+			columns: { id: true },
+		}),
+		db
+			.select({ connectedByUserId: connections.connectedByUserId })
+			.from(connections)
+			.where(
+				and(
+					eq(connections.organizationId, organizationId),
+					eq(connections.connector, "linear"),
+					isNull(connections.disconnectedAt),
+				),
+			),
+	]);
+
+	const jobs = [
+		...(installation
+			? [
+					{
+						url: `${env.NEXT_PUBLIC_API_URL}/api/github/jobs/initial-sync`,
+						body: { installationDbId: installation.id, organizationId },
+						retries: 3,
+					},
+				]
+			: []),
+		...linearConnections.map((connection) => ({
+			url: `${env.NEXT_PUBLIC_API_URL}/api/integrations/linear/jobs/initial-sync`,
+			body: { organizationId, creatorUserId: connection.connectedByUserId },
+			retries: 3,
+		})),
+	];
+
+	if (jobs.length === 0) return;
+
+	try {
+		await qstash.batchJSON(jobs);
+	} catch (error) {
+		console.error(
+			"[stripe/subscription-complete] Failed to queue integration backfill:",
+			error,
+		);
+	}
+}
+
 const desktopDevPort = process.env.DESKTOP_VITE_PORT || "5173";
 const desktopDevOrigins =
 	process.env.NODE_ENV === "development"
@@ -393,7 +462,7 @@ export const auth = betterAuth({
 				definePayload: async ({
 					user,
 				}: {
-					user: { id: string };
+					user: { id: string; name?: string | null; image?: string | null };
 					session: Record<string, unknown>;
 				}) => {
 					const userMemberships = await db.query.members.findMany({
@@ -403,7 +472,15 @@ export const auth = betterAuth({
 					const organizationIds = [
 						...new Set(userMemberships.map((m) => m.organizationId)),
 					];
-					return { sub: user.id, organizationIds };
+					// A Worker that attributes content to a person has to read
+					// who they are from the signed token; a caller-supplied name
+					// is a name they chose for someone else.
+					return {
+						sub: user.id,
+						organizationIds,
+						name: user.name ?? null,
+						image: user.image ?? null,
+					};
 				},
 			},
 		}),
@@ -1160,6 +1237,8 @@ export const auth = betterAuth({
 					stripeSubscription,
 					plan,
 				}) => {
+					await resumeGatedSyncs(subscription.referenceId);
+
 					const org = await db.query.organizations.findFirst({
 						where: eq(authSchema.organizations.id, subscription.referenceId),
 					});

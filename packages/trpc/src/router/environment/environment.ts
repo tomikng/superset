@@ -1,6 +1,5 @@
 import { db, dbWs } from "@superset/db/client";
 import {
-	cloudWorkspaces,
 	environmentRepositories,
 	environmentScopeValues,
 	environmentSecrets,
@@ -32,6 +31,7 @@ import {
 	workspaceRepositories,
 } from "../../lib/sandbox";
 import { jwtProcedure, userError } from "../../trpc";
+import { loadVisibleWorkspace } from "../cloud-workspace/access";
 import { secretsRouter } from "./secrets";
 import { decryptSecret, encryptSecret } from "./secrets/utils/crypto";
 
@@ -211,6 +211,30 @@ function regionForRequest(headers: Headers): SandboxRegionId {
 		: DEFAULT_SANDBOX_REGION;
 }
 
+async function loadPromotable(
+	ctx: Parameters<typeof loadVisibleWorkspace>[0],
+	cloudWorkspaceId: string,
+) {
+	const workspace = await loadVisibleWorkspace(ctx, cloudWorkspaceId);
+	if (workspace.status !== "ready") {
+		throw userError({
+			code: "PRECONDITION_FAILED",
+			message: "Only a ready workspace can become an environment",
+			i18nKey: "serverError.environment.workspaceNotReady",
+		});
+	}
+	const source = await db.query.environments.findFirst({
+		where: eq(environments.id, workspace.environmentId),
+	});
+	const checkouts = await workspaceRepositories({
+		cloudWorkspaceId: workspace.id,
+		hooksRepositoryId: source?.hooksRepositoryId ?? null,
+		primaryBranch: workspace.baseBranch,
+		workingBranch: workspace.branch,
+	});
+	return { workspace, source, checkouts };
+}
+
 export const environmentRouter = {
 	secrets: secretsRouter,
 
@@ -311,6 +335,26 @@ export const environmentRouter = {
 			return row;
 		}),
 
+	/** What promoting this workspace would make, before its golden is built. */
+	promotePreview: jwtProcedure
+		.input(z.object({ cloudWorkspaceId: z.string().uuid() }))
+		.query(async ({ ctx, input }) => {
+			const { workspace, source, checkouts } = await loadPromotable(
+				ctx,
+				input.cloudWorkspaceId,
+			);
+			return {
+				name: workspace.name,
+				repositories: checkouts.map((entry) => ({
+					id: entry.repository.id,
+					fullName: entry.repository.fullName,
+					hooks: entry.hooks,
+				})),
+				region: source?.region ?? null,
+				scope: source?.scope ?? "organization",
+			};
+		}),
+
 	promote: jwtProcedure
 		.input(
 			z
@@ -330,25 +374,10 @@ export const environmentRouter = {
 				),
 		)
 		.mutation(async ({ ctx, input }) => {
-			await assertCloudAccess(ctx);
-			const workspace = await db.query.cloudWorkspaces.findFirst({
-				where: eq(cloudWorkspaces.id, input.cloudWorkspaceId),
-			});
-			if (!workspace) {
-				throw userError({
-					code: "NOT_FOUND",
-					message: "Cloud workspace not found",
-					i18nKey: "serverError.environment.cloudWorkspaceNotFound",
-				});
-			}
-			assertMember(ctx.organizationIds, workspace.organizationId);
-			if (workspace.status !== "ready") {
-				throw userError({
-					code: "PRECONDITION_FAILED",
-					message: "Only a ready workspace can become an environment",
-					i18nKey: "serverError.environment.workspaceNotReady",
-				});
-			}
+			const { workspace, source, checkouts } = await loadPromotable(
+				ctx,
+				input.cloudWorkspaceId,
+			);
 			const target = input.environmentId
 				? await loadEnvironment(input.environmentId, ctx)
 				: null;
@@ -368,15 +397,6 @@ export const environmentRouter = {
 					? personalOwner(target, ctx.userId)
 					: null;
 
-			const source = await db.query.environments.findFirst({
-				where: eq(environments.id, workspace.environmentId),
-			});
-			const checkouts = await workspaceRepositories({
-				cloudWorkspaceId: workspace.id,
-				hooksRepositoryId: source?.hooksRepositoryId ?? null,
-				primaryBranch: workspace.baseBranch,
-				workingBranch: workspace.branch,
-			});
 			const environmentId = target?.id ?? crypto.randomUUID();
 			// The row keeps forking from the old golden until the update lands, so the new one needs its own name.
 			const goldenName = `env-${(target ? crypto.randomUUID() : environmentId).replaceAll("-", "").slice(0, 24)}`;

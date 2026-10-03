@@ -21,6 +21,18 @@
 			"types": "./src/page-comments-runtime.ts",
 			"default": "./src/page-comments-runtime.ts"
 		},
+		"./page-storage-runtime": {
+			"types": "./src/page-storage-runtime.ts",
+			"default": "./src/page-storage-runtime.ts"
+		},
+		"./page-storage-hub": {
+			"types": "./src/page-storage-hub.ts",
+			"default": "./src/page-storage-hub.ts"
+		},
+		"./page-storage": {
+			"types": "./src/page-storage.ts",
+			"default": "./src/page-storage.ts"
+		},
 		"./page-comments": {
 			"types": "./src/page-comments/index.ts",
 			"default": "./src/page-comments/index.ts"
@@ -233,6 +245,14 @@
 			"types": "./src/agent-launch-request.ts",
 			"default": "./src/agent-launch-request.ts"
 		},
+		"./entity-colors": {
+			"types": "./src/entity-colors.ts",
+			"default": "./src/entity-colors.ts"
+		},
+		"./labels": {
+			"types": "./src/labels.ts",
+			"default": "./src/labels.ts"
+		},
 		"./workspace-tags": {
 			"types": "./src/workspace-tags.ts",
 			"default": "./src/workspace-tags.ts"
@@ -252,10 +272,6 @@
 		"./page-slug": {
 			"types": "./src/page-slug.ts",
 			"default": "./src/page-slug.ts"
-		},
-		"./task-slug": {
-			"types": "./src/task-slug.ts",
-			"default": "./src/task-slug.ts"
 		},
 		"./claude-command": {
 			"types": "./src/claude-command.ts",
@@ -337,9 +353,21 @@
 			"types": "./src/plugins/manifest-schema.ts",
 			"default": "./src/plugins/manifest-schema.ts"
 		},
+		"./cloud-workspace-groups": {
+			"types": "./src/cloud-workspace-groups.ts",
+			"default": "./src/cloud-workspace-groups.ts"
+		},
 		"./workspace-activity": {
 			"types": "./src/workspace-activity.ts",
 			"default": "./src/workspace-activity.ts"
+		},
+		"./page-storage-access": {
+			"types": "./src/page-storage-access.ts",
+			"default": "./src/page-storage-access.ts"
+		},
+		"./page-storage-ticket": {
+			"types": "./src/page-storage-ticket.ts",
+			"default": "./src/page-storage-ticket.ts"
 		}
 	},
 	"scripts": {

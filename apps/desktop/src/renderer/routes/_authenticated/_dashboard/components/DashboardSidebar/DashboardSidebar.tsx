@@ -273,19 +273,20 @@ export function DashboardSidebar({
 	// the status provider fans out bindings queries and event subscriptions for
 	// these once, instead of per row. Deliberately unfiltered so subscriptions
 	// don't churn per keystroke.
-	const { workspaces: cloudWorkspaces } = useCloudWorkspaces();
+	const { workspaces: cloudWorkspaces, isFresh: isCloudListFresh } =
+		useCloudWorkspaces();
 	const pruneWorkspaceSeen = useV2NotificationStore(
 		(state) => state.pruneWorkspaceSeen,
 	);
 	useEffect(() => {
-		if (!cloudWorkspaces) return;
+		if (!cloudWorkspaces || !isCloudListFresh) return;
 		const live = new Set(cloudWorkspaces.map((cloud) => cloud.id));
 		for (const id of Object.keys(
 			useV2NotificationStore.getState().workspaceSeenAt,
 		)) {
 			if (!live.has(id)) pruneWorkspaceSeen(id);
 		}
-	}, [cloudWorkspaces, pruneWorkspaceSeen]);
+	}, [cloudWorkspaces, isCloudListFresh, pruneWorkspaceSeen]);
 
 	const statusWorkspaces = useMemo<SidebarStatusWorkspaceRef[]>(() => {
 		const byId = new Map<string, SidebarStatusWorkspaceRef>();

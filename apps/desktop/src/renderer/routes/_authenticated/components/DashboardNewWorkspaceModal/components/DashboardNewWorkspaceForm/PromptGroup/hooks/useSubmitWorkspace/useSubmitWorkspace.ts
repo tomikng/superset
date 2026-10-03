@@ -157,16 +157,22 @@ export function useSubmitWorkspace(
 					// 20,000-character cap.
 					prompt:
 						(cloudPrompt ?? draft.prompt).trim().slice(0, 20_000) || undefined,
+					typedPrompt: draft.prompt.trim().slice(0, 20_000) || undefined,
+					taskIds: draft.linkedIssues
+						.flatMap((issue) =>
+							issue.source === "internal" && issue.taskId ? [issue.taskId] : [],
+						)
+						.slice(0, 10),
 					branch: draft.baseBranch ?? branchName ?? undefined,
+					...(attachmentIds.length > 0
+						? { attachmentFileIds: attachmentIds }
+						: {}),
 					...(wantCloudAgent
 						? {
 								agent: selectedAgent,
 								model: selectedModel ?? undefined,
 								effort: selectedEffort ?? undefined,
 								mode: selectedMode ?? undefined,
-								...(attachmentIds.length > 0
-									? { attachmentFileIds: attachmentIds }
-									: {}),
 							}
 						: {}),
 				});

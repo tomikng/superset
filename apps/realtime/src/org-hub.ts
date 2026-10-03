@@ -1,7 +1,8 @@
-import type {
-	RealtimeNudgeKind,
-	RealtimeNudgeMessage,
-	RealtimeUpdate,
+import {
+	mergePresenceByUser,
+	type RealtimeNudgeKind,
+	type RealtimeNudgeMessage,
+	type RealtimeUpdate,
 } from "@superset/shared/realtime";
 import { Server } from "partyserver";
 import type { RealtimeEnv } from "./types";
@@ -29,7 +30,19 @@ export class OrgHub extends Server<RealtimeEnv> {
 				(await this.ctx.storage.get<Record<string, RealtimeUpdate>>(
 					PENDING_UPDATES_KEY,
 				)) ?? {};
-			updates[update.workspaceId] = update;
+			const pendingUpdate = updates[update.workspaceId];
+			updates[update.workspaceId] = {
+				...pendingUpdate,
+				...update,
+				...(update.presence &&
+					pendingUpdate?.presence && {
+						presence: mergePresenceByUser(
+							pendingUpdate.presence,
+							update.presence,
+							(person) => person.lastSeenAt,
+						),
+					}),
+			};
 			await this.ctx.storage.put(PENDING_UPDATES_KEY, updates);
 		} else {
 			const pending =

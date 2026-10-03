@@ -12,6 +12,8 @@ export const DEAD_KEYS: DeadKey[] = [
 	// Self-host: the sign-in page is credential-only, so there is no last-used
 	// social provider to remember (upstream's sign-in/page.tsx wrote this).
 	{ key: "superset-last-auth-method", match: "exact" },
+	// The task page's inline agent picker; Start work opens New Workspace instead
+	{ key: "lastSelectedV2TaskAgent", match: "exact" },
 	{ key: "getting-started-v1", match: "exact" },
 	// Pending-create records; superseded by canonical workspaces.create (#3893)
 	{ key: "pending-workspaces-", match: "prefix" },
@@ -47,8 +49,6 @@ export const DEAD_KEYS: DeadKey[] = [
 	{ key: "leaderboard-asked-v1", match: "exact" },
 	// Opening a page no longer routes to the last-visited workspace
 	{ key: "last-active-v2-workspace", match: "exact" },
-	// Sidebar automations failure badge removed; it polled for every window
-	{ key: "automation-failures-v1", match: "exact" },
 ];
 
 function matchesDeadKey(key: string): boolean {

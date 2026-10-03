@@ -1,7 +1,12 @@
 import type { LinearClient, WorkflowState } from "@linear/sdk";
 import { db } from "@superset/db/client";
-import type { SelectTask } from "@superset/db/schema";
-import { members, taskStatuses, tasks, users } from "@superset/db/schema";
+import {
+	members,
+	taskImports,
+	taskStatuses,
+	tasks,
+	users,
+} from "@superset/db/schema";
 import { userConnection } from "@superset/trpc/connectors";
 import {
 	getLinearClient,
@@ -71,7 +76,7 @@ async function resolveLinearAssigneeId(
 }
 
 async function syncTaskToLinear(
-	task: SelectTask,
+	task: typeof tasks.$inferSelect,
 	teamId: string | null,
 ): Promise<{
 	success: boolean;
@@ -221,7 +226,6 @@ async function syncTaskToLinear(
 		await db
 			.update(tasks)
 			.set({
-				slug: issue.identifier,
 				externalProvider: "linear",
 				externalId: issue.id,
 				externalKey: issue.identifier,
@@ -274,6 +278,14 @@ export async function POST(request: Request) {
 
 	if (!task) {
 		return Response.json({ error: "Task not found", skipped: true });
+	}
+
+	const imported = await db.query.taskImports.findFirst({
+		where: eq(taskImports.taskId, taskId),
+		columns: { taskId: true },
+	});
+	if (imported) {
+		return Response.json({ skipped: true });
 	}
 
 	const resolvedTeamId =

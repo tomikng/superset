@@ -16,6 +16,7 @@ import {
 import { format } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HiChevronRight } from "react-icons/hi2";
+import { useTaskDisplayId } from "renderer/hooks/useTaskDisplayId";
 import { getSlugColumnWidth } from "renderer/lib/slug-width";
 import { create } from "zustand";
 import {
@@ -131,9 +132,10 @@ export function useTasksTable({
 		}
 	}, [filterTab, assigneeFilter, setRowSelection]);
 
+	const taskDisplayId = useTaskDisplayId();
 	const slugColumnWidth = useMemo(
-		() => getSlugColumnWidth((data ?? []).map((t) => t.slug)),
-		[data],
+		() => getSlugColumnWidth((data ?? []).map(taskDisplayId)),
+		[data, taskDisplayId],
 	);
 
 	const columns = useMemo(
@@ -231,7 +233,7 @@ export function useTasksTable({
 					if (info.cell.getIsPlaceholder()) return null;
 					return (
 						<span className="text-xs text-muted-foreground truncate min-w-0">
-							{info.getValue()}
+							{taskDisplayId(info.row.original)}
 						</span>
 					);
 				},
@@ -310,7 +312,7 @@ export function useTasksTable({
 				},
 			}),
 		],
-		[t],
+		[t, taskDisplayId],
 	);
 
 	const table = useReactTable({

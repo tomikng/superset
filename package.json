@@ -60,7 +60,8 @@
 		"db:generate:desktop": "bun run --cwd packages/local-db generate",
 		"db:seed-shared-environments": "bun run --cwd packages/sandbox seed",
 		"sandbox:release": "bun run --cwd packages/sandbox release",
-		"sandbox:measure": "bun run --cwd packages/sandbox measure"
+		"sandbox:measure": "bun run --cwd packages/sandbox measure",
+		"check:durable-objects": "bun scripts/check-durable-objects.ts"
 	},
 	"type": "module",
 	"workspaces": [
@@ -77,9 +78,9 @@
 		"@tiptap/extensions": "3.30.5",
 		"@types/hast": "3.0.5",
 		"axios": "1.18.1",
-		"hono": "4.13.5",
+		"hono": "4.13.7",
 		"kysely": "0.28.17",
-		"next": "16.3.3",
+		"next": "16.3.6",
 		"rollup": "4.62.3",
 		"shell-quote": "1.9.0"
 	},
@@ -102,6 +103,7 @@
 		"@xterm/xterm@6.1.0-beta.302": "patches/@xterm%2Fxterm@6.1.0-beta.302.patch",
 		"trpc-electron@0.1.2": "patches/trpc-electron@0.1.2.patch",
 		"react-native-screens@4.26.0": "patches/react-native-screens@4.26.0.patch",
-		"@pierre/trees@1.0.0-beta.5": "patches/@pierre%2Ftrees@1.0.0-beta.5.patch"
+		"@pierre/trees@1.0.0-beta.5": "patches/@pierre%2Ftrees@1.0.0-beta.5.patch",
+		"expo-observe@57.0.19": "patches/expo-observe@57.0.19.patch"
 	}
 }

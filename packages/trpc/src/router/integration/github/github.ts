@@ -10,7 +10,12 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { env } from "../../../env";
 import { installationOctokit } from "../../../lib/sandbox/clone-token";
-import { protectedProcedure, userError } from "../../../trpc";
+import { organizationSyncsNow } from "../../../lib/sync-policy/syncPolicy";
+import {
+	planRequiredError,
+	protectedProcedure,
+	userError,
+} from "../../../trpc";
 import { verifyOrgAdmin, verifyOrgMembership } from "../utils";
 import {
 	type PullRequestDetail,
@@ -76,6 +81,16 @@ export const githubRouter = {
 					code: "NOT_FOUND",
 					message: "GitHub installation not found",
 					i18nKey: "serverError.integration.githubInstallationNotFound",
+				});
+			}
+
+			// The webhook drops this organization's deliveries, so a backfill here
+			// would go stale the moment it finished.
+			if (!(await organizationSyncsNow(input.organizationId))) {
+				throw planRequiredError({
+					message: "GitHub sync requires the Pro plan.",
+					i18nKey: "serverError.integration.githubSyncRequiresThePro",
+					requiredPlan: "pro",
 				});
 			}
 
@@ -258,6 +273,8 @@ export const githubRouter = {
 					title: githubPullRequests.title,
 					state: githubPullRequests.state,
 					isDraft: githubPullRequests.isDraft,
+					additions: githubPullRequests.additions,
+					deletions: githubPullRequests.deletions,
 					reviewDecision: githubPullRequests.reviewDecision,
 					checksStatus: githubPullRequests.checksStatus,
 					checks: githubPullRequests.checks,
@@ -302,6 +319,8 @@ export const githubRouter = {
 					title: row.title,
 					state: toPullRequestState(row.state, row.mergedAt),
 					isDraft: row.isDraft,
+					additions: row.additions,
+					deletions: row.deletions,
 					reviewDecision: toReviewDecision(row.reviewDecision),
 					checksStatus: toChecksStatus(row.checksStatus),
 					checks: toChecks(row.checks),

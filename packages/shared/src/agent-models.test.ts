@@ -58,6 +58,7 @@ describe("SUPERSET_CHAT_MODELS", () => {
 		expect(ids).toContain("anthropic/claude-opus-5-5");
 		expect(ids).toContain("anthropic/claude-opus-5");
 		expect(ids).toContain("anthropic/claude-fable-5-1");
+		expect(ids).toContain("openai/gpt-6.1-sol");
 		expect(ids).toContain("openai/gpt-6-astra");
 		expect(ids).toContain("openai/gpt-6-sol");
 		expect(ids).toContain("openai/gpt-6-luna");
@@ -215,7 +216,12 @@ describe("buildAgentModelArgs", () => {
 
 	it("offers the GPT-6 models in codex's current section", () => {
 		const models = getAgentModelSupport("codex")?.models ?? [];
-		for (const model of ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna"]) {
+		for (const model of [
+			"gpt-6.1-sol",
+			"gpt-6-astra",
+			"gpt-6-sol",
+			"gpt-6-luna",
+		]) {
 			expect(buildAgentModelArgs("codex", model)).toEqual(["--model", model]);
 			expect(models.find((option) => option.id === model)?.group).toBe(
 				"Current",
@@ -401,6 +407,19 @@ describe("buildAgentEffortArgs", () => {
 		expect(
 			buildAgentEffortArgs("cursor-agent", "low", "claude-opus-5-high"),
 		).toEqual([]);
+	});
+
+	it("builds every GPT-6.1 Sol reasoning effort", () => {
+		const efforts = ["low", "medium", "high", "xhigh", "max", "ultra"];
+		expect(getAgentEfforts("codex", "gpt-6.1-sol").map(({ id }) => id)).toEqual(
+			efforts,
+		);
+		for (const effort of efforts) {
+			expect(buildAgentEffortArgs("codex", effort, "gpt-6.1-sol")).toEqual([
+				"-c",
+				`model_reasoning_effort=${effort}`,
+			]);
+		}
 	});
 
 	it("drops an effort the selected model does not accept", () => {
@@ -596,20 +615,24 @@ describe("buildAgentModelEnv (vibe)", () => {
 describe("September 2026 model launches", () => {
 	it.each([
 		["claude", "claude-opus-5-5"],
+		["claude", "claude-sonnet-5-5"],
 		["codex", "gpt-6-astra"],
 		["codex", "gpt-6-sol"],
 		["codex", "gpt-6-luna"],
 		["copilot", "claude-opus-5.5"],
 		["copilot", "claude-fable-5.1"],
+		["copilot", "claude-sonnet-5.5"],
 		["copilot", "gpt-6-astra"],
 		["copilot", "gpt-6-sol"],
 		["copilot", "gpt-6-luna"],
 		["gemini", "gemini-3.8-flash"],
 		["gemini", "gemini-3.1-pro-preview"],
 		["opencode", "anthropic/claude-opus-5-5"],
+		["opencode", "anthropic/claude-sonnet-5-5"],
 		["opencode", "anthropic/claude-sonnet-5"],
 		["opencode", "google/gemini-3.8-flash"],
 		["omp", "anthropic/claude-opus-5-5"],
+		["omp", "anthropic/claude-sonnet-5-5"],
 		["omp", "anthropic/claude-sonnet-5"],
 	])("launches %s with its exact model id %s", (preset, model) => {
 		expect(isCuratedAgentModel(preset, model)).toBe(true);
@@ -647,11 +670,15 @@ describe("September 2026 model launches", () => {
 		}
 	});
 
-	it("offers Sonnet 5 in the cloud chat catalog", () => {
-		expect(
-			SUPERSET_CHAT_MODELS.find(({ id }) => id === "anthropic/claude-sonnet-5")
-				?.provider,
-		).toBe("Anthropic");
+	it("offers Sonnet 5.5 and Sonnet 5 in the cloud chat catalog", () => {
+		for (const id of [
+			"anthropic/claude-sonnet-5-5",
+			"anthropic/claude-sonnet-5",
+		]) {
+			expect(
+				SUPERSET_CHAT_MODELS.find((model) => model.id === id)?.provider,
+			).toBe("Anthropic");
+		}
 	});
 
 	it("has unique ids within every agent catalog", () => {

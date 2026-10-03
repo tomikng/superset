@@ -74,7 +74,7 @@ export default ({ config }: ConfigContext) => ({
 	locales: Object.fromEntries(
 		SUPPORTED_LOCALES.map((locale) => [locale, `./locales/${locale}.json`]),
 	),
-	version: "1.1.2",
+	version: "1.1.3",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
 	userInterfaceStyle: "dark",
@@ -106,6 +106,12 @@ export default ({ config }: ConfigContext) => ({
 			"com.apple.security.application-groups": [`group.${MOBILE_APP_ID}`],
 		},
 		infoPlist: {
+			"UISupportedInterfaceOrientations~ipad": [
+				"UIInterfaceOrientationPortrait",
+				"UIInterfaceOrientationPortraitUpsideDown",
+				"UIInterfaceOrientationLandscapeLeft",
+				"UIInterfaceOrientationLandscapeRight",
+			],
 			ITSAppUsesNonExemptEncryption: false,
 			NSSupportsLiveActivities: true,
 			// Dictation is native now (`modules/composer`), so no config plugin

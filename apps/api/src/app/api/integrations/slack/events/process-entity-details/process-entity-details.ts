@@ -1,13 +1,18 @@
 import type { SlackEvent } from "@slack/types";
 import type { EntityPresentDetailsArguments } from "@slack/web-api";
 import { db } from "@superset/db/client";
-import { type SelectConnection, tasks } from "@superset/db/schema";
+import {
+	type SelectConnection,
+	taskLabelAssignments,
+	taskLabels,
+	tasks,
+} from "@superset/db/schema";
 import {
 	accountConnection,
 	connectionBotToken,
 } from "@superset/trpc/connectors";
 import { pagePreview } from "@superset/trpc/page-preview";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { findSlackUserLink } from "../../lib/find-slack-user-link";
 import { generateConnectUrl } from "../utils/generate-connect-url";
 import {
@@ -125,7 +130,18 @@ async function taskDetails(
 		};
 	}
 
-	return { metadata: createTaskFlexpaneObject(task) };
+	const labels = await db
+		.select({ name: taskLabels.name })
+		.from(taskLabelAssignments)
+		.innerJoin(taskLabels, eq(taskLabels.id, taskLabelAssignments.labelId))
+		.where(eq(taskLabelAssignments.taskId, task.id))
+		.orderBy(asc(taskLabels.name));
+	return {
+		metadata: createTaskFlexpaneObject({
+			...task,
+			labels: labels.map((label) => label.name),
+		}),
+	};
 }
 
 /** Pages open for the Slack user viewing them, not the one who posted the link. */

@@ -69,6 +69,69 @@ export const cloudWorkspaceStatusValues = [
 export const cloudWorkspaceStatusEnum = z.enum(cloudWorkspaceStatusValues);
 export type CloudWorkspaceStatus = z.infer<typeof cloudWorkspaceStatusEnum>;
 
+/** Who can see and open a cloud workspace: its creator alone, or its whole organization. */
+export const cloudWorkspaceVisibilityValues = ["just_me", "org"] as const;
+export const cloudWorkspaceVisibilityEnum = z.enum(
+	cloudWorkspaceVisibilityValues,
+);
+export type CloudWorkspaceVisibility = z.infer<
+	typeof cloudWorkspaceVisibilityEnum
+>;
+
+/** Who made a change: a person (bot accounts included) or Superset itself. */
+export const actorKindValues = ["user", "system"] as const;
+export type ActorKind = (typeof actorKindValues)[number];
+
+/** Things that happen to a cloud workspace that aren't a change to one of its fields. */
+export const cloudWorkspaceActivityEventValues = [
+	"created",
+	"archived",
+	"unarchived",
+	"joined",
+	"description_edited",
+	"run_finished",
+	"run_failed",
+] as const;
+export type CloudWorkspaceActivityEvent =
+	(typeof cloudWorkspaceActivityEventValues)[number];
+
+export const taskProjectStateValues = [
+	"planned",
+	"started",
+	"paused",
+	"completed",
+	"canceled",
+] as const;
+export type TaskProjectState = (typeof taskProjectStateValues)[number];
+
+export const suggestionKindValues = [
+	"set_field",
+	"rewrite",
+	"relate",
+	"link_task",
+	"add_link",
+	"create_task",
+] as const;
+export type SuggestionKind = (typeof suggestionKindValues)[number];
+
+export const suggestionStatusValues = [
+	"pending",
+	"accepted",
+	"dismissed",
+	"stale",
+	"superseded",
+] as const;
+export type SuggestionStatus = (typeof suggestionStatusValues)[number];
+
+export const suggestionEntityValues = [
+	"cloud_workspace",
+	"task",
+	"task_project",
+	"task_label",
+	"pull_request",
+] as const;
+export type SuggestionEntity = (typeof suggestionEntityValues)[number];
+
 /** Who can see and use an environment: everyone in its organization, or its creator alone. */
 export const environmentScopeValues = ["organization", "personal"] as const;
 export type EnvironmentScope = (typeof environmentScopeValues)[number];
