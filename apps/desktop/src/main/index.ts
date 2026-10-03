@@ -1,3 +1,4 @@
+import "./cli-passthrough";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
