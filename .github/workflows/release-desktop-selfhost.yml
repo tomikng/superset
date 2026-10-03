@@ -115,6 +115,10 @@ jobs:
     if: needs.plan.outputs.mac == 'true'
     runs-on: [self-hosted, macOS, ms4]
     timeout-minutes: 90
+    env:
+      # The launchd runner has no locale; CocoaPods and Ruby need UTF-8.
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -170,6 +174,10 @@ jobs:
       (needs.mac.result == 'success' || needs.mac.result == 'skipped')
     runs-on: [self-hosted, macOS, ms4]
     timeout-minutes: 90
+    env:
+      # The launchd runner has no locale; CocoaPods and Ruby need UTF-8.
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
